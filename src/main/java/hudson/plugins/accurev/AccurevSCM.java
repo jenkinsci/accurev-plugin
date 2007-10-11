@@ -91,9 +91,9 @@ public class AccurevSCM extends SCM {
         addServer(cmd, server);
         cmd.add("-fx");
         cmd.add("-p");
-        cmd.addQuoted(depot);
+        cmd.add(depot);
         cmd.add("-s");
-        cmd.addQuoted(stream);
+        cmd.add(stream);
         cmd.add("-t");
         cmd.add("now.1");
         StringOutputStream sos = new StringOutputStream();
@@ -246,7 +246,7 @@ public class AccurevSCM extends SCM {
             cmd.add("pop");
             addServer(cmd, server);
             cmd.add("-v");
-            cmd.addQuoted(stream);
+            cmd.add(stream);
             cmd.add("-L");
             cmd.add(workspace.getRemote());
             cmd.add("-R");
@@ -276,7 +276,7 @@ public class AccurevSCM extends SCM {
         cmd.add("-fx");
         cmd.add("-a");
         cmd.add("-s");
-        cmd.addQuoted(stream);
+        cmd.add(stream);
         cmd.add("-t");
         String dateRange = ACCUREV_DATETIME_FORMATTER.format(build.getTimestamp().getTime());
         if (startTime != null) {
