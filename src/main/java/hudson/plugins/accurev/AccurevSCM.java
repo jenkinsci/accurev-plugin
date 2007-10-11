@@ -16,7 +16,6 @@ import hudson.scm.ChangeLogSet;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.util.ArgumentListBuilder;
-import org.apache.commons.lang.time.DateUtils;
 import org.codehaus.plexus.util.StringOutputStream;
 import org.kohsuke.stapler.StaplerRequest;
 import org.xml.sax.SAXException;
@@ -53,6 +52,7 @@ import java.util.logging.Logger;
 public class AccurevSCM extends SCM {
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     public static final SimpleDateFormat ACCUREV_DATETIME_FORMATTER = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private static final long MILLIS_PER_SECOND = 1000L;
     private final String serverName;
     private final String depot;
     private final String stream;
@@ -421,7 +421,7 @@ public class AccurevSCM extends SCM {
 
     private static Date convertAccurevTimestamp(String transactionTime) {
         final long time = Long.parseLong(transactionTime);
-        final long date = time * DateUtils.MILLIS_PER_SECOND;
+        final long date = time * MILLIS_PER_SECOND;
         return new Date(date);
     }
 
