@@ -284,7 +284,7 @@ public class AccurevSCM extends SCM {
         } else {
             dateRange += ".100";
         }
-        cmd.addQuoted(dateRange);
+        cmd.add(dateRange); // if this breaks windows there's going to be fun
         FileOutputStream os = new FileOutputStream(changelogFile);
         try {
             BufferedOutputStream bos = new BufferedOutputStream(os);
