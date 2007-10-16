@@ -10,10 +10,6 @@
 
     <artifactId>accurev</artifactId>
     <packaging>hpi</packaging>
-    <version>0.3</version>
+    <version>0.4-SNAPSHOT</version>
     <name>Hudson Accurev plugin</name>
-
-  <scm>
-    <tag>accurev-0_3</tag>
-  </scm>
 </project>
