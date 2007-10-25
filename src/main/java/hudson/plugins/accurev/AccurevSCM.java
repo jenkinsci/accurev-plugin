@@ -16,6 +16,7 @@ import hudson.scm.ChangeLogSet;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.util.ArgumentListBuilder;
+import hudson.util.IOException2;
 import org.codehaus.plexus.util.StringOutputStream;
 import org.kohsuke.stapler.StaplerRequest;
 import org.xml.sax.SAXException;
@@ -755,7 +756,7 @@ public class AccurevSCM extends SCM {
                     }
                 }
             } catch (XmlPullParserException e) {
-                throw new IOException(e);
+                throw new IOException2(e);
             }
 
             logger.info("transations size = " + transactions.size());
