@@ -13,4 +13,5 @@
     <packaging>hpi</packaging>
     <version>0.4-SNAPSHOT</version>
     <name>Hudson Accurev plugin</name>
+    <url>http://hudson.gotdns.com/wiki/display/HUDSON/Accurev+Plugin</url>
 </project>
