@@ -86,6 +86,42 @@ public class AccurevSCM extends SCM {
             return false;
         }
 
+        final Run lastBuild = project.getLastBuild();
+        if (lastBuild == null) {
+            listener.getLogger().println("Project has never been built");
+            return true;
+        }
+        final Date buildDate = lastBuild.getTimestamp().getTime();
+
+        listener.getLogger().println("Last build on " + buildDate);
+
+        Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
+
+        AccurevStream stream = streams.get(this.stream);
+
+        if (stream == null) {
+            // if there was a problem, fall back to simple stream check
+            return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, this.stream, buildDate);
+        }
+        // There may be changes in a parent stream that we need to factor in.
+        do {
+            if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(), buildDate)) {
+                return true;
+            }
+            stream = stream.getParent();
+        } while (stream != null && stream.isReceivingChangesFromParent());
+        return false;
+    }
+
+    private boolean checkStreamForChanges(AccurevServer server,
+                                          Map<String, String> accurevEnv,
+                                          FilePath workspace,
+                                          TaskListener listener,
+                                          String accurevPath,
+                                          Launcher launcher,
+                                          String stream,
+                                          Date buildDate)
+            throws IOException, InterruptedException {
         ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
         cmd.add("hist");
@@ -121,14 +157,6 @@ public class AccurevSCM extends SCM {
             String transactionTime = parser.getAttributeValue("", "time");
             String transactionUser = parser.getAttributeValue("", "user");
             Date transactionDate = convertAccurevTimestamp(transactionTime);
-
-            final Run lastBuild = project.getLastBuild();
-            if (lastBuild == null) {
-                listener.getLogger().println("Project has never been built");
-                return true;
-            }
-            final Date buildDate = lastBuild.getTimestamp().getTime();
-            listener.getLogger().println("Last build on " + buildDate);
             listener.getLogger().println("Last change on " + transactionDate);
             listener.getLogger().println("#" + transactionId + " " + transactionUser + " " + transactionType);
 
@@ -147,6 +175,8 @@ public class AccurevSCM extends SCM {
                             transactionComment = parser.getText();
                         }
                         break;
+                    case XmlPullParser.END_DOCUMENT:
+                        transactionComment = "";
                     default:
                         continue;
                 }
@@ -160,6 +190,86 @@ public class AccurevSCM extends SCM {
             e.printStackTrace(listener.getLogger());
             logger.warning(e.getMessage());
             return false;
+        }
+    }
+
+    private Map<String, AccurevStream> getStreams(AccurevServer server,
+                                                  Map<String, String> accurevEnv,
+                                                  FilePath workspace,
+                                                  TaskListener listener,
+                                                  String accurevPath,
+                                                  Launcher launcher)
+            throws IOException, InterruptedException {
+        Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("show");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-p");
+        cmd.add(depot);
+        cmd.add("streams");
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("Show streams command failed with exit code " + rv);
+            return null;
+        }
+
+        try {
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+            while (true) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        // build the tree
+                        for (AccurevStream stream : streams.values()) {
+                            if (stream.getBasisName() != null) {
+                                stream.setParent(streams.get(stream.getBasisName()));
+                            }
+                        }
+                        return streams;
+                    case XmlPullParser.START_TAG:
+                        final String tagName = parser.getName();
+                        if ("stream".equalsIgnoreCase(tagName)) {
+                            String streamName = parser.getAttributeValue("", "name");
+                            String streamNumber = parser.getAttributeValue("", "streamNumber");
+                            String basisStreamName = parser.getAttributeValue("", "basis");
+                            String basisStreamNumber = parser.getAttributeValue("", "basisStreamNumber");
+                            String streamType = parser.getAttributeValue("", "type");
+                            String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
+                            String streamTimeString = parser.getAttributeValue("", "time");
+                            Date streamTime = streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
+                            String streamStartTimeString = parser.getAttributeValue("", "startTime");
+                            Date streamStartTime = streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
+                            try {
+                                AccurevStream stream = new AccurevStream(streamName,
+                                        streamNumber == null ? null : Long.valueOf(streamNumber),
+                                        depot,
+                                        basisStreamName,
+                                        basisStreamNumber == null ? null : Long.valueOf(basisStreamNumber),
+                                        streamIsDynamic == null ? false : Boolean.parseBoolean(streamIsDynamic),
+                                        AccurevStream.StreamType.parseStreamType(streamType),
+                                        streamTime,
+                                        streamStartTime);
+                                streams.put(streamName, stream);
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace(listener.getLogger());
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+                    case XmlPullParser.TEXT:
+                        break;
+                }
+            }
+        } catch (XmlPullParserException e) {
+            e.printStackTrace(listener.getLogger());
+            logger.warning(e.getMessage());
+            return null;
         }
     }
 
@@ -270,6 +380,45 @@ public class AccurevSCM extends SCM {
             startTime = build.getPreviousBuild().getTimestamp();
         }
 
+        {
+            Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
+
+            AccurevStream stream = streams.get(this.stream);
+
+            if (stream == null) {
+                // if there was a problem, fall back to simple stream check
+                return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                        build.getTimestamp().getTime(), startTime == null ? null : startTime.getTime(),
+                        this.stream, changelogFile);
+            }
+            // There may be changes in a parent stream that we need to factor in.
+            // TODO produce a consolidated list of changes from the parent streams
+            do {
+                // This is a best effort to get as close to the changes as possible
+                if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                        stream.getName(), startTime == null ? null : startTime.getTime())) {
+                    return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                            build.getTimestamp().getTime(), startTime == null ? null : startTime
+                            .getTime(), stream.getName(), changelogFile);
+                }
+                stream = stream.getParent();
+            } while (stream != null && stream.isReceivingChangesFromParent());
+        }
+        return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                build.getTimestamp().getTime(), startTime == null ? null : startTime.getTime(), this.stream,
+                changelogFile);
+    }
+
+    private boolean captureChangelog(AccurevServer server,
+                                     Map<String, String> accurevEnv,
+                                     FilePath workspace,
+                                     BuildListener listener,
+                                     String accurevPath,
+                                     Launcher launcher,
+                                     Date buildDate,
+                                     Date startDate,
+                                     String stream,
+                                     File changelogFile) throws IOException, InterruptedException {
         ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
         cmd.add("hist");
@@ -279,9 +428,9 @@ public class AccurevSCM extends SCM {
         cmd.add("-s");
         cmd.add(stream);
         cmd.add("-t");
-        String dateRange = ACCUREV_DATETIME_FORMATTER.format(build.getTimestamp().getTime());
-        if (startTime != null) {
-            dateRange += "-" + ACCUREV_DATETIME_FORMATTER.format(startTime.getTime());
+        String dateRange = ACCUREV_DATETIME_FORMATTER.format(buildDate);
+        if (startDate != null) {
+            dateRange += "-" + ACCUREV_DATETIME_FORMATTER.format(startDate);
         } else {
             dateRange += ".100";
         }
@@ -421,9 +570,16 @@ public class AccurevSCM extends SCM {
     }
 
     private static Date convertAccurevTimestamp(String transactionTime) {
-        final long time = Long.parseLong(transactionTime);
-        final long date = time * MILLIS_PER_SECOND;
-        return new Date(date);
+        if (transactionTime == null) {
+            return null;
+        }
+        try {
+            final long time = Long.parseLong(transactionTime);
+            final long date = time * MILLIS_PER_SECOND;
+            return new Date(date);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private static XmlPullParser newPullParser() throws XmlPullParserException {
