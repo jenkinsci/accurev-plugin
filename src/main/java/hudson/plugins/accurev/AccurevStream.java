@@ -27,8 +27,8 @@ public class AccurevStream implements Serializable {
     private final StreamType type;
     private final Date time;
     private final Date startTime;
-    private AccurevStream parent;
-    private final Set<AccurevStream> children = new HashSet<AccurevStream>();
+    private transient AccurevStream parent;
+    private final transient Set<AccurevStream> children = new HashSet<AccurevStream>();
 
     public AccurevStream(String name, Long number, String depot, String basisName, Long basisNumber, boolean dynamic, StreamType type, Date time, Date startTime) {
         this.name = name;

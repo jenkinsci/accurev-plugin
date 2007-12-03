@@ -10,6 +10,7 @@ import hudson.model.ModelObject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.jetty.security.Password;
+import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
@@ -32,7 +33,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -273,6 +277,71 @@ public class AccurevSCM extends SCM {
         }
     }
 
+    private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
+                                                        Map<String, String> accurevEnv,
+                                                        FilePath workspace,
+                                                        TaskListener listener,
+                                                        String accurevPath,
+                                                        Launcher launcher)
+            throws IOException, InterruptedException {
+        Map<String, AccurevWorkspace> workspaces = new HashMap<String, AccurevWorkspace>();
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("show");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-p");
+        cmd.add(depot);
+        cmd.add("wspaces");
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("Show workspaces command failed with exit code " + rv);
+            return null;
+        }
+
+        try {
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+            while (true) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        return workspaces;
+                    case XmlPullParser.START_TAG:
+                        final String tagName = parser.getName();
+                        if ("Element".equalsIgnoreCase(tagName)) {
+                            String name = parser.getAttributeValue("", "Name");
+                            String storage = parser.getAttributeValue("", "Storage");
+                            String host = parser.getAttributeValue("", "Host");
+                            String streamNumber = parser.getAttributeValue("", "Stream");
+                            String depot = parser.getAttributeValue("", "depot");
+                            try {
+                                workspaces.put(name, new AccurevWorkspace(
+                                        depot,
+                                        streamNumber == null ? null : Long.valueOf(streamNumber),
+                                        name,
+                                        host,
+                                        storage));
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace(listener.getLogger());
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+                    case XmlPullParser.TEXT:
+                        break;
+                }
+            }
+        } catch (XmlPullParserException e) {
+            e.printStackTrace(listener.getLogger());
+            logger.warning(e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -288,7 +357,10 @@ public class AccurevSCM extends SCM {
             return false;
         }
 
-        listener.getLogger().println("Populating workspace...");
+        listener.getLogger().println("Getting a list of streams...");
+        final Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath,
+                launcher);
+
         if (depot == null || "".equals(depot)) {
             listener.fatalError("Must specify a depot");
             return false;
@@ -297,61 +369,127 @@ public class AccurevSCM extends SCM {
             listener.fatalError("Must specify a stream");
             return false;
         }
-        if (useWorkspace && (workspace == null || "".equals(workspace))) {
+        if (streams != null && !streams.containsKey(stream)) {
+            listener.fatalError("The specified stream does not appear to exist!");
+            return false;
+        }
+        if (useWorkspace && (this.workspace == null || "".equals(this.workspace))) {
             listener.fatalError("Must specify a workspace");
             return false;
         }
         if (useWorkspace) {
-            listener.fatalError("Sorry, workspace based checkout code has not been written yet");
-            return false;
-            // TODO accurev show -H hostname:port -fx wspaces
-            // TODO Parse the xml file to find the workspace Element (xxx -> text, ### -> number)
-            //   <Element
-            //     Name = "xxxxx"
-            //     Storage = "xxxx"
-            //     Host = "xxx.xxx.xxx"
-            //     Stream = "####"
-            //     depot = "xxxx"
-            //     Target_trans = "####"
-            //     Trans = "####"
-            //     Type = "1"
-            //     EOL = "0"
-            //     user_id = "####"
-            //     user_name = "xxxx" / >
-            // TODO verify that the depot is correct
-            // TODO verify that the Storage corresponds with the workspace folder
-            // TODO verify that the Host corresponds to the slave that this is running on
-            // TODO accurev show -H hostname:port -fx streams
-            // TODO parse the xml file to find the stream
-            /*
-              <stream
-                name="xxxx"
-                basis="xxxxx"
-                basisStreamNumber="####"
-                depotName="xxxxx"
-                streamNumber="####"
-                isDynamic="false"
-                type="snapshot"
-                time="####"
-                startTime="####"/>
-            */
-            // TODO verify that the stream number matches the stream number of the workspace
-            // TODO If the workspace is not based on the stream, change it to be based on the stream
-            // TODO If the workspace is not on the correct hosts and at the correct storage location, move it
+            listener.getLogger().println("Getting a list of workspaces...");
+            Map<String, AccurevWorkspace> workspaces = getWorkspaces(server, accurevEnv, workspace, listener,
+                    accurevPath, launcher);
+            if (workspaces == null) {
+                listener.fatalError("Cannot determine workspace configuration information");
+                return false;
+            }
+            if (!workspaces.containsKey(this.workspace)) {
+                listener.fatalError("The specified workspace does not appear to exist!");
+                return false;
+            }
+            AccurevWorkspace accurevWorkspace = workspaces.get(this.workspace);
+            if (!depot.equals(accurevWorkspace.getDepot())) {
+                listener.fatalError("The specified workspace, " + this.workspace + ", is based in the depot " +
+                        accurevWorkspace.getDepot() + " not " + depot);
+                return false;
+            }
 
-            // Now we have the workspace ready to update
+            for (AccurevStream accurevStream : streams.values()) {
+                if (accurevWorkspace.getStreamNumber().equals(accurevStream.getNumber())) {
+                    accurevWorkspace.setStream(accurevStream);
+                    break;
+                }
+            }
 
-            // Update has been known to fail with refactoring of code in the workspace.... Must use a purged workspace
+            RemoteWorkspaceDetails remoteDetails;
+            try {
+                remoteDetails = workspace.act(new DetermineRemoteHostname(workspace.getRemote()));
+            } catch (IOException e) {
+                listener.fatalError("Unable to validate workspace host.");
+                e.printStackTrace(listener.getLogger());
+                return false;
+            }
 
-            // Thankfully, we delete everything up at the top anyway
+            boolean needsRelocation = false;
+            ArgumentListBuilder cmd = new ArgumentListBuilder();
+            cmd.add(accurevPath);
+            cmd.add("chws");
+            addServer(cmd, server);
+            cmd.add("-w");
+            cmd.add(this.workspace);
 
-            // TODO accurev update -H host:port
+            if (!stream.equals(accurevWorkspace.getStream().getParent().getName())) {
+                listener.getLogger().println("Parent stream needs to be updated.");
+                needsRelocation = true;
+                cmd.add("-b");
+                cmd.add(this.stream);
+            }
+            if (!accurevWorkspace.getHost().equals(remoteDetails.getHostName())) {
+                listener.getLogger().println("Host needs to be updated.");
+                needsRelocation = true;
+                cmd.add("-m");
+                cmd.add(remoteDetails.getHostName());
+            }
+            final String oldStorage = accurevWorkspace.getStorage()
+                    .replace("/", remoteDetails.getFileSeparator())
+                    .replace("\\", remoteDetails.getFileSeparator());
+            if (!oldStorage.equals(remoteDetails.getPath())) {
+                listener.getLogger().println("Storage needs to be updated.");
+                needsRelocation = true;
+                cmd.add("-l");
+                cmd.add(workspace.getRemote());
+            }
 
-            // Since we needed an empty workspace to ensure that update works, now populate everything
-            // TODO accurev pop -H host:port -R .
+            if (needsRelocation) {
+                listener.getLogger().println("Relocating workspace...");
+                listener.getLogger().println("  Old host: " + accurevWorkspace.getHost());
+                listener.getLogger().println("  New host: " + remoteDetails.getHostName());
+                listener.getLogger().println("  Old storage: " + oldStorage);
+                listener.getLogger().println("  New storage: " + workspace.getRemote());
+                listener.getLogger().println("  Old parent stream: " + accurevWorkspace.getStream().getParent()
+                        .getName());
+                listener.getLogger().println("  New parent stream: " + stream);
+                listener.getLogger().println(cmd.toStringWithQuote());
 
-            // Done
+                int rv;
+                rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
+                if (rv != 0) {
+                    listener.fatalError("Relocation failed with exit code " + rv);
+                    return false;
+                }
+                listener.getLogger().println("Relocation successfully.");
+
+            }
+
+            listener.getLogger().println("Updating workspace...");
+            cmd = new ArgumentListBuilder();
+            cmd.add(accurevPath);
+            cmd.add("update");
+            addServer(cmd, server);
+            int rv;
+            rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
+            if (rv != 0) {
+                listener.fatalError("Update failed with exit code " + rv);
+                return false;
+            }
+            listener.getLogger().println("Update completed successfully.");
+
+            listener.getLogger().println("Populating workspace...");
+            cmd = new ArgumentListBuilder();
+            cmd.add(accurevPath);
+            cmd.add("pop");
+            addServer(cmd, server);
+            cmd.add("-R");
+            cmd.add(".");
+            if (rv != 0) {
+                listener.fatalError("Populate failed with exit code " + rv);
+                return false;
+            }
+            listener.getLogger().println("Populate completed successfully.");
         } else {
+            listener.getLogger().println("Populating workspace...");
             ArgumentListBuilder cmd = new ArgumentListBuilder();
             cmd.add(accurevPath);
             cmd.add("pop");
@@ -381,8 +519,6 @@ public class AccurevSCM extends SCM {
         }
 
         {
-            Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
-
             AccurevStream stream = streams.get(this.stream);
 
             if (stream == null) {
@@ -964,4 +1100,48 @@ public class AccurevSCM extends SCM {
         }
     }
 
+    private static class RemoteWorkspaceDetails implements Serializable {
+        private final String hostName;
+        private final String path;
+        private final String fileSeparator;
+
+        public RemoteWorkspaceDetails(String hostName, String path, String fileSeparator) {
+            this.hostName = hostName;
+            this.path = path;
+            this.fileSeparator = fileSeparator;
+        }
+
+        public String getHostName() {
+            return hostName;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public String getFileSeparator() {
+            return fileSeparator;
+        }
+    }
+
+    private static class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails, UnknownHostException> {
+        private final String path;
+
+        public DetermineRemoteHostname(String path) {
+            this.path = path;
+        }
+
+        public RemoteWorkspaceDetails call() throws UnknownHostException {
+            InetAddress addr = InetAddress.getLocalHost();
+            File f = new File(path);
+            String path;
+            try {
+                path = f.getCanonicalPath();
+            } catch (IOException e) {
+                path = f.getAbsolutePath();
+            }
+
+            return new RemoteWorkspaceDetails(addr.getCanonicalHostName(), path, File.separator);
+        }
+    }
 }
