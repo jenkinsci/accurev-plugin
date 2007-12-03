@@ -447,7 +447,7 @@ public class AccurevSCM extends SCM {
                 listener.getLogger().println("  Old host: " + accurevWorkspace.getHost());
                 listener.getLogger().println("  New host: " + remoteDetails.getHostName());
                 listener.getLogger().println("  Old storage: " + oldStorage);
-                listener.getLogger().println("  New storage: " + workspace.getRemote());
+                listener.getLogger().println("  New storage: " + remoteDetails.getPath());
                 listener.getLogger().println("  Old parent stream: " + accurevWorkspace.getStream().getParent()
                         .getName());
                 listener.getLogger().println("  New parent stream: " + stream);
