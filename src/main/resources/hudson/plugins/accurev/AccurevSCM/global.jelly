@@ -24,13 +24,13 @@
                     <f:advanced>
                         <f:entry title="Port">
                             <input class="setting-input number" type="text"
-                                   name="accurev.server.port" value="${h.ifThenElse(host==null,5050,server.port)}"/>
+                                   name="accurev.server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
                         </f:entry>
                     </f:advanced>
 
                 </table>
                 <div align="right">
-                        <f:repeatableDeleteButton/>
+                    <f:repeatableDeleteButton/>
                 </div>
             </f:repeatable>
         </f:entry>
