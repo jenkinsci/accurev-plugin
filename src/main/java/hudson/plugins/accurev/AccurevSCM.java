@@ -597,6 +597,7 @@ public class AccurevSCM extends SCM {
         if (server != null) {
             accurevEnv.put("ACCUREV_HOME", workspace.getParent().getRemote());
             listener.getLogger().println("Authenticating with Accurev server...");
+            boolean[] masks;
             cmd = new ArgumentListBuilder();
             cmd.add(accurevPath);
             cmd.add("login");
@@ -604,13 +605,23 @@ public class AccurevSCM extends SCM {
             cmd.add(server.getUsername());
             if (server.getPassword() == null || "".equals(server.getPassword())) {
                 cmd.addQuoted("");
+                masks = new boolean[cmd.toCommandArray().length];
             } else {
                 cmd.add(server.getPassword());
+                masks = new boolean[cmd.toCommandArray().length];
+                masks[masks.length - 1] = true;
             }
             String resp = null;
             DESCRIPTOR.ACCUREV_LOCK.lock();
             try {
-                resp = workspace.act(new AccurevLoginCallable(cmd.toCommandArray(), Util.mapToEnv(accurevEnv)));
+                StringOutputStream sos = new StringOutputStream();
+                int rv = launcher.launch(cmd.toCommandArray(), masks, Util.mapToEnv(accurevEnv), null, sos, workspace)
+                        .join();
+                if (rv == 0) {
+                    resp = null;
+                } else {
+                    resp = sos.toString();
+                }
             } finally {
                 DESCRIPTOR.ACCUREV_LOCK.unlock();
             }
@@ -989,37 +1000,6 @@ public class AccurevSCM extends SCM {
             } else {
                 // we are running on *nix
                 return getExistingPath(nonWindowsPaths);
-            }
-        }
-    }
-
-    /**
-     * Necessary to hide the password until there is a better launcher.
-     */
-    private static final class AccurevLoginCallable implements FilePath.FileCallable<String> {
-        private final String[] cmd;
-        private final String[] env;
-
-        public AccurevLoginCallable(String[] cmd, String[] env) {
-            this.cmd = cmd;
-            this.env = env;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public String invoke(File f, VirtualChannel channel) throws IOException {
-            Process p = Runtime.getRuntime().exec(cmd, env, f);
-            try {
-                int rv = p.waitFor();
-                if (rv == 0) {
-                    return null;
-                }
-                StringOutputStream sos = new StringOutputStream();
-                Util.copyStream(p.getInputStream(), sos);
-                return sos.toString();
-            } catch (InterruptedException e) {
-                return "Process interrupted.";
             }
         }
     }
