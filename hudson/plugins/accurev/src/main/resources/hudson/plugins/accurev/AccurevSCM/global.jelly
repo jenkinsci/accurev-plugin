@@ -1,0 +1,38 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:section title="Accurev">
+        <f:entry title="Servers">
+            <f:repeatable var="server" varStatus="loopStatus" items="${descriptor.servers}" minimum="1">
+                <table width="100%">
+                    <f:entry title="Name">
+                        <input class="setting-input" type="text"
+                               name="accurev.server.name" value="${server.name}"/>
+                    </f:entry>
+
+                    <f:entry title="Host">
+                        <input class="setting-input" type="text"
+                               name="accurev.server.host" value="${server.host}"/>
+                    </f:entry>
+                    <f:entry title="Username">
+                        <input class="setting-input" type="text"
+                               name="accurev.server.username" value="${server.username}"/>
+                    </f:entry>
+                    <f:entry title="Password">
+                        <input class="setting-input" type="password"
+                               name="accurev.server.password" value="${server.password}"/>
+                    </f:entry>
+                    <f:advanced>
+                        <f:entry title="Port">
+                            <input class="setting-input number" type="text"
+                                   name="accurev.server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
+                        </f:entry>
+                    </f:advanced>
+
+                </table>
+                <div align="right">
+                    <f:repeatableDeleteButton/>
+                </div>
+            </f:repeatable>
+        </f:entry>
+    </f:section>
+</j:jelly>
