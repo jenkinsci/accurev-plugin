@@ -62,13 +62,14 @@ public class AccurevSCM extends SCM {
     private final String depot;
     private final String stream;
     private final boolean useWorkspace;
+    private final boolean synctime;
     private final String workspace;
     private final String workspaceSubPath;
 
     /**
      * @stapler-constructor
      */
-    public AccurevSCM(String serverName, String depot, String stream, boolean useWorkspace, String workspace, String workspaceSubPath) {
+    public AccurevSCM(String serverName, String depot, String stream, boolean useWorkspace, String workspace, String workspaceSubPath, boolean synctime) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -76,6 +77,7 @@ public class AccurevSCM extends SCM {
         this.useWorkspace = useWorkspace;
         this.workspace = workspace;
         this.workspaceSubPath = workspaceSubPath;
+        this.synctime = synctime;
     }
 
     /**
@@ -90,6 +92,13 @@ public class AccurevSCM extends SCM {
 
         if (!accurevLogin(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
             return false;
+        }
+
+        if (synctime) {
+            listener.getLogger().println("Synchronizing clock with the server...");
+            if (!synctime(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+                return false;
+            }
         }
 
         final Run lastBuild = project.getLastBuild();
@@ -197,6 +206,26 @@ public class AccurevSCM extends SCM {
             logger.warning(e.getMessage());
             return false;
         }
+    }
+
+    private boolean synctime(AccurevServer server,
+                             Map<String, String> accurevEnv,
+                             FilePath workspace,
+                             TaskListener listener,
+                             String accurevPath,
+                             Launcher launcher)
+            throws IOException, InterruptedException {
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("synctime");
+        addServer(cmd, server);
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("Synctime command failed with exit code " + rv);
+            return false;
+        }
+        return true;
     }
 
     private Map<String, AccurevStream> getStreams(AccurevServer server,
@@ -357,6 +386,13 @@ public class AccurevSCM extends SCM {
 
         if (!accurevLogin(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
             return false;
+        }
+
+        if (synctime) {
+            listener.getLogger().println("Synchronizing clock with the server...");
+            if (!synctime(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+                return false;
+            }
         }
 
         listener.getLogger().println("Getting a list of streams...");
@@ -726,7 +762,6 @@ public class AccurevSCM extends SCM {
         return stream;
     }
 
-
     /**
      * Getter for property 'workspaceSubPath'.
      *
@@ -734,6 +769,15 @@ public class AccurevSCM extends SCM {
      */
     public String getWorkspaceSubPath() {
         return workspaceSubPath;
+    }
+
+    /**
+     * Getter for property 'synctime'.
+     *
+     * @return Value for property 'synctime'.
+     */
+    public boolean isSynctime() {
+        return synctime;
     }
 
     private static Date convertAccurevTimestamp(String transactionTime) {

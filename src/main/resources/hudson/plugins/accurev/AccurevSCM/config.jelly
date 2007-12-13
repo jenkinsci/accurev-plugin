@@ -28,6 +28,9 @@
                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
             </f:entry>
         </f:optionalBlock>
+        <f:entry title="Synchronize clock with Accurev server">
+            <f:checkbox name="accurev.synctime" checked="${scm.synctime}"/>
+        </f:entry>
         <f:entry title="Sub-path" help="/plugin/accurev/help/project/workspace-subpath.html">
             <f:textbox name="accurev.workspaceSubPath" value="${scm.workspaceSubPath}"/>
         </f:entry>
