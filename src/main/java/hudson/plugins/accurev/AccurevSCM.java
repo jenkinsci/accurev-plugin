@@ -63,17 +63,19 @@ public class AccurevSCM extends SCM {
     private final String stream;
     private final boolean useWorkspace;
     private final String workspace;
+    private final String workspaceSubPath;
 
     /**
      * @stapler-constructor
      */
-    public AccurevSCM(String serverName, String depot, String stream, boolean useWorkspace, String workspace) {
+    public AccurevSCM(String serverName, String depot, String stream, boolean useWorkspace, String workspace, String workspaceSubPath) {
         super();
         this.serverName = serverName;
         this.depot = depot;
         this.stream = stream;
         this.useWorkspace = useWorkspace;
         this.workspace = workspace;
+        this.workspaceSubPath = workspaceSubPath;
     }
 
     /**
@@ -189,7 +191,7 @@ public class AccurevSCM extends SCM {
                 listener.getLogger().println(transactionComment);
             }
 
-            return buildDate.compareTo(transactionDate) < 0;
+            return buildDate == null || buildDate.compareTo(transactionDate) < 0;
         } catch (XmlPullParserException e) {
             e.printStackTrace(listener.getLogger());
             logger.warning(e.getMessage());
@@ -482,7 +484,11 @@ public class AccurevSCM extends SCM {
             cmd.add("pop");
             addServer(cmd, server);
             cmd.add("-R");
-            cmd.add(".");
+            if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
+                cmd.add(".");
+            } else {
+                cmd.add(workspaceSubPath);
+            }
             if (rv != 0) {
                 listener.fatalError("Populate failed with exit code " + rv);
                 return false;
@@ -499,7 +505,11 @@ public class AccurevSCM extends SCM {
             cmd.add("-L");
             cmd.add(workspace.getRemote());
             cmd.add("-R");
-            cmd.add(".");
+            if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
+                cmd.add(".");
+            } else {
+                cmd.add(workspaceSubPath);
+            }
             int rv;
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
@@ -714,6 +724,16 @@ public class AccurevSCM extends SCM {
      */
     public String getStream() {
         return stream;
+    }
+
+
+    /**
+     * Getter for property 'workspaceSubPath'.
+     *
+     * @return Value for property 'workspaceSubPath'.
+     */
+    public String getWorkspaceSubPath() {
+        return workspaceSubPath;
     }
 
     private static Date convertAccurevTimestamp(String transactionTime) {
@@ -1091,14 +1111,29 @@ public class AccurevSCM extends SCM {
             this.fileSeparator = fileSeparator;
         }
 
+        /**
+         * Getter for property 'hostName'.
+         *
+         * @return Value for property 'hostName'.
+         */
         public String getHostName() {
             return hostName;
         }
 
+        /**
+         * Getter for property 'path'.
+         *
+         * @return Value for property 'path'.
+         */
         public String getPath() {
             return path;
         }
 
+        /**
+         * Getter for property 'fileSeparator'.
+         *
+         * @return Value for property 'fileSeparator'.
+         */
         public String getFileSeparator() {
             return fileSeparator;
         }
@@ -1111,6 +1146,9 @@ public class AccurevSCM extends SCM {
             this.path = path;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public RemoteWorkspaceDetails call() throws UnknownHostException {
             InetAddress addr = InetAddress.getLocalHost();
             File f = new File(path);

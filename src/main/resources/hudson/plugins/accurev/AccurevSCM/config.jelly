@@ -22,11 +22,15 @@
     </f:entry>
 
     <f:advanced>
-        <f:optionalBlock name="accurev.useWorkspace" title="Use workspace" checked="${scm.workspace}">
+        <f:optionalBlock name="accurev.useWorkspace" title="Use workspace" checked="${scm.workspace}"
+                         help="/plugin/accurev/help/project/workspace.html">
             <f:entry title="Workspace">
                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
             </f:entry>
         </f:optionalBlock>
+        <f:entry title="Sub-path" help="/plugin/accurev/help/project/workspace-subpath.html">
+            <f:textbox name="accurev.workspaceSubPath" value="${scm.workspaceSubPath}"/>
+        </f:entry>
     </f:advanced>
 
 </j:jelly>
