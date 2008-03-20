@@ -3,3 +3,5 @@ accurev.iml
 accurev.ipr
 target
 work
+.project
+.settings
