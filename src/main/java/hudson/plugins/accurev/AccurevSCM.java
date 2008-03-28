@@ -7,6 +7,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.ModelObject;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.jetty.security.Password;
@@ -62,6 +63,7 @@ public class AccurevSCM extends SCM {
     private final String depot;
     private final String stream;
     private final boolean useWorkspace;
+    private final boolean useUpdate;
     private final boolean synctime;
     private final String workspace;
     private final String workspaceSubPath;
@@ -69,7 +71,14 @@ public class AccurevSCM extends SCM {
     /**
      * @stapler-constructor
      */
-    public AccurevSCM(String serverName, String depot, String stream, boolean useWorkspace, String workspace, String workspaceSubPath, boolean synctime) {
+    public AccurevSCM(String serverName, 
+                      String depot, 
+                      String stream, 
+                      boolean useWorkspace, 
+                      String workspace, 
+                      String workspaceSubPath, 
+                      boolean synctime, 
+                      boolean useUpdate) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -78,6 +87,7 @@ public class AccurevSCM extends SCM {
         this.workspace = workspace;
         this.workspaceSubPath = workspaceSubPath;
         this.synctime = synctime;
+        this.useUpdate = useUpdate;
     }
 
     /**
@@ -378,7 +388,11 @@ public class AccurevSCM extends SCM {
      */
     public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) throws IOException, InterruptedException {
         final String accurevPath = workspace.act(new FindAccurevHome());
-        workspace.act(new PurgeWorkspaceContents(listener));
+        if (!useWorkspace 
+                || !useUpdate
+                || (build.getPreviousBuild() != null && build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE))) {
+            workspace.act(new PurgeWorkspaceContents(listener));
+        }
 
         AccurevServer server = DESCRIPTOR.getServer(serverName);
 
@@ -724,6 +738,15 @@ public class AccurevSCM extends SCM {
      */
     public boolean isUseWorkspace() {
         return useWorkspace;
+    }
+
+    /**
+     * Getter for property 'useUpdate'.
+     *
+     * @return Value for property 'useUpdate'.
+     */
+    public boolean isUseUpdate() {
+        return useUpdate;
     }
 
     /**

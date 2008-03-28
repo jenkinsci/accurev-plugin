@@ -27,6 +27,9 @@
             <f:entry title="Workspace">
                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
             </f:entry>
+            <f:entry title="Use update" help="/plugin/accurev/help/project/update.html">
+                <f:checkbox name="accurev.useUpdate" checked="${scm.useUpdate}"/>
+            </f:entry>
         </f:optionalBlock>
         <f:entry title="Synchronize clock with Accurev server">
             <f:checkbox name="accurev.synctime" checked="${scm.synctime}"/>
