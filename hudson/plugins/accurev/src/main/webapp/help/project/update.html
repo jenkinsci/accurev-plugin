@@ -1,0 +1,14 @@
+<div>
+    <p>
+        By default, this plugin purges the workspace for every build. There are a number of operations
+        which when performed in Accurev, can make it impossible for a client to successfully complete
+        an <code>accurev update</code> operation with the workspace populated. The sequence of purge,
+        update, populate has not failed. The down side is that it is slower.
+    </p>
+    <p>
+        Selecting this option will enable the plugin to skip the purge step and just use update 
+        (followed by a populate just in case any files went missing). <strong>NOTE: however, in order to
+        allow Hudson to recover from the cannot complete update situation a purge will always
+        be performed if the last build failed.</strong>
+    </p>
+</div>

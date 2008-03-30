@@ -1,0 +1,42 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry title="Server ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}">
+
+        <select class="setting-input" name="accurev.serverName">
+            <j:forEach var="needbetterway" items="${scms}">
+                <j:if test="${needbetterway.displayName == 'Accurev'}">
+                    <j:forEach var="i" items="${needbetterway.serverNames}">
+                        <f:option selected="${i==scm.serverName}" value="${i}">${i}</f:option>
+                    </j:forEach>
+                </j:if>
+            </j:forEach>
+        </select>
+    </f:entry>
+
+    <f:entry title="Depot">
+        <f:textbox name="accurev.depot" value="${scm.depot}"/>
+    </f:entry>
+
+    <f:entry title="Stream">
+        <f:textbox name="accurev.stream" value="${scm.stream}"/>
+    </f:entry>
+
+    <f:advanced>
+        <f:optionalBlock name="accurev.useWorkspace" title="Use workspace" checked="${scm.workspace}"
+                         help="/plugin/accurev/help/project/workspace.html">
+            <f:entry title="Workspace">
+                <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
+            </f:entry>
+            <f:entry title="Use update" help="/plugin/accurev/help/project/update.html">
+                <f:checkbox name="accurev.useUpdate" checked="${scm.useUpdate}"/>
+            </f:entry>
+        </f:optionalBlock>
+        <f:entry title="Synchronize clock with Accurev server">
+            <f:checkbox name="accurev.synctime" checked="${scm.synctime}"/>
+        </f:entry>
+        <f:entry title="Sub-path" help="/plugin/accurev/help/project/workspace-subpath.html">
+            <f:textbox name="accurev.workspaceSubPath" value="${scm.workspaceSubPath}"/>
+        </f:entry>
+    </f:advanced>
+
+</j:jelly>
