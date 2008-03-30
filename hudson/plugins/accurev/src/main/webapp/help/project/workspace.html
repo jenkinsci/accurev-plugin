@@ -1,0 +1,32 @@
+<div>
+    <p>
+        By default, this plugin checks out the latest changes without using a workspace. This removes the need to
+        manually create a workspace for each project, and removes the need for the plugin to make Accurev transactions
+        while moving the workspace from slave to slave as the build migrates from slave to slave.
+    </p>
+
+    <p>
+        However, there may be situations when the use of a workspace is preferred. If you want to use a workspace
+        select this checkbox. You will need to manually create the workspace for this job. The plugin can manage
+        migrating the workspace to the appropriate build machine and relocating the workspace to use the correct parent
+        stream (i.e. it knows how to do <code>accurev chws</code>) but the side-effect is that these changes will be
+        recorded in the Accurev repository.
+    </p>
+
+    <p>When not using a workspace, the following Accurev commands will be used:</p>
+    <ul>
+        <li><code>accurev pop -R</code> to extract all the files. Note: this command will not work either if the
+            directory that the files are being extracted to is the child of an active Accurev Workspace.
+        </li>
+    </ul>
+    <p>When using a workspace, the following Accurev commands will be used:</p>
+    <ul>
+        <li><code>accurev show wspaces</code> to validate that the workspace is valid and has the correct parent stream
+        </li>
+        <li><i>(Optional)</i> <code>accurev chws</code> if the workspace: is in the wrong directory; on the wrong
+            machine; or has the wrong parent stream.
+        </li>
+        <li><code>accurev update</code> to update the workspace.</li>
+        <li><code>accurev pop -R</code> to ensure that all files are populated.</li>
+    </ul>
+</div>
