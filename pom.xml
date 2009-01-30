@@ -10,7 +10,13 @@
 
     <artifactId>accurev</artifactId>
     <packaging>hpi</packaging>
-    <version>0.6.7-SNAPSHOT</version>
+    <version>0.6.7</version>
     <name>Hudson Accurev plugin</name>
     <url>http://hudson.gotdns.com/wiki/display/HUDSON/Accurev+Plugin</url>
+
+  <scm>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/accurev-0.6.7</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/accurev-0.6.7</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/accurev/tags/accurev-0.6.7</url>
+  </scm>
 </project>
