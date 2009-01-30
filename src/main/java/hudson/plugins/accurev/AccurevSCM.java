@@ -539,6 +539,7 @@ public class AccurevSCM extends SCM {
             } else {
                 cmd.add(workspaceSubPath);
             }
+            rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
                 listener.fatalError("Populate failed with exit code " + rv);
                 return false;
