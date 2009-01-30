@@ -166,6 +166,8 @@ public class AccurevStream implements Serializable {
             case SNAPSHOT:
                 return false;
             case NORMAL:
+                // TODO need to add an optimization, namely check to see if a time is present, has it changed
+                // since last we checked.
                 return time == null;
             default:
                 return false;

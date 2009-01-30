@@ -765,7 +765,13 @@ public class AccurevSCM extends SCM {
             XmlPullParser parser = newPullParser();
             parser.setInput(new StringReader(sos.toString()));
             while (true) {
-                if (parser.next() != XmlPullParser.START_TAG) {
+                int event = parser.next();
+                if (event == XmlPullParser.END_DOCUMENT) {
+                    // we've got to the end with no transaction tags,
+                    // therefore no changes in this stream
+                    return false;
+                }
+                if (event != XmlPullParser.START_TAG) {
                     continue;
                 }
                 if (!"transaction".equalsIgnoreCase(parser.getName())) {
