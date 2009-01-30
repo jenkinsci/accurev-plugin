@@ -6,25 +6,25 @@
                 <table width="100%">
                     <f:entry title="Name">
                         <input class="setting-input" type="text"
-                               name="accurev.server.name" value="${server.name}"/>
+                               name="server.name" value="${server.name}"/>
                     </f:entry>
 
                     <f:entry title="Host">
                         <input class="setting-input" type="text"
-                               name="accurev.server.host" value="${server.host}"/>
+                               name="server.host" value="${server.host}"/>
                     </f:entry>
                     <f:entry title="Username">
                         <input class="setting-input" type="text"
-                               name="accurev.server.username" value="${server.username}"/>
+                               name="server.username" value="${server.username}"/>
                     </f:entry>
                     <f:entry title="Password">
                         <input class="setting-input" type="password"
-                               name="accurev.server.password" value="${server.password}"/>
+                               name="server.password" value="${server.password}"/>
                     </f:entry>
                     <f:advanced>
                         <f:entry title="Port">
                             <input class="setting-input number" type="text"
-                                   name="accurev.server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
+                                   name="server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
                         </f:entry>
                     </f:advanced>
 

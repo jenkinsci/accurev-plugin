@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.io.ObjectStreamException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
@@ -19,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -33,6 +35,7 @@ import hudson.model.ModelObject;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.model.Descriptor;
 import hudson.plugins.jetty.security.Password;
 import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
@@ -49,6 +52,7 @@ import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
+import net.sf.json.JSONObject;
 
 /**
  * Created by IntelliJ IDEA.
@@ -191,15 +195,17 @@ public class AccurevSCM extends SCM {
      */
     public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener,
                             File changelogFile) throws IOException, InterruptedException {
-        final String accurevPath = workspace.act(new FindAccurevHome());
+
+        AccurevServer server = DESCRIPTOR.getServer(serverName);
+
+        final String accurevPath = workspace.act(new FindAccurevHome(server));
+
         if (!useWorkspace
                 || !useUpdate
                 || (build.getPreviousBuild() != null &&
                 build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE))) {
             workspace.act(new PurgeWorkspaceContents(listener));
         }
-
-        AccurevServer server = DESCRIPTOR.getServer(serverName);
 
         Map<String, String> accurevEnv = new HashMap<String, String>();
 
@@ -534,9 +540,9 @@ public class AccurevSCM extends SCM {
      */
     public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener)
             throws IOException, InterruptedException {
-        final String accurevPath = workspace.act(new FindAccurevHome());
-
         AccurevServer server = DESCRIPTOR.getServer(serverName);
+
+        final String accurevPath = workspace.act(new FindAccurevHome(server));
 
         Map<String, String> accurevEnv = new HashMap<String, String>();
 
@@ -980,9 +986,8 @@ public class AccurevSCM extends SCM {
          * {@inheritDoc}
          */
         @Override
-        public boolean configure(StaplerRequest req) throws FormException {
-            req.bindParameters(this, "accurev.");
-            servers = req.bindParametersToList(AccurevServer.class, "accurev.server.");
+        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+            servers = req.bindJSONToList(AccurevServer.class, formData.get("server"));
             save();
             return true;
         }
@@ -991,8 +996,8 @@ public class AccurevSCM extends SCM {
          * {@inheritDoc}
          */
         @Override
-        public SCM newInstance(StaplerRequest req) throws FormException {
-            return req.bindParameters(AccurevSCM.class, "accurev.");
+        public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+            return req.bindJSON(AccurevSCM.class, formData);
         }
 
         /**
@@ -1043,26 +1048,65 @@ public class AccurevSCM extends SCM {
 
     }
 
-    public static final class AccurevServer {
+    public static final class AccurevServer implements Serializable {
 
         private String name;
         private String host;
         private int port;
         private String username;
         private String password;
+        private transient List<String> winCmdLocations;
+        private transient List<String> nixCmdLocations;
+
+        /**
+         * The default search paths for Windows clients.
+         */
+        private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(
+                "C:\\Program Files\\AccuRev\\bin\\accurev.exe",
+                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
+
+        /**
+         * The default search paths for *nix clients
+         */
+        private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(
+                "/usr/local/bin/accurev",
+                "/usr/bin/accurev",
+                "/bin/accurev",
+                "/local/bin/accurev");
 
         /**
          * Constructs a new AccurevServer.
          */
         public AccurevServer() {
+            winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
+            nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
         }
 
+        @DataBoundConstructor
         public AccurevServer(String name, String host, int port, String username, String password) {
             this.name = name;
             this.host = host;
             this.port = port;
             this.username = username;
-            this.password = password;
+            this.password = Password.obfuscate(password);
+            winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
+            nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+        }
+
+        /**
+         * When f:repeatable tags are nestable, we can change the advances page of the server config to
+         * allow specifying these locations... until then this hack!
+         * @return This.
+         * @throws ObjectStreamException
+         */
+        private Object readResolve() throws ObjectStreamException {
+            if (winCmdLocations == null) {
+                winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
+            }
+            if (nixCmdLocations == null) {
+                nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+            }
+            return this;
         }
 
         /**
@@ -1075,30 +1119,12 @@ public class AccurevSCM extends SCM {
         }
 
         /**
-         * Setter for property 'name'.
-         *
-         * @param name Value to set for property 'name'.
-         */
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        /**
          * Getter for property 'host'.
          *
          * @return Value for property 'host'.
          */
         public String getHost() {
             return host;
-        }
-
-        /**
-         * Setter for property 'host'.
-         *
-         * @param host Value to set for property 'host'.
-         */
-        public void setHost(String host) {
-            this.host = host;
         }
 
         /**
@@ -1111,30 +1137,12 @@ public class AccurevSCM extends SCM {
         }
 
         /**
-         * Setter for property 'port'.
-         *
-         * @param port Value to set for property 'port'.
-         */
-        public void setPort(int port) {
-            this.port = port;
-        }
-
-        /**
          * Getter for property 'username'.
          *
          * @return Value for property 'username'.
          */
         public String getUsername() {
             return username;
-        }
-
-        /**
-         * Setter for property 'username'.
-         *
-         * @param username Value to set for property 'username'.
-         */
-        public void setUsername(String username) {
-            this.username = username;
         }
 
         /**
@@ -1147,12 +1155,21 @@ public class AccurevSCM extends SCM {
         }
 
         /**
-         * Setter for property 'password'.
+         * Getter for property 'nixCmdLocations'.
          *
-         * @param password Value to set for property 'password'.
+         * @return Value for property 'nixCmdLocations'.
          */
-        public void setPassword(String password) {
-            this.password = Password.obfuscate(password);
+        public String[] getNixCmdLocations() {
+            return nixCmdLocations.toArray(new String[nixCmdLocations.size()]);
+        }
+
+        /**
+         * Getter for property 'winCmdLocations'.
+         *
+         * @return Value for property 'winCmdLocations'.
+         */
+        public String[] getWinCmdLocations() {
+            return winCmdLocations.toArray(new String[winCmdLocations.size()]);
         }
 
     }
@@ -1179,24 +1196,20 @@ public class AccurevSCM extends SCM {
 
     private static final class FindAccurevHome implements FilePath.FileCallable<String> {
 
-        private String[] nonWindowsPaths = {
-                "/usr/local/bin/accurev",
-                "/usr/bin/accurev",
-                "/bin/accurev",
-                "/local/bin/accurev",
-        };
-        private String[] windowsPaths = {
-                "C:\\Program Files\\AccuRev\\bin\\accurev.exe",
-                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe"
-        };
+        private final AccurevServer server;
 
-        private static String getExistingPath(String[] paths) {
-            for (int i = 0; i < paths.length; i++) {
-                if (new File(paths[i]).exists()) {
-                    return paths[i];
+        public FindAccurevHome(AccurevServer server) {
+            this.server = server;
+        }
+
+        private static String getExistingPath(List<String> paths, String fallback) {
+            for (String path: paths) {
+                if (new File(path).exists()) {
+                    return path;
                 }
             }
-            return paths[0];
+            // just hope it's on the environment's path
+            return fallback;
         }
 
         /**
@@ -1205,10 +1218,10 @@ public class AccurevSCM extends SCM {
         public String invoke(File f, VirtualChannel channel) throws IOException {
             if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
                 // we are running on windows
-                return getExistingPath(windowsPaths);
+                return getExistingPath(server.winCmdLocations, "accurev.exe");
             } else {
                 // we are running on *nix
-                return getExistingPath(nonWindowsPaths);
+                return getExistingPath(server.nixCmdLocations, "accurev");
             }
         }
 

@@ -33,7 +33,7 @@ public final class Password {
 
     public static String obfuscate(String s) {
         StringBuffer buf = new StringBuffer();
-        byte[] b = s.getBytes();
+        byte[] b = (s == null) ? "".getBytes() : s.getBytes();
         synchronized (buf) {
             buf.append(__OBFUSCATE);
             for (int i = 0; i < b.length; i++) {
