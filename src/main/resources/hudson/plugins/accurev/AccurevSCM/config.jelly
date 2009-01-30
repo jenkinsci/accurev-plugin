@@ -22,7 +22,7 @@
     </f:entry>
 
     <f:advanced>
-        <f:optionalBlock name="accurev.useWorkspace" title="Use workspace" checked="${scm.workspace}"
+        <f:optionalBlock name="accurev.useWorkspace" title="Use workspace" checked="${scm.useWorkspace}"
                          help="/plugin/accurev/help/project/workspace.html">
             <f:entry title="Workspace">
                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
