@@ -1,5 +1,28 @@
 package hudson.plugins.accurev;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
+
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
@@ -26,29 +49,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.io.StringReader;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
-
 /**
  * Created by IntelliJ IDEA.
  *
@@ -56,8 +56,13 @@ import java.util.logging.Logger;
  * @since 09-Oct-2007 16:17:34
  */
 public class AccurevSCM extends SCM {
-    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
+
+// ------------------------------ FIELDS ------------------------------
+
     public static final SimpleDateFormat ACCUREV_DATETIME_FORMATTER = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+    public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
+    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     private static final long MILLIS_PER_SECOND = 1000L;
     private final String serverName;
     private final String depot;
@@ -68,16 +73,18 @@ public class AccurevSCM extends SCM {
     private final String workspace;
     private final String workspaceSubPath;
 
+// --------------------------- CONSTRUCTORS ---------------------------
+
     /**
      * @stapler-constructor
      */
-    public AccurevSCM(String serverName, 
-                      String depot, 
-                      String stream, 
-                      boolean useWorkspace, 
-                      String workspace, 
-                      String workspaceSubPath, 
-                      boolean synctime, 
+    public AccurevSCM(String serverName,
+                      String depot,
+                      String stream,
+                      boolean useWorkspace,
+                      String workspace,
+                      String workspaceSubPath,
+                      boolean synctime,
                       boolean useUpdate) {
         super();
         this.serverName = serverName;
@@ -90,307 +97,103 @@ public class AccurevSCM extends SCM {
         this.useUpdate = useUpdate;
     }
 
+// --------------------- GETTER / SETTER METHODS ---------------------
+
     /**
-     * {@inheritDoc}
+     * Getter for property 'depot'.
+     *
+     * @return Value for property 'depot'.
      */
-    public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener) throws IOException, InterruptedException {
-        final String accurevPath = workspace.act(new FindAccurevHome());
-
-        AccurevServer server = DESCRIPTOR.getServer(serverName);
-
-        Map<String, String> accurevEnv = new HashMap<String, String>();
-
-        if (!accurevLogin(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
-            return false;
-        }
-
-        if (synctime) {
-            listener.getLogger().println("Synchronizing clock with the server...");
-            if (!synctime(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
-                return false;
-            }
-        }
-
-        final Run lastBuild = project.getLastBuild();
-        if (lastBuild == null) {
-            listener.getLogger().println("Project has never been built");
-            return true;
-        }
-        final Date buildDate = lastBuild.getTimestamp().getTime();
-
-        listener.getLogger().println("Last build on " + buildDate);
-
-        Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
-
-        AccurevStream stream = streams.get(this.stream);
-
-        if (stream == null) {
-            // if there was a problem, fall back to simple stream check
-            return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, this.stream, buildDate);
-        }
-        // There may be changes in a parent stream that we need to factor in.
-        do {
-            if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(), buildDate)) {
-                return true;
-            }
-            stream = stream.getParent();
-        } while (stream != null && stream.isReceivingChangesFromParent());
-        return false;
+    public String getDepot() {
+        return depot;
     }
 
-    private boolean checkStreamForChanges(AccurevServer server,
-                                          Map<String, String> accurevEnv,
-                                          FilePath workspace,
-                                          TaskListener listener,
-                                          String accurevPath,
-                                          Launcher launcher,
-                                          String stream,
-                                          Date buildDate)
-            throws IOException, InterruptedException {
-        ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
-        cmd.add("hist");
-        addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("-p");
-        cmd.add(depot);
-        cmd.add("-s");
-        cmd.add(stream);
-        cmd.add("-t");
-        cmd.add("now.1");
-        StringOutputStream sos = new StringOutputStream();
-        int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("History command failed with exit code " + rv);
-            return false;
-        }
-
-        try {
-            XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
-            while (true) {
-                if (parser.next() != XmlPullParser.START_TAG) {
-                    continue;
-                }
-                if (!parser.getName().equalsIgnoreCase("transaction")) {
-                    continue;
-                }
-                break;
-            }
-            String transactionId = parser.getAttributeValue("", "id");
-            String transactionType = parser.getAttributeValue("", "type");
-            String transactionTime = parser.getAttributeValue("", "time");
-            String transactionUser = parser.getAttributeValue("", "user");
-            Date transactionDate = convertAccurevTimestamp(transactionTime);
-            listener.getLogger().println("Last change on " + transactionDate);
-            listener.getLogger().println("#" + transactionId + " " + transactionUser + " " + transactionType);
-
-            String transactionComment = null;
-            boolean inComment = false;
-            while (transactionComment == null) {
-                switch (parser.next()) {
-                    case XmlPullParser.START_TAG:
-                        inComment = parser.getName().equalsIgnoreCase("comment");
-                        break;
-                    case XmlPullParser.END_TAG:
-                        inComment = false;
-                        break;
-                    case XmlPullParser.TEXT:
-                        if (inComment) {
-                            transactionComment = parser.getText();
-                        }
-                        break;
-                    case XmlPullParser.END_DOCUMENT:
-                        transactionComment = "";
-                    default:
-                        continue;
-                }
-            }
-            if (transactionComment != null) {
-                listener.getLogger().println(transactionComment);
-            }
-
-            return buildDate == null || buildDate.compareTo(transactionDate) < 0;
-        } catch (XmlPullParserException e) {
-            e.printStackTrace(listener.getLogger());
-            logger.warning(e.getMessage());
-            return false;
-        }
+    /**
+     * Getter for property 'serverName'.
+     *
+     * @return Value for property 'serverName'.
+     */
+    public String getServerName() {
+        return serverName;
     }
 
-    private boolean synctime(AccurevServer server,
-                             Map<String, String> accurevEnv,
-                             FilePath workspace,
-                             TaskListener listener,
-                             String accurevPath,
-                             Launcher launcher)
-            throws IOException, InterruptedException {
-        ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
-        cmd.add("synctime");
-        addServer(cmd, server);
-        StringOutputStream sos = new StringOutputStream();
-        int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("Synctime command failed with exit code " + rv);
-            return false;
-        }
-        return true;
+    /**
+     * Getter for property 'stream'.
+     *
+     * @return Value for property 'stream'.
+     */
+    public String getStream() {
+        return stream;
     }
 
-    private Map<String, AccurevStream> getStreams(AccurevServer server,
-                                                  Map<String, String> accurevEnv,
-                                                  FilePath workspace,
-                                                  TaskListener listener,
-                                                  String accurevPath,
-                                                  Launcher launcher)
-            throws IOException, InterruptedException {
-        Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
-        ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
-        cmd.add("show");
-        addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("-p");
-        cmd.add(depot);
-        cmd.add("streams");
-        StringOutputStream sos = new StringOutputStream();
-        int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("Show streams command failed with exit code " + rv);
-            return null;
-        }
-
-        try {
-            XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
-            while (true) {
-                switch (parser.next()) {
-                    case XmlPullParser.START_DOCUMENT:
-                        break;
-                    case XmlPullParser.END_DOCUMENT:
-                        // build the tree
-                        for (AccurevStream stream : streams.values()) {
-                            if (stream.getBasisName() != null) {
-                                stream.setParent(streams.get(stream.getBasisName()));
-                            }
-                        }
-                        return streams;
-                    case XmlPullParser.START_TAG:
-                        final String tagName = parser.getName();
-                        if ("stream".equalsIgnoreCase(tagName)) {
-                            String streamName = parser.getAttributeValue("", "name");
-                            String streamNumber = parser.getAttributeValue("", "streamNumber");
-                            String basisStreamName = parser.getAttributeValue("", "basis");
-                            String basisStreamNumber = parser.getAttributeValue("", "basisStreamNumber");
-                            String streamType = parser.getAttributeValue("", "type");
-                            String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
-                            String streamTimeString = parser.getAttributeValue("", "time");
-                            Date streamTime = streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
-                            String streamStartTimeString = parser.getAttributeValue("", "startTime");
-                            Date streamStartTime = streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
-                            try {
-                                AccurevStream stream = new AccurevStream(streamName,
-                                        streamNumber == null ? null : Long.valueOf(streamNumber),
-                                        depot,
-                                        basisStreamName,
-                                        basisStreamNumber == null ? null : Long.valueOf(basisStreamNumber),
-                                        streamIsDynamic == null ? false : Boolean.parseBoolean(streamIsDynamic),
-                                        AccurevStream.StreamType.parseStreamType(streamType),
-                                        streamTime,
-                                        streamStartTime);
-                                streams.put(streamName, stream);
-                            } catch (NumberFormatException e) {
-                                e.printStackTrace(listener.getLogger());
-                            }
-                        }
-                        break;
-                    case XmlPullParser.END_TAG:
-                        break;
-                    case XmlPullParser.TEXT:
-                        break;
-                }
-            }
-        } catch (XmlPullParserException e) {
-            e.printStackTrace(listener.getLogger());
-            logger.warning(e.getMessage());
-            return null;
-        }
+    /**
+     * Getter for property 'workspace'.
+     *
+     * @return Value for property 'workspace'.
+     */
+    public String getWorkspace() {
+        return workspace;
     }
 
-    private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
-                                                        Map<String, String> accurevEnv,
-                                                        FilePath workspace,
-                                                        TaskListener listener,
-                                                        String accurevPath,
-                                                        Launcher launcher)
-            throws IOException, InterruptedException {
-        Map<String, AccurevWorkspace> workspaces = new HashMap<String, AccurevWorkspace>();
-        ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
-        cmd.add("show");
-        addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("-p");
-        cmd.add(depot);
-        cmd.add("wspaces");
-        StringOutputStream sos = new StringOutputStream();
-        int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("Show workspaces command failed with exit code " + rv);
-            return null;
-        }
-
-        try {
-            XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
-            while (true) {
-                switch (parser.next()) {
-                    case XmlPullParser.START_DOCUMENT:
-                        break;
-                    case XmlPullParser.END_DOCUMENT:
-                        return workspaces;
-                    case XmlPullParser.START_TAG:
-                        final String tagName = parser.getName();
-                        if ("Element".equalsIgnoreCase(tagName)) {
-                            String name = parser.getAttributeValue("", "Name");
-                            String storage = parser.getAttributeValue("", "Storage");
-                            String host = parser.getAttributeValue("", "Host");
-                            String streamNumber = parser.getAttributeValue("", "Stream");
-                            String depot = parser.getAttributeValue("", "depot");
-                            try {
-                                workspaces.put(name, new AccurevWorkspace(
-                                        depot,
-                                        streamNumber == null ? null : Long.valueOf(streamNumber),
-                                        name,
-                                        host,
-                                        storage));
-                            } catch (NumberFormatException e) {
-                                e.printStackTrace(listener.getLogger());
-                            }
-                        }
-                        break;
-                    case XmlPullParser.END_TAG:
-                        break;
-                    case XmlPullParser.TEXT:
-                        break;
-                }
-            }
-        } catch (XmlPullParserException e) {
-            e.printStackTrace(listener.getLogger());
-            logger.warning(e.getMessage());
-            return null;
-        }
+    /**
+     * Getter for property 'workspaceSubPath'.
+     *
+     * @return Value for property 'workspaceSubPath'.
+     */
+    public String getWorkspaceSubPath() {
+        return workspaceSubPath;
     }
+
+    /**
+     * Getter for property 'synctime'.
+     *
+     * @return Value for property 'synctime'.
+     */
+    public boolean isSynctime() {
+        return synctime;
+    }
+
+    /**
+     * Getter for property 'useUpdate'.
+     *
+     * @return Value for property 'useUpdate'.
+     */
+    public boolean isUseUpdate() {
+        return useUpdate;
+    }
+
+    /**
+     * Getter for property 'useWorkspace'.
+     *
+     * @return Value for property 'useWorkspace'.
+     */
+    public boolean isUseWorkspace() {
+        return useWorkspace;
+    }
+
+// ------------------------ INTERFACE METHODS ------------------------
+
+// --------------------- Interface Describable ---------------------
 
     /**
      * {@inheritDoc}
      */
-    public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) throws IOException, InterruptedException {
+    public SCMDescriptor<?> getDescriptor() {
+        return DESCRIPTOR;
+    }
+
+// -------------------------- OTHER METHODS --------------------------
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener,
+                            File changelogFile) throws IOException, InterruptedException {
         final String accurevPath = workspace.act(new FindAccurevHome());
-        if (!useWorkspace 
+        if (!useWorkspace
                 || !useUpdate
-                || (build.getPreviousBuild() != null && build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE))) {
+                || (build.getPreviousBuild() != null &&
+                build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE))) {
             workspace.act(new PurgeWorkspaceContents(listener));
         }
 
@@ -512,7 +315,6 @@ public class AccurevSCM extends SCM {
                     return false;
                 }
                 listener.getLogger().println("Relocation successfully.");
-
             }
 
             listener.getLogger().println("Updating workspace...");
@@ -606,6 +408,71 @@ public class AccurevSCM extends SCM {
                 changelogFile);
     }
 
+    private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
+                                                        Map<String, String> accurevEnv,
+                                                        FilePath workspace,
+                                                        TaskListener listener,
+                                                        String accurevPath,
+                                                        Launcher launcher)
+            throws IOException, InterruptedException {
+        Map<String, AccurevWorkspace> workspaces = new HashMap<String, AccurevWorkspace>();
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("show");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-p");
+        cmd.add(depot);
+        cmd.add("wspaces");
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("Show workspaces command failed with exit code " + rv);
+            return null;
+        }
+
+        try {
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+            while (true) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        return workspaces;
+                    case XmlPullParser.START_TAG:
+                        final String tagName = parser.getName();
+                        if ("Element".equalsIgnoreCase(tagName)) {
+                            String name = parser.getAttributeValue("", "Name");
+                            String storage = parser.getAttributeValue("", "Storage");
+                            String host = parser.getAttributeValue("", "Host");
+                            String streamNumber = parser.getAttributeValue("", "Stream");
+                            String depot = parser.getAttributeValue("", "depot");
+                            try {
+                                workspaces.put(name, new AccurevWorkspace(
+                                        depot,
+                                        streamNumber == null ? null : Long.valueOf(streamNumber),
+                                        name,
+                                        host,
+                                        storage));
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace(listener.getLogger());
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+                    case XmlPullParser.TEXT:
+                        break;
+                }
+            }
+        } catch (XmlPullParserException e) {
+            e.printStackTrace(listener.getLogger());
+            logger.warning(e.getMessage());
+            return null;
+        }
+    }
+
     private boolean captureChangelog(AccurevServer server,
                                      Map<String, String> accurevEnv,
                                      FilePath workspace,
@@ -653,7 +520,67 @@ public class AccurevSCM extends SCM {
         return true;
     }
 
-    private boolean accurevLogin(AccurevServer server, Map<String, String> accurevEnv, FilePath workspace, TaskListener listener, String accurevPath, Launcher launcher) throws IOException, InterruptedException {
+    /**
+     * {@inheritDoc}
+     */
+    public ChangeLogParser createChangeLogParser() {
+        return new AccurevChangeLogParser();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener)
+            throws IOException, InterruptedException {
+        final String accurevPath = workspace.act(new FindAccurevHome());
+
+        AccurevServer server = DESCRIPTOR.getServer(serverName);
+
+        Map<String, String> accurevEnv = new HashMap<String, String>();
+
+        if (!accurevLogin(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+            return false;
+        }
+
+        if (synctime) {
+            listener.getLogger().println("Synchronizing clock with the server...");
+            if (!synctime(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+                return false;
+            }
+        }
+
+        final Run lastBuild = project.getLastBuild();
+        if (lastBuild == null) {
+            listener.getLogger().println("Project has never been built");
+            return true;
+        }
+        final Date buildDate = lastBuild.getTimestamp().getTime();
+
+        listener.getLogger().println("Last build on " + buildDate);
+
+        Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
+
+        AccurevStream stream = streams.get(this.stream);
+
+        if (stream == null) {
+            // if there was a problem, fall back to simple stream check
+            return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, this.stream,
+                    buildDate);
+        }
+        // There may be changes in a parent stream that we need to factor in.
+        do {
+            if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(),
+                    buildDate)) {
+                return true;
+            }
+            stream = stream.getParent();
+        } while (stream != null && stream.isReceivingChangesFromParent());
+        return false;
+    }
+
+    private boolean accurevLogin(AccurevServer server, Map<String, String> accurevEnv, FilePath workspace,
+                                 TaskListener listener, String accurevPath, Launcher launcher)
+            throws IOException, InterruptedException {
         ArgumentListBuilder cmd;
         if (server != null) {
             accurevEnv.put("ACCUREV_HOME", workspace.getParent().getRemote());
@@ -692,10 +619,202 @@ public class AccurevSCM extends SCM {
             } else {
                 listener.fatalError("Authentication failed: " + resp);
                 return false;
-
             }
         }
         return true;
+    }
+
+    private boolean synctime(AccurevServer server,
+                             Map<String, String> accurevEnv,
+                             FilePath workspace,
+                             TaskListener listener,
+                             String accurevPath,
+                             Launcher launcher)
+            throws IOException, InterruptedException {
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("synctime");
+        addServer(cmd, server);
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("Synctime command failed with exit code " + rv);
+            return false;
+        }
+        return true;
+    }
+
+    private Map<String, AccurevStream> getStreams(AccurevServer server,
+                                                  Map<String, String> accurevEnv,
+                                                  FilePath workspace,
+                                                  TaskListener listener,
+                                                  String accurevPath,
+                                                  Launcher launcher)
+            throws IOException, InterruptedException {
+        Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("show");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-p");
+        cmd.add(depot);
+        cmd.add("streams");
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("Show streams command failed with exit code " + rv);
+            return null;
+        }
+
+        try {
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+            while (true) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        // build the tree
+                        for (AccurevStream stream : streams.values()) {
+                            if (stream.getBasisName() != null) {
+                                stream.setParent(streams.get(stream.getBasisName()));
+                            }
+                        }
+                        return streams;
+                    case XmlPullParser.START_TAG:
+                        final String tagName = parser.getName();
+                        if ("stream".equalsIgnoreCase(tagName)) {
+                            String streamName = parser.getAttributeValue("", "name");
+                            String streamNumber = parser.getAttributeValue("", "streamNumber");
+                            String basisStreamName = parser.getAttributeValue("", "basis");
+                            String basisStreamNumber = parser.getAttributeValue("", "basisStreamNumber");
+                            String streamType = parser.getAttributeValue("", "type");
+                            String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
+                            String streamTimeString = parser.getAttributeValue("", "time");
+                            Date streamTime =
+                                    streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
+                            String streamStartTimeString = parser.getAttributeValue("", "startTime");
+                            Date streamStartTime =
+                                    streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
+                            try {
+                                AccurevStream stream = new AccurevStream(streamName,
+                                        streamNumber == null ? null : Long.valueOf(streamNumber),
+                                        depot,
+                                        basisStreamName,
+                                        basisStreamNumber == null ? null : Long.valueOf(basisStreamNumber),
+                                        streamIsDynamic == null ? false : Boolean.parseBoolean(streamIsDynamic),
+                                        AccurevStream.StreamType.parseStreamType(streamType),
+                                        streamTime,
+                                        streamStartTime);
+                                streams.put(streamName, stream);
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace(listener.getLogger());
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+                    case XmlPullParser.TEXT:
+                        break;
+                }
+            }
+        } catch (XmlPullParserException e) {
+            e.printStackTrace(listener.getLogger());
+            logger.warning(e.getMessage());
+            return null;
+        }
+    }
+
+    private boolean checkStreamForChanges(AccurevServer server,
+                                          Map<String, String> accurevEnv,
+                                          FilePath workspace,
+                                          TaskListener listener,
+                                          String accurevPath,
+                                          Launcher launcher,
+                                          String stream,
+                                          Date buildDate)
+            throws IOException, InterruptedException {
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("hist");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-p");
+        cmd.add(depot);
+        cmd.add("-s");
+        cmd.add(stream);
+        cmd.add("-t");
+        cmd.add("now.1");
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("History command failed with exit code " + rv);
+            return false;
+        }
+
+        try {
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+            while (true) {
+                if (parser.next() != XmlPullParser.START_TAG) {
+                    continue;
+                }
+                if (!parser.getName().equalsIgnoreCase("transaction")) {
+                    continue;
+                }
+                break;
+            }
+            String transactionId = parser.getAttributeValue("", "id");
+            String transactionType = parser.getAttributeValue("", "type");
+            String transactionTime = parser.getAttributeValue("", "time");
+            String transactionUser = parser.getAttributeValue("", "user");
+            Date transactionDate = convertAccurevTimestamp(transactionTime);
+            listener.getLogger().println("Last change on " + transactionDate);
+            listener.getLogger().println("#" + transactionId + " " + transactionUser + " " + transactionType);
+
+            String transactionComment = null;
+            boolean inComment = false;
+            while (transactionComment == null) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_TAG:
+                        inComment = parser.getName().equalsIgnoreCase("comment");
+                        break;
+                    case XmlPullParser.END_TAG:
+                        inComment = false;
+                        break;
+                    case XmlPullParser.TEXT:
+                        if (inComment) {
+                            transactionComment = parser.getText();
+                        }
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        transactionComment = "";
+                    default:
+                        continue;
+                }
+            }
+            if (transactionComment != null) {
+                listener.getLogger().println(transactionComment);
+            }
+
+            return buildDate == null || buildDate.compareTo(transactionDate) < 0;
+        } catch (XmlPullParserException e) {
+            e.printStackTrace(listener.getLogger());
+            logger.warning(e.getMessage());
+            return false;
+        }
+    }
+
+    private void addServer(ArgumentListBuilder cmd, AccurevServer server) {
+        if (null != server && null != server.getHost() && !"".equals(server.getHost())) {
+            cmd.add("-H");
+            if (server.getPort() != 0) {
+                cmd.add(server.getHost() + ":" + server.getPort());
+            } else {
+                cmd.add(server.getHost());
+            }
+        }
     }
 
     private int launchAccurev(Launcher launcher,
@@ -714,94 +833,12 @@ public class AccurevSCM extends SCM {
         return rv;
     }
 
-    private void addServer(ArgumentListBuilder cmd, AccurevServer server) {
-        if (null != server && null != server.getHost() && !"".equals(server.getHost())) {
-            cmd.add("-H");
-            if (server.getPort() != 0) {
-                cmd.add(server.getHost() + ":" + server.getPort());
-            } else {
-                cmd.add(server.getHost());
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ChangeLogParser createChangeLogParser() {
-        return new AccurevChangeLogParser();
-    }
-
-    /**
-     * Getter for property 'useWorkspace'.
-     *
-     * @return Value for property 'useWorkspace'.
-     */
-    public boolean isUseWorkspace() {
-        return useWorkspace;
-    }
-
-    /**
-     * Getter for property 'useUpdate'.
-     *
-     * @return Value for property 'useUpdate'.
-     */
-    public boolean isUseUpdate() {
-        return useUpdate;
-    }
-
-    /**
-     * Getter for property 'workspace'.
-     *
-     * @return Value for property 'workspace'.
-     */
-    public String getWorkspace() {
-        return workspace;
-    }
-
-    /**
-     * Getter for property 'serverName'.
-     *
-     * @return Value for property 'serverName'.
-     */
-    public String getServerName() {
-        return serverName;
-    }
-
-    /**
-     * Getter for property 'depot'.
-     *
-     * @return Value for property 'depot'.
-     */
-    public String getDepot() {
-        return depot;
-    }
-
-    /**
-     * Getter for property 'stream'.
-     *
-     * @return Value for property 'stream'.
-     */
-    public String getStream() {
-        return stream;
-    }
-
-    /**
-     * Getter for property 'workspaceSubPath'.
-     *
-     * @return Value for property 'workspaceSubPath'.
-     */
-    public String getWorkspaceSubPath() {
-        return workspaceSubPath;
-    }
-
-    /**
-     * Getter for property 'synctime'.
-     *
-     * @return Value for property 'synctime'.
-     */
-    public boolean isSynctime() {
-        return synctime;
+    private static XmlPullParser newPullParser() throws XmlPullParserException {
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+        factory.setNamespaceAware(false);
+        factory.setValidating(false);
+        XmlPullParser parser = factory.newPullParser();
+        return parser;
     }
 
     private static Date convertAccurevTimestamp(String transactionTime) {
@@ -817,27 +854,13 @@ public class AccurevSCM extends SCM {
         }
     }
 
-    private static XmlPullParser newPullParser() throws XmlPullParserException {
-        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-        factory.setNamespaceAware(false);
-        factory.setValidating(false);
-        XmlPullParser parser = factory.newPullParser();
-        return parser;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public SCMDescriptor<?> getDescriptor() {
-        return DESCRIPTOR;
-    }
-
-    public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
+// -------------------------- INNER CLASSES --------------------------
 
     public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
+
         /**
-         * The accurev server has been known to crash if more than one copy of the accurev has been run concurrently
-         * on the local machine.
+         * The accurev server has been known to crash if more than one copy of the accurev has been run concurrently on
+         * the local machine.
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
         private List<AccurevServer> servers;
@@ -926,6 +949,7 @@ public class AccurevSCM extends SCM {
     }
 
     public static final class AccurevServer {
+
         private String name;
         private String host;
         private int port;
@@ -1039,6 +1063,7 @@ public class AccurevSCM extends SCM {
     }
 
     private static final class PurgeWorkspaceContents implements FilePath.FileCallable<Boolean> {
+
         private final TaskListener listener;
 
         public PurgeWorkspaceContents(TaskListener listener) {
@@ -1054,6 +1079,7 @@ public class AccurevSCM extends SCM {
             listener.getLogger().println("Workspace purged.");
             return Boolean.TRUE;
         }
+
     }
 
     private static final class FindAccurevHome implements FilePath.FileCallable<String> {
@@ -1090,13 +1116,16 @@ public class AccurevSCM extends SCM {
                 return getExistingPath(nonWindowsPaths);
             }
         }
+
     }
 
     private static final class AccurevChangeLogParser extends ChangeLogParser {
+
         /**
          * {@inheritDoc}
          */
-        public ChangeLogSet<AccurevTransaction> parse(AbstractBuild build, File changelogFile) throws IOException, SAXException {
+        public ChangeLogSet<AccurevTransaction> parse(AbstractBuild build, File changelogFile)
+                throws IOException, SAXException {
             List<AccurevTransaction> transactions = null;
             try {
                 XmlPullParser parser = newPullParser();
@@ -1123,7 +1152,8 @@ public class AccurevSCM extends SCM {
             return new AccurevChangeLogSet(build, transactions);
         }
 
-        private List<AccurevTransaction> parseTransactions(XmlPullParser parser) throws IOException, XmlPullParserException {
+        private List<AccurevTransaction> parseTransactions(XmlPullParser parser)
+                throws IOException, XmlPullParserException {
             List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
             AccurevTransaction currentTransaction = null;
             boolean inComment = false;
@@ -1164,11 +1194,12 @@ public class AccurevSCM extends SCM {
                         break;
                 }
             }
-
         }
+
     }
 
     private static class RemoteWorkspaceDetails implements Serializable {
+
         private final String hostName;
         private final String path;
         private final String fileSeparator;
@@ -1205,9 +1236,11 @@ public class AccurevSCM extends SCM {
         public String getFileSeparator() {
             return fileSeparator;
         }
+
     }
 
     private static class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails, UnknownHostException> {
+
         private final String path;
 
         public DetermineRemoteHostname(String path) {
@@ -1229,5 +1262,7 @@ public class AccurevSCM extends SCM {
 
             return new RemoteWorkspaceDetails(addr.getCanonicalHostName(), path, File.separator);
         }
+
     }
+
 }
