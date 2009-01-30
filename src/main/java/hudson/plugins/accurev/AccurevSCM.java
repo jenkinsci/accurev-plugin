@@ -43,6 +43,7 @@ import hudson.scm.SCMDescriptor;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.IOException2;
 import org.codehaus.plexus.util.StringOutputStream;
+import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
@@ -76,8 +77,9 @@ public class AccurevSCM extends SCM {
 // --------------------------- CONSTRUCTORS ---------------------------
 
     /**
-     * @stapler-constructor
+     * Our constructor.
      */
+    @DataBoundConstructor
     public AccurevSCM(String serverName,
                       String depot,
                       String stream,
@@ -382,7 +384,7 @@ public class AccurevSCM extends SCM {
         }
 
         {
-            AccurevStream stream = streams.get(this.stream);
+            AccurevStream stream = streams == null ? null : streams.get(this.stream);
 
             if (stream == null) {
                 // if there was a problem, fall back to simple stream check
@@ -703,7 +705,7 @@ public class AccurevSCM extends SCM {
                                         depot,
                                         basisStreamName,
                                         basisStreamNumber == null ? null : Long.valueOf(basisStreamNumber),
-                                        streamIsDynamic == null ? false : Boolean.parseBoolean(streamIsDynamic),
+                                        streamIsDynamic != null && Boolean.parseBoolean(streamIsDynamic),
                                         AccurevStream.StreamType.parseStreamType(streamType),
                                         streamTime,
                                         streamStartTime);
@@ -760,7 +762,7 @@ public class AccurevSCM extends SCM {
                 if (parser.next() != XmlPullParser.START_TAG) {
                     continue;
                 }
-                if (!parser.getName().equalsIgnoreCase("transaction")) {
+                if (!"transaction".equalsIgnoreCase(parser.getName())) {
                     continue;
                 }
                 break;
@@ -778,7 +780,7 @@ public class AccurevSCM extends SCM {
             while (transactionComment == null) {
                 switch (parser.next()) {
                     case XmlPullParser.START_TAG:
-                        inComment = parser.getName().equalsIgnoreCase("comment");
+                        inComment = "comment".equalsIgnoreCase(parser.getName());
                         break;
                     case XmlPullParser.END_TAG:
                         inComment = false;
@@ -791,12 +793,9 @@ public class AccurevSCM extends SCM {
                     case XmlPullParser.END_DOCUMENT:
                         transactionComment = "";
                     default:
-                        continue;
                 }
             }
-            if (transactionComment != null) {
-                listener.getLogger().println(transactionComment);
-            }
+            listener.getLogger().println(transactionComment);
 
             return buildDate == null || buildDate.compareTo(transactionDate) < 0;
         } catch (XmlPullParserException e) {
@@ -806,6 +805,89 @@ public class AccurevSCM extends SCM {
         }
     }
 
+    /**
+     * Helper method to retrieve include/exclude rules for a given stream.
+     *
+     * @return HashMap key: String path , val: String (enum) incl/excl rule type
+     */
+    private HashMap<String, String> getIncludeExcludeRules(AccurevServer server,
+                                                           Map<String, String> accurevEnv,
+                                                           FilePath workspace,
+                                                           TaskListener listener,
+                                                           String accurevPath,
+                                                           Launcher launcher,
+                                                           String stream)
+            throws IOException, InterruptedException {
+        listener.getLogger().println("Retrieving include/exclude rules for stream: " + stream);
+
+        // Build the 'accurev lsrules' command
+        ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("lsrules");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-s");
+        cmd.add(stream);
+
+        // Execute 'accurev lsrules' command and save off output
+        StringOutputStream sos = new StringOutputStream();
+        int rv;
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
+            listener.fatalError("lsrules command failed with exit code " + rv);
+            return null;
+        }
+
+        // Parse the 'accurev lsrules' command, and build up the include/exclude rules map
+        HashMap<String, String> locationToKindMap = new HashMap<String, String>();
+        //key: String location, val: String kind (incl / excl / incldo)
+        try {
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+            boolean parsingComplete = false;
+            while (!parsingComplete) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+                    case XmlPullParser.START_TAG:
+                        final String tagName = parser.getName();
+                        if ("element".equalsIgnoreCase(tagName)) {
+                            String kind = parser.getAttributeValue("", "kind");
+                            String location = parser.getAttributeValue("", "location");
+                            if (location != null && kind != null) {
+                                locationToKindMap.put(location, kind);
+                            }
+                        }
+                        break;
+                    case XmlPullParser.END_TAG:
+                        break;
+                    case XmlPullParser.TEXT:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        parsingComplete = true;
+                        break;
+                }
+            }
+        }
+        catch (XmlPullParserException e) {
+            e.printStackTrace(listener.getLogger());
+            logger.warning(e.getMessage());
+            return null;
+        }
+
+        for (String location : locationToKindMap.keySet()) {
+            String kind = locationToKindMap.get(location);
+            listener.getLogger().println("Found rule: " + kind + " for: " + location);
+        }
+
+        return locationToKindMap;
+    }
+
+    /**
+     * Adds the server reference to the Arguments list.
+     *
+     * @param cmd    The accurev command line.
+     * @param server The Accurev server details.
+     */
     private void addServer(ArgumentListBuilder cmd, AccurevServer server) {
         if (null != server && null != server.getHost() && !"".equals(server.getHost())) {
             cmd.add("-H");
@@ -833,14 +915,27 @@ public class AccurevSCM extends SCM {
         return rv;
     }
 
+    /**
+     * Gets a new {@link org.xmlpull.v1.XmlPullParser} configured for parsing Accurev XML files.
+     *
+     * @return a new {@link org.xmlpull.v1.XmlPullParser} configured for parsing Accurev XML files.
+     *
+     * @throws XmlPullParserException when things go wrong/
+     */
     private static XmlPullParser newPullParser() throws XmlPullParserException {
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(false);
         factory.setValidating(false);
-        XmlPullParser parser = factory.newPullParser();
-        return parser;
+        return factory.newPullParser();
     }
 
+    /**
+     * Converts an Accurev timestamp into a {@link Date}
+     *
+     * @param transactionTime The accurev timestamp.
+     *
+     * @return A {@link Date} set to the time for the accurev timestamp.
+     */
     private static Date convertAccurevTimestamp(String transactionTime) {
         if (transactionTime == null) {
             return null;
@@ -1148,7 +1243,7 @@ public class AccurevSCM extends SCM {
                 throw new IOException2(e);
             }
 
-            logger.info("transations size = " + transactions.size());
+            logger.info("transactions size = " + transactions.size());
             return new AccurevChangeLogSet(build, transactions);
         }
 
