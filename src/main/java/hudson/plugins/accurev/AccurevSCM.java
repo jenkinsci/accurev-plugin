@@ -87,20 +87,20 @@ public class AccurevSCM extends SCM {
     public AccurevSCM(String serverName,
                       String depot,
                       String stream,
-                      boolean useWorkspace,
+                      Boolean useWorkspace,
                       String workspace,
                       String workspaceSubPath,
-                      boolean synctime,
-                      boolean useUpdate) {
+                      Boolean synctime,
+                      Boolean useUpdate) {
         super();
         this.serverName = serverName;
         this.depot = depot;
         this.stream = stream;
-        this.useWorkspace = useWorkspace;
+        this.useWorkspace = Boolean.TRUE.equals(useWorkspace);
         this.workspace = workspace;
         this.workspaceSubPath = workspaceSubPath;
-        this.synctime = synctime;
-        this.useUpdate = useUpdate;
+        this.synctime = Boolean.TRUE.equals(synctime);
+        this.useUpdate = Boolean.TRUE.equals(useUpdate);
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
