@@ -13,4 +13,13 @@
     <version>0.6.8-SNAPSHOT</version>
     <name>Hudson Accurev plugin</name>
     <url>http://hudson.gotdns.com/wiki/display/HUDSON/Accurev+Plugin</url>
+    
+    <dependencies>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+    </dependencies>
+    
 </project>
