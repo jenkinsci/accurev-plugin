@@ -22,16 +22,6 @@
     </f:entry>
 
     <f:advanced>
-        <f:entry title="Sub-path" help="/plugin/accurev/help/project/workspace-subpath.html">
-            <f:textbox name="accurev.workspaceSubPath" value="${scm.workspaceSubPath}"/>
-        </f:entry>
-        <f:entry title="Synchronize clock with Accurev server">
-            <f:checkbox name="accurev.synctime" checked="${scm.synctime}"/>
-        </f:entry>
-        <f:entry title="Create and build from snapshot"
-                help="/plugin/accurev/help/project/snapshot.html">
-            <f:checkbox name="accurev.useSnapshot" checked="${scm.useSnapshot}"/>
-        </f:entry>
         <f:optionalBlock name="accurev.useWorkspace" title="Use workspace" checked="${scm.useWorkspace}"
                          help="/plugin/accurev/help/project/workspace.html">
             <f:entry title="Workspace">
@@ -41,6 +31,12 @@
                 <f:checkbox name="accurev.useUpdate" checked="${scm.useUpdate}"/>
             </f:entry>
         </f:optionalBlock>
+        <f:entry title="Synchronize clock with Accurev server">
+            <f:checkbox name="accurev.synctime" checked="${scm.synctime}"/>
+        </f:entry>
+        <f:entry title="Sub-path" help="/plugin/accurev/help/project/workspace-subpath.html">
+            <f:textbox name="accurev.workspaceSubPath" value="${scm.workspaceSubPath}"/>
+        </f:entry>
     </f:advanced>
 
 </j:jelly>
