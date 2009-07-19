@@ -87,20 +87,20 @@ public class AccurevSCM extends SCM {
     public AccurevSCM(String serverName,
                       String depot,
                       String stream,
-                      Boolean useWorkspace,
+                      boolean useWorkspace,
                       String workspace,
                       String workspaceSubPath,
-                      Boolean synctime,
-                      Boolean useUpdate) {
+                      boolean synctime,
+                      boolean useUpdate) {
         super();
         this.serverName = serverName;
         this.depot = depot;
         this.stream = stream;
-        this.useWorkspace = Boolean.TRUE.equals(useWorkspace);
+        this.useWorkspace = useWorkspace;
         this.workspace = workspace;
         this.workspaceSubPath = workspaceSubPath;
-        this.synctime = Boolean.TRUE.equals(synctime);
-        this.useUpdate = Boolean.TRUE.equals(useUpdate);
+        this.synctime = synctime;
+        this.useUpdate = useUpdate;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -1003,7 +1003,15 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-            return req.bindJSON(AccurevSCM.class, formData);
+			return new AccurevSCM( //
+					req.getParameter("accurev.serverName"), //
+					req.getParameter("accurev.depot"), //
+					req.getParameter("accurev.stream"), (//
+					req.getParameter("accurev.useWorkspace") != null), //
+					req.getParameter("accurev.workspace"), //
+					req.getParameter("accurev.workspaceSubPath"), //
+					req.getParameter("accurev.synctime") != null, //
+					req.getParameter("accurev.useUpdate") != null);
         }
 
         /**
