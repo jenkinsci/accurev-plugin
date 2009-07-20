@@ -10,7 +10,7 @@
 
     <artifactId>accurev</artifactId>
     <packaging>hpi</packaging>
-    <version>0.6.8</version>
+    <version>0.6.9-SNAPSHOT</version>
     <name>Hudson Accurev plugin</name>
     <url>http://wiki.hudson-ci.org/display/HUDSON/Accurev+Plugin</url>
     
@@ -21,11 +21,4 @@
         <version>1.5.1</version>
       </dependency>
     </dependencies>
-    
-
-  <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/accurev-0.6.8</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/accurev-0.6.8</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/accurev/tags/accurev-0.6.8</url>
-  </scm>
 </project>
