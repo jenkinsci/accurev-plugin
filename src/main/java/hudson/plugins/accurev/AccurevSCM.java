@@ -833,6 +833,10 @@ public class AccurevSCM extends SCM {
                 if (!"transaction".equalsIgnoreCase(parser.getName())) {
                     continue;
                 }
+                // ignore "dispatch" transactions - these are AccuWork
+                if ("dispatch".equalsIgnoreCase(parser.getAttributeValue(null, "type"))) {
+                    continue;
+                }
                 break;
             }
             String transactionId = parser.getAttributeValue("", "id");
