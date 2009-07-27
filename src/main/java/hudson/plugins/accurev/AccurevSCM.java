@@ -41,6 +41,7 @@ import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
+import hudson.scm.EditType;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.util.ArgumentListBuilder;
@@ -189,6 +190,61 @@ public class AccurevSCM extends SCM {
     }
 
 // -------------------------- OTHER METHODS --------------------------
+
+    /**
+     * Exposes AccuRev-specific information to the environment.
+     * The following variables become available, if not null:
+     * <ul>
+     *  <li>ACCUREV_DEPOT - The depot name</li>
+     *  <li>ACCUREV_STREAM - The stream name</li>
+     *  <li>ACCUREV_SERVER - The server name</li>
+     *  <li>ACCUREV_WORKSPACE - The workspace name</li>
+     *  <li>ACCUREV_SUBPATH - The workspace subpath</li>
+     * 
+     * </ul>
+     * @since 0.6.9
+     */
+    @Override
+    public void buildEnvVars(AbstractBuild build, Map<String, String> env) {
+        // call super even though SCM.buildEnvVars currently does nothing - this could change
+        super.buildEnvVars(build, env);
+        // add various accurev-specific variables to the environment
+        if (depot != null)
+            env.put("ACCUREV_DEPOT", depot);
+        if (stream != null)
+            env.put("ACCUREV_STREAM", stream);
+        if (serverName != null)
+            env.put("ACCUREV_SERVER", serverName);
+        if (workspace != null && useWorkspace)
+            env.put("ACCUREV_WORKSPACE", workspace);
+        if (workspaceSubPath != null)
+            env.put("ACCUREV_SUBPATH", workspaceSubPath);
+        // grab the last promote transaction from the changelog file
+        String lastTransaction = null;
+        // Abstract should have this since checkout should have already run
+        ChangeLogSet<AccurevTransaction> changeSet = build.getChangeSet();
+        if (!changeSet.isEmptySet()) {
+            // first EDIT entry should be the last transaction we want
+            for (Object o : changeSet.getItems()) {
+                AccurevTransaction t = (AccurevTransaction) o;
+                if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
+                   lastTransaction = t.getRevision();
+                   break;
+                }
+            }
+            /*
+             * in case you get a changelog with no changes (e.g. a dispatch
+             * message or something I don't know about yet), set something
+             * different than nothing
+             */
+            if (lastTransaction == null) {
+                lastTransaction = "NO_EDITS";
+            }
+        }
+        if (lastTransaction != null) {
+            env.put("ACCUREV_LAST_TRANSACTION", lastTransaction);
+        }
+    }
 
     /**
      * {@inheritDoc}
