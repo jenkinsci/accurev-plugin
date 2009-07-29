@@ -200,7 +200,7 @@ public class AccurevSCM extends SCM {
      *  <li>ACCUREV_SERVER - The server name</li>
      *  <li>ACCUREV_WORKSPACE - The workspace name</li>
      *  <li>ACCUREV_SUBPATH - The workspace subpath</li>
-     * 
+     *
      * </ul>
      * @since 0.6.9
      */
@@ -790,6 +790,20 @@ public class AccurevSCM extends SCM {
         }
     }
 
+    /**
+     *
+     * @param server
+     * @param accurevEnv
+     * @param workspace
+     * @param listener
+     * @param accurevPath
+     * @param launcher
+     * @param stream
+     * @param buildDate
+     * @return if there are any new transactions in the stream since the last build was done
+     * @throws IOException
+     * @throws InterruptedException
+     */
     private boolean checkStreamForChanges(AccurevServer server,
                                           Map<String, String> accurevEnv,
                                           FilePath workspace,
@@ -799,80 +813,105 @@ public class AccurevSCM extends SCM {
                                           String stream,
                                           Date buildDate)
             throws IOException, InterruptedException {
-        ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
-        cmd.add("hist");
-        addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("-p");
-        cmd.add(depot);
-        cmd.add("-s");
-        cmd.add(stream);
-        cmd.add("-t");
-        cmd.add("now.1");
-        StringOutputStream sos = new StringOutputStream();
-        int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("History command failed with exit code " + rv);
-            return false;
-        }
+        AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
+        latestCodeChangeTransaction.setDate(new Date(0));
 
-        try {
-            XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
-            while (true) {
-                int event = parser.next();
-                if (event == XmlPullParser.END_DOCUMENT) {
-                    // we've got to the end with no transaction tags,
-                    // therefore no changes in this stream
-                    return false;
-                }
-                if (event != XmlPullParser.START_TAG) {
-                    continue;
-                }
-                if (!"transaction".equalsIgnoreCase(parser.getName())) {
-                    continue;
-                }
-                break;
-            }
-            String transactionId = parser.getAttributeValue("", "id");
-            String transactionType = parser.getAttributeValue("", "type");
-            String transactionTime = parser.getAttributeValue("", "time");
-            String transactionUser = parser.getAttributeValue("", "user");
-            Date transactionDate = convertAccurevTimestamp(transactionTime);
-            listener.getLogger().println("Last change on " + transactionDate);
-            listener.getLogger().println("#" + transactionId + " " + transactionUser + " " + transactionType);
+        //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
+        for (String transactionType : server.getValidTransactionTypes().split(";")) {
+            AccurevTransaction tempTransaction;
 
-            String transactionComment = null;
-            boolean inComment = false;
-            while (transactionComment == null) {
-                switch (parser.next()) {
-                    case XmlPullParser.START_TAG:
-                        inComment = "comment".equalsIgnoreCase(parser.getName());
-                        break;
-                    case XmlPullParser.END_TAG:
-                        inComment = false;
-                        break;
-                    case XmlPullParser.TEXT:
-                        if (inComment) {
-                            transactionComment = parser.getText();
-                        }
-                        break;
-                    case XmlPullParser.END_DOCUMENT:
-                        transactionComment = "";
-                    default:
+            try {
+                tempTransaction = getLatestTransaction(server, accurevEnv, workspace, listener, accurevPath, launcher, stream, transactionType);
+                if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
+                    latestCodeChangeTransaction = tempTransaction;
                 }
             }
-            listener.getLogger().println(transactionComment);
-
-            return buildDate == null || buildDate.compareTo(transactionDate) < 0;
-        } catch (XmlPullParserException e) {
-            e.printStackTrace(listener.getLogger());
-            logger.warning(e.getMessage());
-            return false;
+            catch(NullPointerException e){
+                 listener.getLogger().println("There is no transactions of the type " + transactionType + " in the stream " + stream);
+            }
+            catch(Exception e) {
+                listener.getLogger().println("getTimeOfLatestTransaction failed when checking the stream " + stream + " for changes with transaction type " + transactionType);
+                e.printStackTrace(listener.getLogger());
+                logger.warning(e.getMessage());
+            }
         }
+
+        //log transaction-information
+        listener.getLogger().println("Last change on " + latestCodeChangeTransaction.getDate());
+        listener.getLogger().println("#" + latestCodeChangeTransaction.getId() + " " + latestCodeChangeTransaction.getAuthor() + " " + latestCodeChangeTransaction.getAction());
+        if(latestCodeChangeTransaction.getMsg() != null ) {
+            listener.getLogger().println(latestCodeChangeTransaction.getMsg());
+        }
+
+        return buildDate == null || buildDate.before(latestCodeChangeTransaction.getDate());
     }
 
+    /**
+     *
+     *
+     * @param server
+     * @param accurevEnv
+     * @param workspace
+     * @param listener
+     * @param accurevPath
+     * @param launcher
+     * @param stream
+     * @param transactionType Specify what type of transaction to search for
+     * @return the latest transaction of the specified type from the selected stream
+     * @throws Exception
+     */
+    private AccurevTransaction getLatestTransaction(AccurevServer server,
+                                              Map<String, String> accurevEnv,
+                                              FilePath workspace,
+                                              TaskListener listener,
+                                              String accurevPath,
+                                              Launcher launcher,
+                                              String stream,
+                                              String transactionType)
+                throws Exception {
+            //initialize code that extracts the latest transaction of a certain type using -k flag
+            ArgumentListBuilder cmd = new ArgumentListBuilder();
+            cmd.add(accurevPath);
+            cmd.add("hist");
+            addServer(cmd, server);
+            cmd.add("-fx");
+            cmd.add("-p");
+            cmd.add(depot);
+            cmd.add("-s");
+            cmd.add(stream);
+            cmd.add("-t");
+            cmd.add("now.1");
+            cmd.add("-k");
+            cmd.add(transactionType);
+            StringOutputStream sos = new StringOutputStream();
+
+            //execute code that extracts the latest transaction
+            int rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace);
+            if (0 != rv) {
+                throw new Exception("History command failed with exit code " + rv + " when trying to get the latest transaction of type " + transactionType);
+            }
+
+            //parse the result from the transaction-query
+            XmlPullParser parser = newPullParser();
+            parser.setInput(new StringReader(sos.toString()));
+
+            AccurevTransaction resultTransaction = new AccurevTransaction();
+            while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                if (parser.getEventType() == XmlPullParser.START_TAG) {
+                    if(parser.getName().equalsIgnoreCase("transaction")) {
+                        //parse transaction-values
+                        resultTransaction.setId( ( Integer.parseInt( parser.getAttributeValue("", "id"))));
+                        resultTransaction.setAction( parser.getAttributeValue("","type"));
+                        resultTransaction.setDate( convertAccurevTimestamp(parser.getAttributeValue("", "time")));
+                        resultTransaction.setUser( parser.getAttributeValue("", "user"));
+                    } else if (parser.getName().equalsIgnoreCase("comment")) {
+                        //parse comments
+                        resultTransaction.setMsg(parser.nextText());
+                    }
+                }
+            }
+            return resultTransaction;
+        }    
     /**
      * Helper method to retrieve include/exclude rules for a given stream.
      *
@@ -1127,7 +1166,7 @@ public class AccurevSCM extends SCM {
         private String password;
         private transient List<String> winCmdLocations;
         private transient List<String> nixCmdLocations;
-
+        private String validTransactionTypes;
         /**
          * The default search paths for Windows clients.
          */
@@ -1153,7 +1192,7 @@ public class AccurevSCM extends SCM {
         }
 
         @DataBoundConstructor
-        public AccurevServer(String name, String host, int port, String username, String password) {
+        public AccurevServer(String name, String host, int port, String username, String password, String validTransactionTypes) {
             this.name = name;
             this.host = host;
             this.port = port;
@@ -1161,6 +1200,7 @@ public class AccurevSCM extends SCM {
             this.password = Password.obfuscate(password);
             winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
             nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+            this.validTransactionTypes = validTransactionTypes;
         }
 
         /**
@@ -1242,6 +1282,21 @@ public class AccurevSCM extends SCM {
             return winCmdLocations.toArray(new String[winCmdLocations.size()]);
         }
 
+        /**
+         *
+         * @return returns the currently set transaction types that are seen as valid for triggering builds and whos authors get notified when a build fails
+         */
+        public String getValidTransactionTypes() {
+            return validTransactionTypes;
+        }
+
+        /**
+         *
+         * @param validTransactionTypes the currently set transaction types that are seen as valid for triggering builds and whos authors get notified when a build fails 
+         */
+        public void setValidTransactionTypes(String validTransactionTypes) {
+            this.validTransactionTypes = validTransactionTypes;
+         }
     }
 
     private static final class PurgeWorkspaceContents implements FilePath.FileCallable<Boolean> {

@@ -26,6 +26,10 @@
                             <input class="setting-input number" type="text"
                                    name="server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
                         </f:entry>
+                        <f:entry title="Valid transaction types" help="/plugin/accurev/help/validtransactiontypes.html">
+                            <input class="setting-input" type="text"
+                                   name="server.validTransactionTypes" value="${h.ifThenElse(server==null,'add;chstream;co;defcomp;defunct;keep;mkstream;move;promote;purge',server.validTransactionTypes)}" />
+                        </f:entry>
                     </f:advanced>
 
                 </table>

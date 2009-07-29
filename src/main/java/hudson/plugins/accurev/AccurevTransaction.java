@@ -19,6 +19,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     private String msg;
     private String action;
     private List<String> affectedPaths = new ArrayList<String>();
+    private int id;
 
     public String getRevision() {
         return revision;
@@ -95,5 +96,30 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     public void addAffectedPath(String path) {
         affectedPaths.add(path);
+    }
+    /**
+     * Getter for action
+     * Enables accurate filtering by AccuRev transaction type since the metod getEditType censors the actual type.
+     * @return transaction type of the AccuRev transaction
+     */
+    public String getAction() {
+        return action;
+    }
+
+    /**
+     * Getter for id
+     * Enables logging with AccuRev transaction id
+     * @return transaction id of the AccuRev transaction
+     */
+    public int getId() {
+        return id;
+    }
+
+    /**
+     * Setter for id
+     * @param id transaction id of the AccuRev transaction
+     */
+    public void setId(int id) {
+        this.id = id;
     }
 }
