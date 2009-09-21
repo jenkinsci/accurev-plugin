@@ -25,6 +25,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
@@ -35,7 +36,6 @@ import hudson.model.ModelObject;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.model.Descriptor;
 import hudson.plugins.jetty.security.Password;
 import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
@@ -67,6 +67,7 @@ public class AccurevSCM extends SCM {
 
     public static final SimpleDateFormat ACCUREV_DATETIME_FORMATTER = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
+    @Extension
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     private static final long MILLIS_PER_SECOND = 1000L;
@@ -185,6 +186,7 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      */
+    @Override
     public SCMDescriptor<?> getDescriptor() {
         return DESCRIPTOR;
     }
@@ -667,8 +669,7 @@ public class AccurevSCM extends SCM {
             DESCRIPTOR.ACCUREV_LOCK.lock();
             try {
                 StringOutputStream sos = new StringOutputStream();
-                int rv = launcher.launch(cmd.toCommandArray(), masks, Util.mapToEnv(accurevEnv), null, sos, workspace)
-                        .join();
+                int rv = launcher.launch().cmds(cmd).masks(masks).envs(accurevEnv).stdout(sos).pwd(workspace).join();
                 if (rv == 0) {
                     resp = null;
                 } else {
@@ -1015,7 +1016,7 @@ public class AccurevSCM extends SCM {
         int rv;
         DESCRIPTOR.ACCUREV_LOCK.lock();
         try {
-            rv = launcher.launch(cmd.toCommandArray(), Util.mapToEnv(env), in, os, workspace).join();
+            rv = launcher.launch().cmds(cmd).envs(env).stdin(in).stdout(os).pwd(workspace).join();
         } finally {
             DESCRIPTOR.ACCUREV_LOCK.unlock();
         }
