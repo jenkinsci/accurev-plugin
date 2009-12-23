@@ -18,12 +18,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
 
 import hudson.Extension;
 import hudson.FilePath;
@@ -45,9 +49,11 @@ import hudson.scm.EditType;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.util.ArgumentListBuilder;
+import hudson.util.FormValidation;
 import hudson.util.IOException2;
 import org.codehaus.plexus.util.StringOutputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
@@ -71,6 +77,13 @@ public class AccurevSCM extends SCM {
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     private static final long MILLIS_PER_SECOND = 1000L;
+    private static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge";
+    private static final String VTT_DELIM = ",";
+    // keep all transaction types in a set for validation
+    private static final String VTT_LIST = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
+    private static final Set<String> VALID_TRANSACTION_TYPES = 
+    	new HashSet<String>(Arrays.asList(VTT_LIST.split(VTT_DELIM))); 
+    private static final Date NO_TRANS_DATE = new Date(0);
     private final String serverName;
     private final String depot;
     private final String stream;
@@ -789,6 +802,7 @@ public class AccurevSCM extends SCM {
             logger.warning(e.getMessage());
             return null;
         }
+
     }
 
     /**
@@ -815,33 +829,53 @@ public class AccurevSCM extends SCM {
                                           Date buildDate)
             throws IOException, InterruptedException {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
-        latestCodeChangeTransaction.setDate(new Date(0));
+        latestCodeChangeTransaction.setDate(NO_TRANS_DATE);
 
         //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
-        for (String transactionType : server.getValidTransactionTypes().split(";")) {
+        String[] validTransactionTypes = null;
+        if (server.getValidTransactionTypes() != null) {
+        	validTransactionTypes = server.getValidTransactionTypes().split(VTT_DELIM);
+            // if this is still empty, use default list
+        	if (validTransactionTypes.length == 0) {
+        		validTransactionTypes = DEFAULT_VALID_TRANSACTION_TYPES.split(VTT_DELIM);
+        	}
+        }
+        else {
+        	validTransactionTypes = DEFAULT_VALID_TRANSACTION_TYPES.split(VTT_DELIM);
+        }
+
+        for (String transactionType : validTransactionTypes) {
             AccurevTransaction tempTransaction;
 
             try {
                 tempTransaction = getLatestTransaction(server, accurevEnv, workspace, listener, accurevPath, launcher, stream, transactionType);
-                if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
-                    latestCodeChangeTransaction = tempTransaction;
+                if (tempTransaction != null) {
+                	if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
+                		latestCodeChangeTransaction = tempTransaction;
+                	}
+                }
+                else {
+                    listener.getLogger().println("No transactions of type [" + transactionType + "] in stream [" + stream + "]");        	
                 }
             }
-            catch(NullPointerException e){
-                 listener.getLogger().println("There is no transactions of the type " + transactionType + " in the stream " + stream);
-            }
-            catch(Exception e) {
+            catch (Exception e) {
                 listener.getLogger().println("getTimeOfLatestTransaction failed when checking the stream " + stream + " for changes with transaction type " + transactionType);
                 e.printStackTrace(listener.getLogger());
                 logger.warning(e.getMessage());
             }
         }
 
-        //log transaction-information
-        listener.getLogger().println("Last change on " + latestCodeChangeTransaction.getDate());
-        listener.getLogger().println("#" + latestCodeChangeTransaction.getId() + " " + latestCodeChangeTransaction.getAuthor() + " " + latestCodeChangeTransaction.getAction());
-        if(latestCodeChangeTransaction.getMsg() != null ) {
-            listener.getLogger().println(latestCodeChangeTransaction.getMsg());
+        //log last transaction information if retrieved
+        if (latestCodeChangeTransaction.getDate().equals(NO_TRANS_DATE)) {
+            listener.getLogger().println("No last transaction found for stream [" + stream + "]");
+        }
+        else {
+            listener.getLogger().println("Last valid trans id [" + latestCodeChangeTransaction.getId() 
+            		+ "] date [" + latestCodeChangeTransaction.getDate() 
+            		+ "] author [" + latestCodeChangeTransaction.getAuthor()
+            		+ "] action [" + latestCodeChangeTransaction.getAction()
+            		+ "] msg [" + ((latestCodeChangeTransaction.getMsg() != null) 
+            				? latestCodeChangeTransaction.getMsg() : "" + "]"));
         }
 
         return buildDate == null || buildDate.before(latestCodeChangeTransaction.getDate());
@@ -896,10 +930,12 @@ public class AccurevSCM extends SCM {
             XmlPullParser parser = newPullParser();
             parser.setInput(new StringReader(sos.toString()));
 
-            AccurevTransaction resultTransaction = new AccurevTransaction();
+            AccurevTransaction resultTransaction = null;
+
             while (parser.next() != XmlPullParser.END_DOCUMENT) {
                 if (parser.getEventType() == XmlPullParser.START_TAG) {
                     if(parser.getName().equalsIgnoreCase("transaction")) {
+                    	resultTransaction = new AccurevTransaction();
                         //parse transaction-values
                         resultTransaction.setId( ( Integer.parseInt( parser.getAttributeValue("", "id"))));
                         resultTransaction.setAction( parser.getAttributeValue("","type"));
@@ -1298,6 +1334,19 @@ public class AccurevSCM extends SCM {
         public void setValidTransactionTypes(String validTransactionTypes) {
             this.validTransactionTypes = validTransactionTypes;
          }
+
+        public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)
+		throws IOException, ServletException {
+        	String[] formValidTypes = value.split(VTT_DELIM);
+        	for (String formValidType : formValidTypes) {
+        		if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {
+        			return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + VTT_LIST);
+        		}
+        	}
+
+        	return FormValidation.ok();
+        }
+
     }
 
     private static final class PurgeWorkspaceContents implements FilePath.FileCallable<Boolean> {
