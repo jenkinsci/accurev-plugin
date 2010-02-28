@@ -27,10 +27,13 @@
                                    name="server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
                         </f:entry>
 <!-- TODO: Add validation so only valid types can be specified -->
-                        <f:entry title="Valid transaction types" help="/plugin/accurev/help/validtransactiontypes.html" field="validTransactionTypes">
+                        <f:entry title="Valid transaction types" help="/plugin/accurev/help/validTransactionTypes.html" field="validTransactionTypes">
                             <input class="setting-input" type="text"
                                    name="server.validTransactionTypes" value="${h.ifThenElse(server==null,'add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge',server.validTransactionTypes)}" />
                         </f:entry>
+				        <f:entry title="Synchronize AccuRev CLI Operations" help="/plugin/accurev/help/sync-operations.html">
+				            <f:checkbox name="server.syncOperations" checked="${server.syncOperations}" default="true" />
+				        </f:entry>
                     </f:advanced>
 
                 </table>

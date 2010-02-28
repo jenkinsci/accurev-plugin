@@ -1050,11 +1050,17 @@ public class AccurevSCM extends SCM {
                               OutputStream os,
                               FilePath workspace) throws IOException, InterruptedException {
         int rv;
-        DESCRIPTOR.ACCUREV_LOCK.lock();
+        // need server to know if it syncs CLI operations
+        AccurevServer server = DESCRIPTOR.getServer(serverName);
+        if (server.isSyncOperations()) {
+        	DESCRIPTOR.ACCUREV_LOCK.lock();
+        }
         try {
             rv = launcher.launch().cmds(cmd).envs(env).stdin(in).stdout(os).pwd(workspace).join();
         } finally {
-            DESCRIPTOR.ACCUREV_LOCK.unlock();
+        	if (server.isSyncOperations()) {
+        		DESCRIPTOR.ACCUREV_LOCK.unlock();
+        	}
         }
         return rv;
     }
@@ -1204,6 +1210,8 @@ public class AccurevSCM extends SCM {
         private transient List<String> winCmdLocations;
         private transient List<String> nixCmdLocations;
         private String validTransactionTypes;
+        private boolean syncOperations;
+
         /**
          * The default search paths for Windows clients.
          */
@@ -1229,7 +1237,7 @@ public class AccurevSCM extends SCM {
         }
 
         @DataBoundConstructor
-        public AccurevServer(String name, String host, int port, String username, String password, String validTransactionTypes) {
+        public AccurevServer(String name, String host, int port, String username, String password, String validTransactionTypes, boolean syncOperations) {
             this.name = name;
             this.host = host;
             this.port = port;
@@ -1238,6 +1246,7 @@ public class AccurevSCM extends SCM {
             winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
             nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
             this.validTransactionTypes = validTransactionTypes;
+            this.syncOperations = syncOperations;
         }
 
         /**
@@ -1334,6 +1343,14 @@ public class AccurevSCM extends SCM {
         public void setValidTransactionTypes(String validTransactionTypes) {
             this.validTransactionTypes = validTransactionTypes;
          }
+
+        public boolean isSyncOperations() {
+        	return syncOperations;
+        }
+
+        public void setSyncOperations(boolean syncOperations) {
+        	this.syncOperations = syncOperations;
+        }
 
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)
 		throws IOException, ServletException {
