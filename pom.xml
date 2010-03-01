@@ -23,8 +23,8 @@
     </dependencies>
 
   <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/accurev-0.6.10</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/accurev-0.6.10</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/tags/accurev-0.6.10</url>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/accurev-0.6.9</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/accurev-0.6.9</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/tags/accurev-0.6.9</url>
   </scm>
 </project>
