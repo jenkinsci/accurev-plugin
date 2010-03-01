@@ -1,0 +1,31 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.jvnet.hudson.plugins</groupId>
+        <artifactId>plugin</artifactId>
+        <version>1.316</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>accurev</artifactId>
+    <packaging>hpi</packaging>
+    <version>0.6.8</version>
+    <name>Hudson Accurev plugin</name>
+    <url>http://wiki.hudson-ci.org/display/HUDSON/Accurev+Plugin</url>
+    
+    <dependencies>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+    </dependencies>
+    
+
+  <scm>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/accurev-0.6.8</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/accurev-0.6.8</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/accurev/tags/accurev-0.6.8</url>
+  </scm>
+</project>

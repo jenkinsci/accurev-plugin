@@ -1,0 +1,13 @@
+<div>
+    <p>
+    	When toggled, Hudson will create a snapshot of the target stream, then populate and build from that snapshot.
+    </p>
+    <p>
+    <u>Known Limitations:</u>
+    	<ul>
+	    <li>Currently this feature does not work with the "Use workspace" option.</li> 
+	    <li>The naming convention of the snapshot is limited to: "<i>hudson_job_name</i>"_"<i>build_number</i>".</li>
+	    <li>If the snapshot name already exists, the accurev mksnap command will fail and the build will stop.</li>
+    	</ul>
+    </p>
+</div>
