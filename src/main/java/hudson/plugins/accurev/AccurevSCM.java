@@ -89,6 +89,7 @@ public class AccurevSCM extends SCM {
     private final String stream;
     private final boolean useWorkspace;
     private final boolean useUpdate;
+    private final boolean useSnapshot;
     private final boolean synctime;
     private final String workspace;
     private final String workspaceSubPath;
@@ -106,7 +107,8 @@ public class AccurevSCM extends SCM {
                       String workspace,
                       String workspaceSubPath,
                       boolean synctime,
-                      boolean useUpdate) {
+                      boolean useUpdate,
+                      boolean useSnapshot) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -116,6 +118,7 @@ public class AccurevSCM extends SCM {
         this.workspaceSubPath = workspaceSubPath;
         this.synctime = synctime;
         this.useUpdate = useUpdate;
+        this.useSnapshot = useSnapshot;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -181,6 +184,15 @@ public class AccurevSCM extends SCM {
      */
     public boolean isUseUpdate() {
         return useUpdate;
+    }
+
+    /**
+     * Getter for property 'useSnapshot'.
+     *
+     * @return Value for property 'useSnapshot'.
+     */
+    public boolean isUseSnapshot() {
+        return useSnapshot;
     }
 
     /**
@@ -414,6 +426,49 @@ public class AccurevSCM extends SCM {
             cmd.add(accurevPath);
             cmd.add("pop");
             addServer(cmd, server);
+            cmd.add("-R");
+            if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
+                cmd.add(".");
+            } else {
+                cmd.add(workspaceSubPath);
+            }
+            rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
+            if (rv != 0) {
+                listener.fatalError("Populate failed with exit code " + rv);
+                return false;
+            }
+            listener.getLogger().println("Populate completed successfully.");
+        } else if ( isUseSnapshot() ) {
+            // TODO Allow a flexible snapshot naming convention
+            String snapshotName = build.getProject().getName() + "_" + build.getNumber();
+            listener.getLogger().println("Creating snapshot: " + snapshotName + "...");
+            // snapshot command: accurev mksnap -H <server> -s <snapshotName> -b <backing_stream> -t now
+            ArgumentListBuilder cmd = new ArgumentListBuilder();
+            cmd.add(accurevPath);
+            cmd.add("mksnap");
+            addServer(cmd, server);
+            cmd.add("-s");
+            cmd.add(snapshotName);
+            cmd.add("-b");
+            cmd.add(stream);
+            cmd.add("-t");
+            cmd.add("now");
+            int rv;
+            rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
+            if (rv != 0) {
+                listener.fatalError("Snapshot creation failed with exit code " + rv);
+                return false;
+            }
+            listener.getLogger().println("Snapshot created successfully.");
+            listener.getLogger().println("Populating workspace from snapshot...");
+            cmd = new ArgumentListBuilder();
+            cmd.add(accurevPath);
+            cmd.add("pop");
+            addServer(cmd, server);
+            cmd.add("-v");
+            cmd.add(snapshotName);
+            cmd.add("-L");
+            cmd.add(workspace.getRemote());
             cmd.add("-R");
             if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                 cmd.add(".");
@@ -1149,7 +1204,8 @@ public class AccurevSCM extends SCM {
 					req.getParameter("accurev.workspace"), //
 					req.getParameter("accurev.workspaceSubPath"), //
 					req.getParameter("accurev.synctime") != null, //
-					req.getParameter("accurev.useUpdate") != null);
+					req.getParameter("accurev.useUpdate") != null, //
+					req.getParameter("accurev.useSnapshot") != null);
         }
 
         /**
