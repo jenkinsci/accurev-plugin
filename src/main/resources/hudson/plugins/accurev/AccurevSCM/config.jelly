@@ -27,6 +27,9 @@
             <f:entry title="Workspace">
                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
             </f:entry>
+            <f:entry title="Purge Workspace if last build failed" help="/plugin/accurev/help/project/purge.html">
+                <f:checkbox name="accurev.usePurgeIfLastFailed" checked="${scm.usePurgeIfLastFailed}"/>
+            </f:entry>
             <f:entry title="Use update" help="/plugin/accurev/help/project/update.html">
                 <f:checkbox name="accurev.useUpdate" checked="${scm.useUpdate}"/>
             </f:entry>

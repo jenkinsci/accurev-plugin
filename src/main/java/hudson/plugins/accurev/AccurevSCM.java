@@ -89,6 +89,7 @@ public class AccurevSCM extends SCM {
     private final String depot;
     private final String stream;
     private final boolean useWorkspace;
+    private final boolean usePurgeIfLastFailed;
     private final boolean useUpdate;
     private final boolean useRevert;
     private final boolean useSnapshot;
@@ -110,6 +111,7 @@ public class AccurevSCM extends SCM {
                       String workspaceSubPath,
                       boolean synctime,
                       boolean useUpdate,
+                      boolean usePurgeIfLastFailed,
                       boolean useRevert,
                       boolean useSnapshot) {
         super();
@@ -121,6 +123,7 @@ public class AccurevSCM extends SCM {
         this.workspaceSubPath = workspaceSubPath;
         this.synctime = synctime;
         this.useUpdate = useUpdate;
+        this.usePurgeIfLastFailed = usePurgeIfLastFailed;
         this.useRevert = useRevert;
         this.useSnapshot = useSnapshot;
     }
@@ -181,6 +184,16 @@ public class AccurevSCM extends SCM {
         return synctime;
     }
 
+    /**
+     * Getter for property 'usePurgeIfLastFailed'.
+     *
+     * @return Value for property 'usePurgeIfLastFailed'.
+     */
+    public boolean isUsePurgeIfLastFailed() {
+        return usePurgeIfLastFailed;
+    }
+    
+    
     /**
      * Getter for property 'useUpdate'.
      *
@@ -298,8 +311,14 @@ public class AccurevSCM extends SCM {
 
         if (!useWorkspace
                 || !useUpdate
-                || (build.getPreviousBuild() != null &&
-                build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE))) {
+                || 
+                	(
+                	 usePurgeIfLastFailed &&
+                	 build.getPreviousBuild() != null &&
+                	 build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE)
+                	 )
+            ) {
+        	
             workspace.act(new PurgeWorkspaceContents(listener));
         }
 
@@ -338,8 +357,8 @@ public class AccurevSCM extends SCM {
         }
         if (useWorkspace) {
             listener.getLogger().println("Getting a list of workspaces...");
-            Map<String, AccurevWorkspace> workspaces = getWorkspaces(server, accurevEnv, workspace, listener,
-                    accurevPath, launcher);
+            Map<String, AccurevWorkspace> workspaces = getWorkspaces(server, accurevEnv, workspace, listener, accurevPath, launcher);
+            
             if (workspaces == null) {
                 listener.fatalError("Cannot determine workspace configuration information");
                 return false;
@@ -350,8 +369,7 @@ public class AccurevSCM extends SCM {
             }
             AccurevWorkspace accurevWorkspace = workspaces.get(this.workspace);
             if (!depot.equals(accurevWorkspace.getDepot())) {
-                listener.fatalError("The specified workspace, " + this.workspace + ", is based in the depot " +
-                        accurevWorkspace.getDepot() + " not " + depot);
+                listener.fatalError("The specified workspace, " + this.workspace + ", is based in the depot " + accurevWorkspace.getDepot() + " not " + depot);
                 return false;
             }
 
@@ -421,11 +439,12 @@ public class AccurevSCM extends SCM {
                 listener.getLogger().println("Relocation successfully.");
             }
 
+            
             if (useRevert){
             	listener.getLogger().println("attempting to get overlaps");
             	List<String> overlaps = getOverlaps(server, accurevEnv, workspace, listener, accurevPath, launcher);
             	if (overlaps != null && overlaps.size()>0)
-            		workspace.act(new PurgeWorkspaceContents(listener));
+            		workspace.act(new PurgeWorkspaceOverlaps(listener, overlaps));
             }
             
             
@@ -905,7 +924,6 @@ public class AccurevSCM extends SCM {
 		ArgumentListBuilder cmd = new ArgumentListBuilder();
 		cmd.add(accurevPath);
 		cmd.add("stat");
-		addServer(cmd, server);
 		cmd.add("-fx");
 		cmd.add("-o");
 		StringOutputStream sos = new StringOutputStream();
@@ -1294,15 +1312,16 @@ public class AccurevSCM extends SCM {
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
 			return new AccurevSCM( //
-					req.getParameter("accurev.serverName"), //
-					req.getParameter("accurev.depot"), //
-					req.getParameter("accurev.stream"), (//
-					req.getParameter("accurev.useWorkspace") != null), //
-					req.getParameter("accurev.workspace"), //
-					req.getParameter("accurev.workspaceSubPath"), //
-					req.getParameter("accurev.synctime") != null, //
-					req.getParameter("accurev.useUpdate") != null, //
-					req.getParameter("accurev.useRevert") != null, //
+					req.getParameter("accurev.serverName"), 
+					req.getParameter("accurev.depot"), 
+					req.getParameter("accurev.stream"), 
+					req.getParameter("accurev.useWorkspace") != null,
+					req.getParameter("accurev.workspace"), 
+					req.getParameter("accurev.workspaceSubPath"),
+					req.getParameter("accurev.synctime") != null,
+					req.getParameter("accurev.useUpdate") != null,
+					req.getParameter("accurev.usePurgeIfLastFailed") != null,
+					req.getParameter("accurev.useRevert") != null, 
 					req.getParameter("accurev.useSnapshot") != null);
         }
 
