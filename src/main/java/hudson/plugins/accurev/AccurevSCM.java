@@ -16,6 +16,7 @@ import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,6 +90,7 @@ public class AccurevSCM extends SCM {
     private final String stream;
     private final boolean useWorkspace;
     private final boolean useUpdate;
+    private final boolean useRevert;
     private final boolean useSnapshot;
     private final boolean synctime;
     private final String workspace;
@@ -108,6 +110,7 @@ public class AccurevSCM extends SCM {
                       String workspaceSubPath,
                       boolean synctime,
                       boolean useUpdate,
+                      boolean useRevert,
                       boolean useSnapshot) {
         super();
         this.serverName = serverName;
@@ -118,6 +121,7 @@ public class AccurevSCM extends SCM {
         this.workspaceSubPath = workspaceSubPath;
         this.synctime = synctime;
         this.useUpdate = useUpdate;
+        this.useRevert = useRevert;
         this.useSnapshot = useSnapshot;
     }
 
@@ -184,6 +188,15 @@ public class AccurevSCM extends SCM {
      */
     public boolean isUseUpdate() {
         return useUpdate;
+    }
+
+    /**
+     * Getter for property 'useRevert'.
+     *
+     * @return Value for property 'useRevert'.
+     */
+    public boolean isUseRevert() {
+        return useRevert;
     }
 
     /**
@@ -408,6 +421,14 @@ public class AccurevSCM extends SCM {
                 listener.getLogger().println("Relocation successfully.");
             }
 
+            if (useRevert){
+            	listener.getLogger().println("attempting to get overlaps");
+            	List<String> overlaps = getOverlaps(server, accurevEnv, workspace, listener, accurevPath, launcher);
+            	if (overlaps != null && overlaps.size()>0)
+            		workspace.act(new PurgeWorkspaceContents(listener));
+            }
+            
+            
             listener.getLogger().println("Updating workspace...");
             cmd = new ArgumentListBuilder();
             cmd.add(accurevPath);
@@ -860,6 +881,82 @@ public class AccurevSCM extends SCM {
 
     }
 
+	/**
+	 * get
+	 * 
+	 * @param server
+	 * @param accurevEnv
+	 * @param workspace
+	 * @param listener
+	 * @param accurevPath
+	 * @param launcher
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	private List<String> getOverlaps(AccurevServer server,
+			Map<String, String> accurevEnv, FilePath workspace,
+			TaskListener listener, String accurevPath, Launcher launcher)
+			throws IOException, InterruptedException {
+		
+		List<String> overlaps = new ArrayList<String>();
+		
+		Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+		ArgumentListBuilder cmd = new ArgumentListBuilder();
+		cmd.add(accurevPath);
+		cmd.add("stat");
+		addServer(cmd, server);
+		cmd.add("-fx");
+		cmd.add("-o");
+		StringOutputStream sos = new StringOutputStream();
+		int rv;
+		if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos,	workspace))) {
+			listener.fatalError("Stat overlaps command failed with exit code " + rv);
+			return null;
+		}
+
+		try {
+			XmlPullParser parser = newPullParser();
+			parser.setInput(new StringReader(sos.toString()));
+			while (true) {
+				switch (parser.next()) {
+				case XmlPullParser.START_DOCUMENT:
+					break;
+				case XmlPullParser.END_DOCUMENT:
+					// build the tree
+					return overlaps;
+				case XmlPullParser.START_TAG:
+					final String tagName = parser.getName();
+					logger.warning("Parsing tag name: " + tagName);
+					
+					if ("element".equalsIgnoreCase(tagName)) {
+						String filename = parser.getAttributeValue("", "location");
+						String dir = parser.getAttributeValue("","dir");	// yes or no
+							
+						if ("no".equalsIgnoreCase(dir)){
+							listener.getLogger().println("Adding file to overlap list: " + filename);
+							overlaps.add(filename);
+						}else{
+							// don't add dirs to overlap list
+						}
+						
+					}
+
+					break;
+				case XmlPullParser.END_TAG:
+					break;
+				case XmlPullParser.TEXT:
+					break;
+				}
+			}
+		} catch (XmlPullParserException e) {
+			e.printStackTrace(listener.getLogger());
+			logger.warning(e.getMessage());
+			return null;
+		}
+
+	}
+    
     /**
      *
      * @param server
@@ -1205,6 +1302,7 @@ public class AccurevSCM extends SCM {
 					req.getParameter("accurev.workspaceSubPath"), //
 					req.getParameter("accurev.synctime") != null, //
 					req.getParameter("accurev.useUpdate") != null, //
+					req.getParameter("accurev.useRevert") != null, //
 					req.getParameter("accurev.useSnapshot") != null);
         }
 
@@ -1442,6 +1540,34 @@ public class AccurevSCM extends SCM {
 
     }
 
+    
+    private static final class PurgeWorkspaceOverlaps implements FilePath.FileCallable<Boolean> {
+
+    	private final List<String> filelist;
+        private final TaskListener listener;
+
+        public PurgeWorkspaceOverlaps(TaskListener listener, List<String> filelist) {
+        	this.filelist = filelist;
+            this.listener = listener;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public Boolean invoke(File ws, VirtualChannel channel) throws IOException {
+    		listener.getLogger().println("Purging overlaps...");
+        	for (String filename: filelist){
+        		File toPurge = new File(ws, filename);
+        		Util.deleteFile(toPurge);
+        		listener.getLogger().println("... " + toPurge.getAbsolutePath());
+        	}
+    		listener.getLogger().println("Overlaps purged.");
+            return Boolean.TRUE;
+        }
+
+    }
+    
+    
     private static final class FindAccurevHome implements FilePath.FileCallable<String> {
 
         private final AccurevServer server;
