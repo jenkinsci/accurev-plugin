@@ -924,6 +924,7 @@ public class AccurevSCM extends SCM {
 		ArgumentListBuilder cmd = new ArgumentListBuilder();
 		cmd.add(accurevPath);
 		cmd.add("stat");
+        addServer(cmd, server);		
 		cmd.add("-fx");
 		cmd.add("-o");
 		StringOutputStream sos = new StringOutputStream();
