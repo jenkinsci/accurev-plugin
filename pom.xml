@@ -13,6 +13,13 @@
     <version>0.6.12-SNAPSHOT</version>
     <name>Jenkins Accurev plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Accurev+Plugin</url>
+
+    <developers>
+      <developer>
+        <id>statler</id>
+        <name>Scott Tatum</name>
+      </developer>
+    </developers>
     
     <dependencies>
       <dependency>
@@ -21,4 +28,10 @@
         <version>1.5.1</version>
       </dependency>
     </dependencies>
+
+    <scm>
+      <connection>scm:git:git://github.com/jenkinsci/accurev-plugin.git</connection>
+      <developerConnection>scm:git:git@github.com:jenkinsci/accurev-plugin.git</developerConnection>
+      <url>https://github.com/jenkinsci/accurev-plugin</url>
+    </scm>
 </project>
