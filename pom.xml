@@ -10,9 +10,16 @@
 
     <artifactId>accurev</artifactId>
     <packaging>hpi</packaging>
-    <version>0.6.13</version>
+    <version>0.6.12-SNAPSHOT</version>
     <name>Jenkins Accurev plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Accurev+Plugin</url>
+
+    <developers>
+      <developer>
+        <id>statler</id>
+        <name>Scott Tatum</name>
+      </developer>
+    </developers>
     
     <dependencies>
       <dependency>
@@ -22,9 +29,9 @@
       </dependency>
     </dependencies>
 
-  <scm>
-    <connection>scm:git:ssh://github.com/jenkinsci/jenkins-ci.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/jenkins-ci.git</developerConnection>
-  </scm>
-
+    <scm>
+      <connection>scm:git:git://github.com/jenkinsci/accurev-plugin.git</connection>
+      <developerConnection>scm:git:git@github.com:jenkinsci/accurev-plugin.git</developerConnection>
+      <url>https://github.com/jenkinsci/accurev-plugin</url>
+    </scm>
 </project>
