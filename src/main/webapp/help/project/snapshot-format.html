@@ -1,20 +1,20 @@
 <div>
     <p>
-    	If set, this sets the naming schema used for the snapshot.<br/>
-    	If not set, the snapshot name defaults to "<i>job_name</i>"_"<i>build_number</i>".
+    This configures the way the snapshot is named, allowing the use of environment variables using the same syntax as Ant uses for property expansion.<br/>
+    i.e. a literal <tt>$</tt> must be escaped as <tt>$$</tt>, and <tt>${</tt><i>name</i><tt>}</tt> resolves to the value of environment variable "<i>name</i>".<br/>
+    If not set, the snapshot name defaults to "<i>job_name</i>_<i>build_number</i>".
     </p>
     <p>
-    This allows the use of environment variables, using the same syntax as Ant.
-    The default is "<pre>${JOB_NAME}_${BUILD_NUMBER}</pre>", i.e. "<i>job_name</i>"_"<i>build_number</i>",
-    but can be set to any combination of literal text and environment variables
-    (subject to AccuRev's snapshot naming restrictions
-    "The name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a backslash (\)."
-    ).
+    The default is "<tt>${JOB_NAME}_${BUILD_NUMBER}</tt>".
+    It can be set to any combination of literal text and environment variables,
+    subject to AccuRev's snapshot naming restrictions:
+    "<i>The name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a backslash (\)</i>".<br/>
+    e.g. "<tt>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</tt>"
+    would take the name of the stream being built,
+    append an underscore,
+    append the build number
+    and finally append "_Snapshot",
+    which would result in a snapshot name of the form
+    "<tt>MyStreamName_1234_Snapshot</tt>".
     </p>
-    <p>
-    e.g. "<pre>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</pre>"
-	would name the snapshot by taking the name of the stream being built and
-	appending the build number and "_Snapshot" to form e.g.
-	"MyStreamName_1234_Snapshot".
-	</p>
 </div>
