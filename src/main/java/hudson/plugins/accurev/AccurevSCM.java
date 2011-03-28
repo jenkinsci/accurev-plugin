@@ -180,6 +180,15 @@ public class AccurevSCM extends SCM {
     }
 
     /**
+     * Getter for property 'snapshotNameFormat'.
+     *
+     * @return Value for property 'snapshotNameFormat'.
+     */
+    public String getSnapshotNameFormat() {
+        return snapshotNameFormat;
+    }
+
+    /**
      * Getter for property 'synctime'.
      *
      * @return Value for property 'synctime'.
