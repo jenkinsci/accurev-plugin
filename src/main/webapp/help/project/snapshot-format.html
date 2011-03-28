@@ -1,0 +1,20 @@
+<div>
+    <p>
+    	If set, this sets the naming schema used for the snapshot.<br/>
+    	If not set, the snapshot name defaults to "<i>job_name</i>"_"<i>build_number</i>".
+    </p>
+    <p>
+    This allows the use of environment variables, using the same syntax as Ant.
+    The default is "<pre>${JOB_NAME}_${BUILD_NUMBER}</pre>", i.e. "<i>job_name</i>"_"<i>build_number</i>",
+    but can be set to any combination of literal text and environment variables
+    (subject to AccuRev's snapshot naming restrictions
+    "The name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a backslash (\)."
+    ).
+    </p>
+    <p>
+    e.g. "<pre>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</pre>"
+	would name the snapshot by taking the name of the stream being built and
+	appending the build number and "_Snapshot" to form e.g.
+	"MyStreamName_1234_Snapshot".
+	</p>
+</div>

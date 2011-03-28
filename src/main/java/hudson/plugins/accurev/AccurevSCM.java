@@ -16,7 +16,6 @@ import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +29,7 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -83,8 +83,9 @@ public class AccurevSCM extends SCM {
     // keep all transaction types in a set for validation
     private static final String VTT_LIST = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
     private static final Set<String> VALID_TRANSACTION_TYPES = 
-    	new HashSet<String>(Arrays.asList(VTT_LIST.split(VTT_DELIM))); 
+        new HashSet<String>(Arrays.asList(VTT_LIST.split(VTT_DELIM))); 
     private static final Date NO_TRANS_DATE = new Date(0);
+    private static final String DEFAULT_SNAPSHOT_NAME_FORMAT = "${JOB_NAME}_${BUILD_NUMBER}";
     private final String serverName;
     private final String depot;
     private final String stream;
@@ -93,6 +94,7 @@ public class AccurevSCM extends SCM {
     private final boolean useUpdate;
     private final boolean useRevert;
     private final boolean useSnapshot;
+    private final String snapshotNameFormat;
     private final boolean synctime;
     private final String workspace;
     private final String workspaceSubPath;
@@ -113,7 +115,8 @@ public class AccurevSCM extends SCM {
                       boolean useUpdate,
                       boolean usePurgeIfLastFailed,
                       boolean useRevert,
-                      boolean useSnapshot) {
+                      boolean useSnapshot,
+                      String snapshotNameFormat) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -126,6 +129,7 @@ public class AccurevSCM extends SCM {
         this.usePurgeIfLastFailed = usePurgeIfLastFailed;
         this.useRevert = useRevert;
         this.useSnapshot = useSnapshot;
+        this.snapshotNameFormat = snapshotNameFormat;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -318,7 +322,6 @@ public class AccurevSCM extends SCM {
                 	 build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE)
                 	 )
             ) {
-        	
             workspace.act(new PurgeWorkspaceContents(listener));
         }
 
@@ -479,9 +482,9 @@ public class AccurevSCM extends SCM {
             }
             listener.getLogger().println("Populate completed successfully.");
         } else if ( isUseSnapshot() ) {
-            // TODO Allow a flexible snapshot naming convention
-            String snapshotName = build.getProject().getName() + "_" + build.getNumber();
+            final String snapshotName = calculateSnapshotName(build, listener);
             listener.getLogger().println("Creating snapshot: " + snapshotName + "...");
+            build.getEnvironment(listener).put("ACCUREV_SNAPSHOT", snapshotName);
             // snapshot command: accurev mksnap -H <server> -s <snapshotName> -b <backing_stream> -t now
             ArgumentListBuilder cmd = new ArgumentListBuilder();
             cmd.add(accurevPath);
@@ -580,6 +583,15 @@ public class AccurevSCM extends SCM {
         return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
                 build.getTimestamp().getTime(), startTime == null ? null : startTime.getTime(), this.stream,
                 changelogFile);
+    }
+
+    private String calculateSnapshotName(final AbstractBuild build,
+            final BuildListener listener) throws IOException, InterruptedException {
+        final String actualFormat = (snapshotNameFormat == null || snapshotNameFormat
+                .trim().isEmpty()) ? DEFAULT_SNAPSHOT_NAME_FORMAT : snapshotNameFormat.trim();
+        final EnvVars environment = build.getEnvironment(listener);
+        final String snapshotName = environment.expand(actualFormat);
+        return snapshotName;
     }
 
     private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
@@ -920,7 +932,6 @@ public class AccurevSCM extends SCM {
 		
 		List<String> overlaps = new ArrayList<String>();
 		
-		Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
 		ArgumentListBuilder cmd = new ArgumentListBuilder();
 		cmd.add(accurevPath);
 		cmd.add("stat");
@@ -1227,7 +1238,7 @@ public class AccurevSCM extends SCM {
         	DESCRIPTOR.ACCUREV_LOCK.lock();
         }
         try {
-            rv = launcher.launch().cmds(cmd).envs(env).stdin(in).stdout(os).pwd(workspace).join();
+            rv = launcher.launch().cmds(cmd).envs(env).stdin(in).stdout(os).stderr(os).pwd(workspace).join();
         } finally {
         	if (server.isSyncOperations()) {
         		DESCRIPTOR.ACCUREV_LOCK.unlock();
@@ -1323,7 +1334,8 @@ public class AccurevSCM extends SCM {
 					req.getParameter("accurev.useUpdate") != null,
 					req.getParameter("accurev.usePurgeIfLastFailed") != null,
 					req.getParameter("accurev.useRevert") != null, 
-					req.getParameter("accurev.useSnapshot") != null);
+					req.getParameter("accurev.useSnapshot") != null,
+					req.getParameter("accurev.snapshotNameFormat"));
         }
 
         /**

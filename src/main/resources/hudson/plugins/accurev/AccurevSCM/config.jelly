@@ -43,10 +43,13 @@
         <f:entry title="Sub-path" help="/plugin/accurev/help/project/workspace-subpath.html">
             <f:textbox name="accurev.workspaceSubPath" value="${scm.workspaceSubPath}"/>
         </f:entry>
-        <f:entry title="Create and build from snapshot"
-                help="/plugin/accurev/help/project/snapshot.html">
-            <f:checkbox name="accurev.useSnapshot" checked="${scm.useSnapshot}"/>
-        </f:entry>
+        <f:optionalBlock title="Create and build from snapshot"
+                         help="/plugin/accurev/help/project/snapshot.html"
+                         name="accurev.useSnapshot" checked="${scm.useSnapshot}">
+            <f:entry title="Snapshot Name Format" help="/plugin/accurev/help/project/snapshot-format.html">
+                <f:textbox name="accurev.snapshotNameFormat" value="${scm.snapshotNameFormat}"/>
+            </f:entry>
+        </f:optionalBlock>
     </f:advanced>
 
 </j:jelly>

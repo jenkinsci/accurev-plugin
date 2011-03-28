@@ -31,9 +31,9 @@
                             <input class="setting-input" type="text"
                                    name="server.validTransactionTypes" value="${h.ifThenElse(server==null,'add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge',server.validTransactionTypes)}" />
                         </f:entry>
-				        <f:entry title="Synchronize AccuRev CLI Operations" help="/plugin/accurev/help/sync-operations.html">
-				            <f:checkbox name="server.syncOperations" checked="${server.syncOperations}" default="true" />
-				        </f:entry>
+                        <f:entry title="Synchronize AccuRev CLI Operations" help="/plugin/accurev/help/sync-operations.html">
+                            <f:checkbox name="server.syncOperations" checked="${server.syncOperations}" default="true" />
+                        </f:entry>
                     </f:advanced>
 
                 </table>
