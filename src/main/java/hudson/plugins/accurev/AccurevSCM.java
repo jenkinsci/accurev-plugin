@@ -1,7 +1,7 @@
 package hudson.plugins.accurev;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -52,7 +52,6 @@ import hudson.scm.SCMDescriptor;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 import hudson.util.IOException2;
-import org.codehaus.plexus.util.StringOutputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -442,10 +441,10 @@ public class AccurevSCM extends SCM {
                 listener.getLogger().println("  New parent stream: " + stream);
                 listener.getLogger().println(cmd.toStringWithQuote());
 
-                int rv;
+                final int rv;
                 rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
                 if (rv != 0) {
-                    listener.fatalError("Relocation failed with exit code " + rv);
+                    logCommandFailure(cmd, "Workspace relocation command", rv, null, listener);
                     return false;
                 }
                 listener.getLogger().println("Relocation successfully.");
@@ -468,7 +467,7 @@ public class AccurevSCM extends SCM {
             int rv;
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
-                listener.fatalError("Update failed with exit code " + rv);
+                logCommandFailure(cmd, "Workspace update command", rv, null, listener);
                 return false;
             }
             listener.getLogger().println("Update completed successfully.");
@@ -486,7 +485,7 @@ public class AccurevSCM extends SCM {
             }
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
-                listener.fatalError("Populate failed with exit code " + rv);
+                logCommandFailure(cmd, "Populate workspace command", rv, null, listener);
                 return false;
             }
             listener.getLogger().println("Populate completed successfully.");
@@ -508,7 +507,7 @@ public class AccurevSCM extends SCM {
             int rv;
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
-                listener.fatalError("Snapshot creation failed with exit code " + rv);
+                logCommandFailure(cmd, "Create snapshot command", rv, null, listener);
                 return false;
             }
             listener.getLogger().println("Snapshot created successfully.");
@@ -529,7 +528,7 @@ public class AccurevSCM extends SCM {
             }
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
-                listener.fatalError("Populate failed with exit code " + rv);
+                logCommandFailure(cmd, "Populate from snapshot command", rv, null, listener);
                 return false;
             }
             listener.getLogger().println("Populate completed successfully.");
@@ -552,7 +551,7 @@ public class AccurevSCM extends SCM {
             int rv;
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
-                listener.fatalError("Populate failed with exit code " + rv);
+                logCommandFailure(cmd, "Populate command", rv, null, listener);
                 return false;
             }
             listener.getLogger().println("Populate completed successfully.");
@@ -619,16 +618,16 @@ public class AccurevSCM extends SCM {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("wspaces");
-        StringOutputStream sos = new StringOutputStream();
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("Show workspaces command failed with exit code " + rv);
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace))) {
+            logCommandFailure(cmd, "Show workspaces command", rv, stdout, listener);
             return null;
         }
 
         try {
             XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
+            parser.setInput(new StringReader(stdout.toString()));
             while (true) {
                 switch (parser.next()) {
                     case XmlPullParser.START_DOCUMENT:
@@ -694,18 +693,15 @@ public class AccurevSCM extends SCM {
             dateRange += ".100";
         }
         cmd.add(dateRange); // if this breaks windows there's going to be fun
-        FileOutputStream os = new FileOutputStream(changelogFile);
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        final int rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace);
+        if (rv != 0) {
+            logCommandFailure(cmd, "Changelog command", rv, stdout, listener);
+            return false;
+        }
+        final FileOutputStream os = new FileOutputStream(changelogFile);
         try {
-            BufferedOutputStream bos = new BufferedOutputStream(os);
-            try {
-                int rv = launchAccurev(launcher, cmd, accurevEnv, null, bos, workspace);
-                if (rv != 0) {
-                    listener.fatalError("Changelog failed with exit code " + rv);
-                    return false;
-                }
-            } finally {
-                bos.close();
-            }
+            stdout.writeTo(os);
         } finally {
             os.close();
         }
@@ -753,9 +749,9 @@ public class AccurevSCM extends SCM {
 
         listener.getLogger().println("Last build on " + buildDate);
 
-        Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
+        final Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
 
-        AccurevStream stream = streams.get(this.stream);
+        AccurevStream stream = streams == null ? null : streams.get(this.stream);
 
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
@@ -797,12 +793,12 @@ public class AccurevSCM extends SCM {
             String resp = null;
             DESCRIPTOR.ACCUREV_LOCK.lock();
             try {
-                StringOutputStream sos = new StringOutputStream();
-                int rv = launcher.launch().cmds(cmd).masks(masks).envs(accurevEnv).stdout(sos).pwd(workspace).join();
+                final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+                int rv = launcher.launch().cmds(cmd).masks(masks).envs(accurevEnv).stdout(stdout).pwd(workspace).join();
                 if (rv == 0) {
                     resp = null;
                 } else {
-                    resp = sos.toString();
+                    resp = stdout.toString();
                 }
             } finally {
                 DESCRIPTOR.ACCUREV_LOCK.unlock();
@@ -829,10 +825,10 @@ public class AccurevSCM extends SCM {
         cmd.add(accurevPath);
         cmd.add("synctime");
         addServer(cmd, server);
-        StringOutputStream sos = new StringOutputStream();
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("Synctime command failed with exit code " + rv);
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace))) {
+            logCommandFailure(cmd, "Synctime command", rv, stdout, listener);
             return false;
         }
         return true;
@@ -854,16 +850,16 @@ public class AccurevSCM extends SCM {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("streams");
-        StringOutputStream sos = new StringOutputStream();
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("Show streams command failed with exit code " + rv);
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace))) {
+            logCommandFailure(cmd, "Show streams command", rv, stdout, listener);
             return null;
         }
 
         try {
             XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
+            parser.setInput(new StringReader(stdout.toString()));
             while (true) {
                 switch (parser.next()) {
                     case XmlPullParser.START_DOCUMENT:
@@ -879,20 +875,20 @@ public class AccurevSCM extends SCM {
                     case XmlPullParser.START_TAG:
                         final String tagName = parser.getName();
                         if ("stream".equalsIgnoreCase(tagName)) {
-                            String streamName = parser.getAttributeValue("", "name");
-                            String streamNumber = parser.getAttributeValue("", "streamNumber");
-                            String basisStreamName = parser.getAttributeValue("", "basis");
-                            String basisStreamNumber = parser.getAttributeValue("", "basisStreamNumber");
-                            String streamType = parser.getAttributeValue("", "type");
-                            String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
-                            String streamTimeString = parser.getAttributeValue("", "time");
-                            Date streamTime =
+                            final String streamName = parser.getAttributeValue("", "name");
+                            final String streamNumber = parser.getAttributeValue("", "streamNumber");
+                            final String basisStreamName = parser.getAttributeValue("", "basis");
+                            final String basisStreamNumber = parser.getAttributeValue("", "basisStreamNumber");
+                            final String streamType = parser.getAttributeValue("", "type");
+                            final String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
+                            final String streamTimeString = parser.getAttributeValue("", "time");
+                            final Date streamTime =
                                     streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
-                            String streamStartTimeString = parser.getAttributeValue("", "startTime");
-                            Date streamStartTime =
-                                    streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
+                            final String streamStartTimeString = parser.getAttributeValue("", "startTime");
+                            final Date streamStartTime =
+                                    streamTimeString == null ? null : convertAccurevTimestamp(streamStartTimeString);
                             try {
-                                AccurevStream stream = new AccurevStream(streamName,
+                                final AccurevStream stream = new AccurevStream(streamName,
                                         streamNumber == null ? null : Long.valueOf(streamNumber),
                                         depot,
                                         basisStreamName,
@@ -947,16 +943,16 @@ public class AccurevSCM extends SCM {
         addServer(cmd, server);		
 		cmd.add("-fx");
 		cmd.add("-o");
-		StringOutputStream sos = new StringOutputStream();
+		final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 		int rv;
-		if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos,	workspace))) {
-			listener.fatalError("Stat overlaps command failed with exit code " + rv);
+		if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace))) {
+            logCommandFailure(cmd, "Stat overlaps command", rv, stdout, listener);
 			return null;
 		}
 
 		try {
 			XmlPullParser parser = newPullParser();
-			parser.setInput(new StringReader(sos.toString()));
+			parser.setInput(new StringReader(stdout.toString()));
 			while (true) {
 				switch (parser.next()) {
 				case XmlPullParser.START_DOCUMENT:
@@ -1109,17 +1105,18 @@ public class AccurevSCM extends SCM {
             cmd.add("now.1");
             cmd.add("-k");
             cmd.add(transactionType);
-            StringOutputStream sos = new StringOutputStream();
+            final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 
             //execute code that extracts the latest transaction
-            int rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace);
+            int rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace);
             if (0 != rv) {
+                logCommandFailure(cmd, "History command", rv, stdout, listener);
                 throw new Exception("History command failed with exit code " + rv + " when trying to get the latest transaction of type " + transactionType);
             }
 
             //parse the result from the transaction-query
             XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
+            parser.setInput(new StringReader(stdout.toString()));
 
             AccurevTransaction resultTransaction = null;
 
@@ -1165,10 +1162,10 @@ public class AccurevSCM extends SCM {
         cmd.add(stream);
 
         // Execute 'accurev lsrules' command and save off output
-        StringOutputStream sos = new StringOutputStream();
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         int rv;
-        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, sos, workspace))) {
-            listener.fatalError("lsrules command failed with exit code " + rv);
+        if (0 != (rv = launchAccurev(launcher, cmd, accurevEnv, null, stdout, workspace))) {
+            logCommandFailure(cmd, "lsrules command", rv, stdout, listener);
             return null;
         }
 
@@ -1177,7 +1174,7 @@ public class AccurevSCM extends SCM {
         //key: String location, val: String kind (incl / excl / incldo)
         try {
             XmlPullParser parser = newPullParser();
-            parser.setInput(new StringReader(sos.toString()));
+            parser.setInput(new StringReader(stdout.toString()));
             boolean parsingComplete = false;
             while (!parsingComplete) {
                 switch (parser.next()) {
@@ -1240,20 +1237,36 @@ public class AccurevSCM extends SCM {
                               InputStream in,
                               OutputStream os,
                               FilePath workspace) throws IOException, InterruptedException {
-        int rv;
+        final int rv;
         // need server to know if it syncs CLI operations
         AccurevServer server = DESCRIPTOR.getServer(serverName);
-        if (server.isSyncOperations()) {
+        final boolean shouldLock = server.isSyncOperations();
+		if (shouldLock) {
         	DESCRIPTOR.ACCUREV_LOCK.lock();
         }
         try {
             rv = launcher.launch().cmds(cmd).envs(env).stdin(in).stdout(os).stderr(os).pwd(workspace).join();
         } finally {
-        	if (server.isSyncOperations()) {
+        	if (shouldLock) {
         		DESCRIPTOR.ACCUREV_LOCK.unlock();
         	}
         }
         return rv;
+    }
+
+    private void logCommandFailure(final ArgumentListBuilder command,
+            final String commandDescription,
+            final int commandExitCode,
+            final ByteArrayOutputStream commandStderrOrNull,
+            final TaskListener taskListener) {
+        final String msg = commandDescription + " ("
+                + command.toStringWithQuote() + ")" + " failed with exit code "
+                + commandExitCode;
+        logger.warning(msg);
+        if (commandStderrOrNull != null && commandStderrOrNull.size() > 0) {
+            taskListener.fatalError(commandStderrOrNull.toString());
+        }
+        taskListener.fatalError(msg);
     }
 
     /**
@@ -1574,11 +1587,13 @@ public class AccurevSCM extends SCM {
          */
         public Boolean invoke(File ws, VirtualChannel channel) throws IOException {
             listener.getLogger().println("Purging workspace...");
+            System.runFinalization();
+            System.gc();
+            System.runFinalization();
             Util.deleteContentsRecursive(ws);
             listener.getLogger().println("Workspace purged.");
             return Boolean.TRUE;
         }
-
     }
 
     
