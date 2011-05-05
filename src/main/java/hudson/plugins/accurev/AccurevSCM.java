@@ -1262,10 +1262,12 @@ public class AccurevSCM extends SCM {
         final String msg = commandDescription + " ("
                 + command.toStringWithQuote() + ")" + " failed with exit code "
                 + commandExitCode;
-        logger.warning(msg);
-        if (commandStderrOrNull != null && commandStderrOrNull.size() > 0) {
-            taskListener.fatalError(commandStderrOrNull.toString());
-        }
+		logger.warning(msg);
+		if (commandStderrOrNull != null && commandStderrOrNull.size() > 0) {
+			final String stderr = commandStderrOrNull.toString();
+			logger.info(stderr);
+			taskListener.fatalError(stderr);
+		}
         taskListener.fatalError(msg);
     }
 
