@@ -1269,7 +1269,7 @@ public class AccurevSCM extends SCM {
      *         "(not logged in)" if not logged in.<br>
      *         Returns null on failure.
      */
-    private String getLoggedInUsername(
+    private static String getLoggedInUsername(
             AccurevServer server,
             Map<String, String> accurevEnv,
             FilePath workspace,
@@ -1295,25 +1295,43 @@ public class AccurevSCM extends SCM {
             stdout.close();
         }
         listener.getLogger().println(cmdOutput);
+        return getUsernameFromAccurevInfo(cmdOutput, commandDescription,
+				listener);
+    }
+
+
+    private static String getUsernameFromAccurevInfo(final String cmdOutput,
+            final String commandDescription, TaskListener listener)
+            throws IOException {
+        final String usernameHeading = "Principal:";
+        final String controlCharsOrSpaceRegex = "[ \\x00-\\x1F\\x7F]+";
         final StringReader stringReader = new StringReader(cmdOutput);
         final BufferedReader lineReader = new BufferedReader(stringReader);
-        final String firstLine;
+        String line;
         try {
-            firstLine = lineReader.readLine();
+            line = lineReader.readLine();
+            while (line != null) {
+                final String[] parts = line.split(controlCharsOrSpaceRegex);
+                for (int i = 0; i < parts.length; i++) {
+                    final String part = parts[i];
+                    if (usernameHeading.equals(part)) {
+                        if ((i + 1) < parts.length) {
+                            final String username = parts[i + 1];
+                            return username;
+                        }
+                    }
+                }
+                line = lineReader.readLine();
+            }
         } finally {
             lineReader.close();
         }
-        final String controlCharsOrSpaceRegex = "[ \\x00-\\x1F\\x7F]*";
-        final String[] parts = firstLine.split(controlCharsOrSpaceRegex, 2);
-        if (parts.length != 2) {
-            final String msg = commandDescription
-                    + " returned output whose first line did not contain "
-                    + controlCharsOrSpaceRegex + " regex: " + cmdOutput;
-            logger.warning(msg);
-            listener.error(msg);
-            return null;
-        }
-        return parts[1];
+        final String msg = commandDescription
+                + " returned output which did not contain " + usernameHeading
+                + " " + controlCharsOrSpaceRegex + " <username>: " + cmdOutput;
+        logger.warning(msg);
+        listener.error(msg);
+        return null;
     }
 
     /**
@@ -1322,7 +1340,7 @@ public class AccurevSCM extends SCM {
      * @param cmd    The accurev command line.
      * @param server The Accurev server details.
      */
-    private void addServer(ArgumentListBuilder cmd, AccurevServer server) {
+    private static void addServer(ArgumentListBuilder cmd, AccurevServer server) {
         if (null != server && null != server.getHost() && !"".equals(server.getHost())) {
             cmd.add("-H");
             if (server.getPort() != 0) {
@@ -1356,7 +1374,7 @@ public class AccurevSCM extends SCM {
         return rv;
     }
 
-    private void logCommandFailure(final ArgumentListBuilder command,
+    private static void logCommandFailure(final ArgumentListBuilder command,
             final String commandDescription,
             final int commandExitCode,
             final ByteArrayOutputStream commandStderrOrNull,
