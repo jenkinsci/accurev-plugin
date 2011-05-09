@@ -1294,6 +1294,7 @@ public class AccurevSCM extends SCM {
         } finally {
             stdout.close();
         }
+        listener.getLogger().println(cmdOutput);
         final StringReader stringReader = new StringReader(cmdOutput);
         final BufferedReader lineReader = new BufferedReader(stringReader);
         final String firstLine;
