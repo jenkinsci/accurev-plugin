@@ -5,10 +5,17 @@
     	any time, across all jobs on a given node. The default is synchronized,
     	which is the plugin's original behavior.
     	<br /><br />
+    	Note that login operations are <i>always</i> synchronized.
+    	<br /><br />
     	This sync was supposedly for problems with older versions of the AccuRev
     	CLI. If you have a recent version of AccuRev (4.7+, possibly earlier), 
+    	but are using "traditional" authentication, 
     	it should be ok to turn off synchronization. This can speed up operations
     	significantly in some scenarios, such as with multiple jobs with large 
     	checkouts.
+    	If you are using "accurev_login" or "custom" authentication, even on recent
+    	versions of Accurev (e.g. 4.7.4 suffers from this), you need to ensure
+    	that you never run a "login" unless no other accurev operations are ongoing,
+    	otherwise those other accurev operations are likely to fail.
     </p>
 </div>

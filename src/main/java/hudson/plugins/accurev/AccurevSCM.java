@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -335,7 +336,7 @@ public class AccurevSCM extends SCM {
 
         Map<String, String> accurevEnv = new HashMap<String, String>();
 
-        if (!accurevLogin(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+        if (!ensureLoggedInToAccurev(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
             return false;
         }
 
@@ -727,9 +728,9 @@ public class AccurevSCM extends SCM {
 
         final String accurevPath = workspace.act(new FindAccurevHome(server));
 
-        Map<String, String> accurevEnv = new HashMap<String, String>();
+        final Map<String, String> accurevEnv = new HashMap<String, String>();
 
-        if (!accurevLogin(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+        if (!ensureLoggedInToAccurev(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
             return false;
         }
 
@@ -769,49 +770,85 @@ public class AccurevSCM extends SCM {
         return false;
     }
 
-    private boolean accurevLogin(AccurevServer server, Map<String, String> accurevEnv, FilePath workspace,
-                                 TaskListener listener, String accurevPath, Launcher launcher)
+    private boolean ensureLoggedInToAccurev(
+            AccurevServer server,
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher)
             throws IOException, InterruptedException {
-        ArgumentListBuilder cmd;
         if (server != null) {
             accurevEnv.put("ACCUREV_HOME", workspace.getParent().getRemote());
-            listener.getLogger().println("Authenticating with Accurev server...");
-            boolean[] masks;
-            cmd = new ArgumentListBuilder();
-            cmd.add(accurevPath);
-            cmd.add("login");
-            addServer(cmd, server);
-            cmd.add(server.getUsername());
-            if (server.getPassword() == null || "".equals(server.getPassword())) {
-                cmd.addQuoted("");
-                masks = new boolean[cmd.toCommandArray().length];
-            } else {
-                cmd.add(server.getPassword());
-                masks = new boolean[cmd.toCommandArray().length];
-                masks[masks.length - 1] = true;
-            }
-            String resp = null;
             DESCRIPTOR.ACCUREV_LOCK.lock();
             try {
-                final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-                int rv = launcher.launch().cmds(cmd).masks(masks).envs(accurevEnv).stdout(stdout).pwd(workspace).join();
-                if (rv == 0) {
-                    resp = null;
+                final String requiredUsername = server.getUsername();
+                final boolean loginRequired;
+                if (server.isMinimiseLogins()) {
+                    final String currentUsername = getLoggedInUsername(server,
+                            accurevEnv, workspace, listener, accurevPath,
+                            launcher);
+                    loginRequired = (currentUsername == null)
+                            || (!currentUsername.equals(requiredUsername));
                 } else {
-                    resp = stdout.toString();
+                    loginRequired = true;
+                }
+                if (loginRequired) {
+                    return accurevLogin(server, accurevEnv, workspace,
+                            listener, accurevPath, launcher);
+                }
+                else {
+                    listener.getLogger().println(
+                            "Already authenticated with Accurev server as "
+                                    + requiredUsername);
                 }
             } finally {
                 DESCRIPTOR.ACCUREV_LOCK.unlock();
             }
-            if (null == resp || "".equals(resp)) {
-                listener.getLogger().println("Authentication completed successfully.");
-                return true;
-            } else {
-                listener.fatalError("Authentication failed: " + resp);
-                return false;
-            }
         }
         return true;
+    }
+
+    private boolean accurevLogin(AccurevServer server,
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher)
+            throws IOException, InterruptedException {
+        listener.getLogger().println("Authenticating with Accurev server...");
+        final boolean[] masks;
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("login");
+        addServer(cmd, server);
+        if( server.isUseNonexpiringLogin() ) {
+            cmd.add("-n");
+        }
+        cmd.add(server.getUsername());
+        if (server.getPassword() == null || "".equals(server.getPassword())) {
+            cmd.addQuoted("");
+            masks = new boolean[cmd.toCommandArray().length];
+        } else {
+            cmd.add(server.getPassword());
+            masks = new boolean[cmd.toCommandArray().length];
+            masks[masks.length - 1] = true;
+        }
+        final String resp;
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        int rv = launcher.launch().cmds(cmd).masks(masks).envs(accurevEnv).stdout(stdout).pwd(workspace).join();
+        if (rv == 0) {
+            resp = null;
+        } else {
+            resp = stdout.toString();
+        }
+        if (null == resp || "".equals(resp)) {
+            listener.getLogger().println("Authentication completed successfully.");
+            return true;
+        } else {
+            listener.fatalError("Authentication failed: " + resp);
+            return false;
+        }
     }
 
     private boolean synctime(AccurevServer server,
@@ -1046,9 +1083,10 @@ public class AccurevSCM extends SCM {
                 }
             }
             catch (Exception e) {
-                listener.getLogger().println("getTimeOfLatestTransaction failed when checking the stream " + stream + " for changes with transaction type " + transactionType);
+                final String msg = "getTimeOfLatestTransaction failed when checking the stream " + stream + " for changes with transaction type " + transactionType;
+                listener.getLogger().println(msg);
                 e.printStackTrace(listener.getLogger());
-                logger.warning(e.getMessage());
+                logger.log(Level.WARNING, msg, e);
             }
         }
 
@@ -1215,6 +1253,57 @@ public class AccurevSCM extends SCM {
     }
 
     /**
+     * @return The currently logged in user "Principal" name, which may be
+     *         "(not logged in)" if not logged in.<br>
+     *         Returns null on failure.
+     */
+    private String getLoggedInUsername(
+            AccurevServer server,
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher)
+            throws IOException, InterruptedException {
+        final String commandDescription = "info command";
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add(accurevPath);
+        cmd.add("info");
+        addServer(cmd, server);
+        final String cmdOutput;
+        final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        try {
+            final int rv = launcher.launch().cmds(cmd).envs(accurevEnv).stdout(stdout).stderr(stdout).pwd(workspace).join();
+            if (0 != rv) {
+                logCommandFailure(cmd, commandDescription, rv, stdout, listener);
+                return null;
+            }
+            cmdOutput = stdout.toString();
+        } finally {
+            stdout.close();
+        }
+        final StringReader stringReader = new StringReader(cmdOutput);
+        final BufferedReader lineReader = new BufferedReader(stringReader);
+        final String firstLine;
+        try {
+            firstLine = lineReader.readLine();
+        } finally {
+            lineReader.close();
+        }
+        final String controlCharsOrSpaceRegex = "[ \\x00-\\x1F\\x7F]*";
+        final String[] parts = firstLine.split(controlCharsOrSpaceRegex, 2);
+        if (parts.length != 2) {
+            final String msg = commandDescription
+                    + " returned output whose first line did not contain "
+                    + controlCharsOrSpaceRegex + " regex: " + cmdOutput;
+            logger.warning(msg);
+            listener.error(msg);
+            return null;
+        }
+        return parts[1];
+    }
+
+    /**
      * Adds the server reference to the Arguments list.
      *
      * @param cmd    The accurev command line.
@@ -1262,12 +1351,12 @@ public class AccurevSCM extends SCM {
         final String msg = commandDescription + " ("
                 + command.toStringWithQuote() + ")" + " failed with exit code "
                 + commandExitCode;
-		logger.warning(msg);
-		if (commandStderrOrNull != null && commandStderrOrNull.size() > 0) {
-			final String stderr = commandStderrOrNull.toString();
-			logger.info(stderr);
-			taskListener.fatalError(stderr);
-		}
+        logger.warning(msg);
+        if (commandStderrOrNull != null && commandStderrOrNull.size() > 0) {
+            final String stderr = commandStderrOrNull.toString();
+            logger.info(stderr);
+            taskListener.fatalError(stderr);
+        }
         taskListener.fatalError(msg);
     }
 
@@ -1312,6 +1401,9 @@ public class AccurevSCM extends SCM {
         /**
          * The accurev server has been known to crash if more than one copy of the accurev has been run concurrently on
          * the local machine.
+         * <br>
+         * Also, the accurev client has been known to complain that it's not logged in if another
+         * client on the same machine logs in again.
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
         private List<AccurevServer> servers;
@@ -1421,6 +1513,8 @@ public class AccurevSCM extends SCM {
         private transient List<String> nixCmdLocations;
         private String validTransactionTypes;
         private boolean syncOperations;
+        private boolean minimiseLogins;
+        private boolean useNonexpiringLogin;
 
         /**
          * The default search paths for Windows clients.
@@ -1447,7 +1541,16 @@ public class AccurevSCM extends SCM {
         }
 
         @DataBoundConstructor
-        public AccurevServer(String name, String host, int port, String username, String password, String validTransactionTypes, boolean syncOperations) {
+        public AccurevServer(
+                String name,
+                String host,
+                int port,
+                String username,
+                String password,
+                String validTransactionTypes,
+                boolean syncOperations,
+                boolean minimiseLogins,
+                boolean useNonexpiringLogin) {
             this.name = name;
             this.host = host;
             this.port = port;
@@ -1457,6 +1560,8 @@ public class AccurevSCM extends SCM {
             nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
             this.validTransactionTypes = validTransactionTypes;
             this.syncOperations = syncOperations;
+            this.minimiseLogins = minimiseLogins;
+            this.useNonexpiringLogin = useNonexpiringLogin;
         }
 
         /**
@@ -1560,6 +1665,22 @@ public class AccurevSCM extends SCM {
 
         public void setSyncOperations(boolean syncOperations) {
         	this.syncOperations = syncOperations;
+        }
+
+        public boolean isMinimiseLogins() {
+            return minimiseLogins;
+        }
+
+        public void setMinimiseLogins(boolean minimiseLogins) {
+            this.minimiseLogins = minimiseLogins;
+        }
+
+        public boolean isUseNonexpiringLogin() {
+            return useNonexpiringLogin;
+        }
+
+        public void setUseNonexpiringLogin(boolean useNonexpiringLogin) {
+            this.useNonexpiringLogin = useNonexpiringLogin;
         }
 
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)

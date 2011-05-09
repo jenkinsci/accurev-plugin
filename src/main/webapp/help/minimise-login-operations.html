@@ -1,0 +1,13 @@
+<div>
+    <p>
+    	If checked, before issuing an "accurev login" command, the plugin will
+    	first issue an "accurev info" command to see if it is already logged in
+    	and, if only issue the "accurev login" command if it is not already logged
+    	in as the desired user.
+    	<br /><br />
+    	This was introduced to work around the accurev client bug whereby a
+    	login will first log out all active logins on that host before logging
+    	in again, causing any other accurev commands running in other processes
+    	to fail due to the client (temporarily) not being logged in.
+    </p>
+</div>
