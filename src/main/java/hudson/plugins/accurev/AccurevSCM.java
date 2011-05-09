@@ -788,8 +788,19 @@ public class AccurevSCM extends SCM {
                     final String currentUsername = getLoggedInUsername(server,
                             accurevEnv, workspace, listener, accurevPath,
                             launcher);
-                    loginRequired = (currentUsername == null)
-                            || (!currentUsername.equals(requiredUsername));
+                    if (currentUsername==null) {
+                        loginRequired = true;
+                        listener.getLogger().println(
+                                "Not currently authenticated with Accurev server");
+                    } else {
+                        loginRequired = !currentUsername
+                                .equals(requiredUsername);
+                        listener.getLogger()
+                                .println(
+                                        "Currently authenticated with Accurev server as '"
+                                                + currentUsername
+                                                + "', login required");
+                    }
                 } else {
                     loginRequired = true;
                 }
@@ -799,8 +810,9 @@ public class AccurevSCM extends SCM {
                 }
                 else {
                     listener.getLogger().println(
-                            "Already authenticated with Accurev server as "
-                                    + requiredUsername);
+                            "Already authenticated with Accurev server as '"
+                                    + requiredUsername
+                                    + "', not logging in again.");
                 }
             } finally {
                 DESCRIPTOR.ACCUREV_LOCK.unlock();
