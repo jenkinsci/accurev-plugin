@@ -367,6 +367,9 @@ public class AccurevSCM extends SCM {
             listener.fatalError("Must specify a workspace");
             return false;
         }
+
+        final Date startDateOfPopulate;
+
         if (useWorkspace) {
             listener.getLogger().println("Getting a list of workspaces...");
             Map<String, AccurevWorkspace> workspaces = getWorkspaces(server, accurevEnv, workspace, listener, accurevPath, launcher);
@@ -484,6 +487,7 @@ public class AccurevSCM extends SCM {
             } else {
                 cmd.add(workspaceSubPath);
             }
+            startDateOfPopulate = new Date();
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
                 logCommandFailure(cmd, "Populate workspace command", rv, null, listener);
@@ -527,6 +531,7 @@ public class AccurevSCM extends SCM {
             } else {
                 cmd.add(workspaceSubPath);
             }
+            startDateOfPopulate = new Date();
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
                 logCommandFailure(cmd, "Populate from snapshot command", rv, null, listener);
@@ -550,6 +555,7 @@ public class AccurevSCM extends SCM {
                 cmd.add(workspaceSubPath);
             }
             int rv;
+            startDateOfPopulate = new Date();
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
             if (rv != 0) {
                 logCommandFailure(cmd, "Populate command", rv, null, listener);
@@ -573,7 +579,7 @@ public class AccurevSCM extends SCM {
             if (stream == null) {
                 // if there was a problem, fall back to simple stream check
                 return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                        build.getTimestamp().getTime(), startTime == null ? null : startTime.getTime(),
+                        startDateOfPopulate, startTime == null ? null : startTime.getTime(),
                         this.stream, changelogFile);
             }
             // There may be changes in a parent stream that we need to factor in.
@@ -583,14 +589,14 @@ public class AccurevSCM extends SCM {
                 if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
                         stream.getName(), startTime == null ? null : startTime.getTime())) {
                     return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                            build.getTimestamp().getTime(), startTime == null ? null : startTime
+                            startDateOfPopulate, startTime == null ? null : startTime
                             .getTime(), stream.getName(), changelogFile);
                 }
                 stream = stream.getParent();
             } while (stream != null && stream.isReceivingChangesFromParent());
         }
         return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                build.getTimestamp().getTime(), startTime == null ? null : startTime.getTime(), this.stream,
+                startDateOfPopulate, startTime == null ? null : startTime.getTime(), this.stream,
                 changelogFile);
     }
 
@@ -778,39 +784,43 @@ public class AccurevSCM extends SCM {
             String accurevPath,
             Launcher launcher)
             throws IOException, InterruptedException {
-        if (server != null) {
-            accurevEnv.put("ACCUREV_HOME", workspace.getParent().getRemote());
-            DESCRIPTOR.ACCUREV_LOCK.lock();
-            try {
-                final String requiredUsername = server.getUsername();
-                final boolean loginRequired;
-                if (server.isMinimiseLogins()) {
-                    final String currentUsername = getLoggedInUsername(server,
-                            accurevEnv, workspace, listener, accurevPath,
-                            launcher);
-                    if (currentUsername==null) {
-                        loginRequired = true;
-                        listener.getLogger().println(
-                                "Not currently authenticated with Accurev server");
-                    } else {
-                        loginRequired = !currentUsername
-                                .equals(requiredUsername);
-                        listener.getLogger().println(
-                                "Currently authenticated with Accurev server as '"
-                                        + currentUsername
-                                        + (loginRequired ? "', login required"
-                                                : "', not logging in again."));
-                    }
-                } else {
+        accurevEnv.put("ACCUREV_HOME", workspace.getParent().getRemote());
+        if (server == null) {
+            return true;
+        }
+        final String requiredUsername = server.getUsername();
+        if( requiredUsername==null || requiredUsername.trim().length()==0 ) {
+            return true;
+        }
+        DESCRIPTOR.ACCUREV_LOCK.lock();
+        try {
+            final boolean loginRequired;
+            if (server.isMinimiseLogins()) {
+                final String currentUsername = getLoggedInUsername(server,
+                        accurevEnv, workspace, listener, accurevPath,
+                        launcher);
+                if (currentUsername==null) {
                     loginRequired = true;
+                    listener.getLogger().println(
+                            "Not currently authenticated with Accurev server");
+                } else {
+                    loginRequired = !currentUsername
+                            .equals(requiredUsername);
+                    listener.getLogger().println(
+                            "Currently authenticated with Accurev server as '"
+                                    + currentUsername
+                                    + (loginRequired ? "', login required"
+                                            : "', not logging in again."));
                 }
-                if (loginRequired) {
-                    return accurevLogin(server, accurevEnv, workspace,
-                            listener, accurevPath, launcher);
-                }
-            } finally {
-                DESCRIPTOR.ACCUREV_LOCK.unlock();
+            } else {
+                loginRequired = true;
             }
+            if (loginRequired) {
+                return accurevLogin(server, accurevEnv, workspace,
+                        listener, accurevPath, launcher);
+            }
+        } finally {
+            DESCRIPTOR.ACCUREV_LOCK.unlock();
         }
         return true;
     }
