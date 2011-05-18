@@ -730,6 +730,10 @@ public class AccurevSCM extends SCM {
      */
     public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener)
             throws IOException, InterruptedException {
+        if( project.isInQueue()) {
+            listener.getLogger().println("Project build is currently in queue.");
+            return false;
+        }
         AccurevServer server = DESCRIPTOR.getServer(serverName);
 
         final String accurevPath = workspace.act(new FindAccurevHome(server));
