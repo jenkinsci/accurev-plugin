@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,10 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.ModelObject;
+import hudson.model.ParameterValue;
+import hudson.model.StringParameterValue;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -355,11 +360,19 @@ public class AccurevSCM extends SCM {
             listener.fatalError("Must specify a depot");
             return false;
         }
+		
+		
+		
         if (stream == null || "".equals(stream)) {
             listener.fatalError("Must specify a stream");
             return false;
         }
-        if (streams != null && !streams.containsKey(stream)) {
+		
+		EnvVars environment = build.getEnvironment(listener);
+		
+		String localStream = environment.expand(stream);
+		
+        if (streams != null && !streams.containsKey(localStream)) {
             listener.fatalError("The specified stream does not appear to exist!");
             return false;
         }
@@ -412,11 +425,11 @@ public class AccurevSCM extends SCM {
             cmd.add("-w");
             cmd.add(this.workspace);
 
-            if (!stream.equals(accurevWorkspace.getStream().getParent().getName())) {
+            if (!localStream.equals(accurevWorkspace.getStream().getParent().getName())) {
                 listener.getLogger().println("Parent stream needs to be updated.");
                 needsRelocation = true;
                 cmd.add("-b");
-                cmd.add(this.stream);
+                cmd.add(localStream);
             }
             if (!accurevWorkspace.getHost().equals(remoteDetails.getHostName())) {
                 listener.getLogger().println("Host needs to be updated.");
@@ -442,7 +455,7 @@ public class AccurevSCM extends SCM {
                 listener.getLogger().println("  New storage: " + remoteDetails.getPath());
                 listener.getLogger().println("  Old parent stream: " + accurevWorkspace.getStream().getParent()
                         .getName());
-                listener.getLogger().println("  New parent stream: " + stream);
+                listener.getLogger().println("  New parent stream: " + localStream);
                 listener.getLogger().println(cmd.toStringWithQuote());
 
                 final int rv;
@@ -506,7 +519,7 @@ public class AccurevSCM extends SCM {
             cmd.add("-s");
             cmd.add(snapshotName);
             cmd.add("-b");
-            cmd.add(stream);
+            cmd.add(localStream);
             cmd.add("-t");
             cmd.add("now");
             int rv;
@@ -545,7 +558,7 @@ public class AccurevSCM extends SCM {
             cmd.add("pop");
             addServer(cmd, server);
             cmd.add("-v");
-            cmd.add(stream);
+            cmd.add(localStream);
             cmd.add("-L");
             cmd.add(workspace.getRemote());
             cmd.add("-R");
@@ -574,13 +587,13 @@ public class AccurevSCM extends SCM {
         }
 
         {
-            AccurevStream stream = streams == null ? null : streams.get(this.stream);
+            AccurevStream stream = streams == null ? null : streams.get(localStream);
 
             if (stream == null) {
                 // if there was a problem, fall back to simple stream check
                 return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
                         startDateOfPopulate, startTime == null ? null : startTime.getTime(),
-                        this.stream, changelogFile);
+                        localStream, changelogFile);
             }
             // There may be changes in a parent stream that we need to factor in.
             // TODO produce a consolidated list of changes from the parent streams
@@ -596,7 +609,7 @@ public class AccurevSCM extends SCM {
             } while (stream != null && stream.isReceivingChangesFromParent());
         }
         return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                startDateOfPopulate, startTime == null ? null : startTime.getTime(), this.stream,
+                startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
                 changelogFile);
     }
 
@@ -724,6 +737,10 @@ public class AccurevSCM extends SCM {
     public ChangeLogParser createChangeLogParser() {
         return new AccurevChangeLogParser();
     }
+	
+	private static boolean hasStringVariableReference(final String str) {
+		return str != null && str.indexOf("${") != -1;
+	}
 
     /**
      * {@inheritDoc}
@@ -761,12 +778,63 @@ public class AccurevSCM extends SCM {
         listener.getLogger().println("Last build on " + buildDate);
 
         final Map<String, AccurevStream> streams = getStreams(server, accurevEnv, workspace, listener, accurevPath, launcher);
+		
+		EnvVars environment = null;
+				
+		if(hasStringVariableReference(this.stream)){
+			ParametersDefinitionProperty paramDefProp = (ParametersDefinitionProperty) project.getProperty(ParametersDefinitionProperty.class);
+			
+			if(paramDefProp == null) {
+				listener.getLogger().println("Polling is not supported when stream name has a variable reference '" + this.stream + "'.");
+				
+				// as we don't know which stream to check we just state that there is no changes
+				return false;
+			}
+			
+			listener.getLogger().println("logout of parameter definitions ...");
+			
+			Map<String, String> keyValues = new TreeMap<String, String>();
 
-        AccurevStream stream = streams == null ? null : streams.get(this.stream);
+			/* Scan for all parameter with an associated default values */
+			for(ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions())
+			{
+				//listener.getLogger().println("parameter definition for '" + paramDefinition.getName() + "':");
+				
+				ParameterValue defaultValue  = paramDefinition.getDefaultParameterValue();
+				
+				if(defaultValue instanceof StringParameterValue){
+					StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
+					
+					//listener.getLogger().println("parameter default value for '" + defaultValue.getName() + " / " + defaultValue.getDescription() + "' is '" + strdefvalue.value + "'.");
+					
+					keyValues.put(defaultValue.getName(), strdefvalue.value);				
+				}
+			}
+
+			environment = new EnvVars(keyValues); 
+		}
+		
+		if(environment == null){
+			return false;
+		}
+		
+		String localStream = environment.expand(this.stream);
+		
+		if(hasStringVariableReference(localStream)){
+				listener.getLogger().println("Polling is not supported when stream name has a variable reference '" + this.stream + "'.");
+				
+				// as we don't know which stream to check we just state that there is no changes
+				return false;
+		}
+		
+		
+		listener.getLogger().println("... expanded '" + this.stream + "' to '" + localStream + "'.");
+
+        AccurevStream stream = streams == null ? null : streams.get(localStream);
 
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
-            return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, this.stream,
+            return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,localStream,
                     buildDate);
         }
         // There may be changes in a parent stream that we need to factor in.
