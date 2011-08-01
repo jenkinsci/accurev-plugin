@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -498,7 +499,10 @@ public class AccurevSCM extends SCM {
             if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                 cmd.add(".");
             } else {
-                cmd.add(workspaceSubPath);
+                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+            	while (st.hasMoreElements()) {
+            		cmd.add(st.nextToken().trim());
+				}
             }
             startDateOfPopulate = new Date();
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
@@ -542,7 +546,10 @@ public class AccurevSCM extends SCM {
             if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                 cmd.add(".");
             } else {
-                cmd.add(workspaceSubPath);
+                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+            	while (st.hasMoreElements()) {
+            		cmd.add(st.nextToken().trim());
+				}
             }
             startDateOfPopulate = new Date();
             rv = launchAccurev(launcher, cmd, accurevEnv, null, listener.getLogger(), workspace);
@@ -565,7 +572,10 @@ public class AccurevSCM extends SCM {
             if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                 cmd.add(".");
             } else {
-                cmd.add(workspaceSubPath);
+                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+            	while (st.hasMoreElements()) {
+            		cmd.add(st.nextToken().trim());
+				}
             }
             int rv;
             startDateOfPopulate = new Date();
