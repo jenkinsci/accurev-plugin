@@ -1,0 +1,43 @@
+package hudson.plugins.accurev;
+
+import java.io.Serializable;
+
+class RemoteWorkspaceDetails implements Serializable {
+
+    private final String hostName;
+    private final String path;
+    private final String fileSeparator;
+
+    public RemoteWorkspaceDetails(String hostName, String path, String fileSeparator) {
+        this.hostName = hostName;
+        this.path = path;
+        this.fileSeparator = fileSeparator;
+    }
+
+    /**
+     * Getter for property 'hostName'.
+     *
+     * @return Value for property 'hostName'.
+     */
+    public String getHostName() {
+        return hostName;
+    }
+
+    /**
+     * Getter for property 'path'.
+     *
+     * @return Value for property 'path'.
+     */
+    public String getPath() {
+        return path;
+    }
+
+    /**
+     * Getter for property 'fileSeparator'.
+     *
+     * @return Value for property 'fileSeparator'.
+     */
+    public String getFileSeparator() {
+        return fileSeparator;
+    }
+}
