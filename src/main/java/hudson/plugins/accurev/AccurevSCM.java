@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -488,8 +489,11 @@ public class AccurevSCM extends SCM {
                 if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                     popcmd.add(".");
                 } else {
-                    popcmd.add(workspaceSubPath);
-                }
+		            final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+		        	while (st.hasMoreElements()) {
+		        		popcmd.add(st.nextToken().trim());
+		            }
+				}
                 startDateOfPopulate = new Date();
                 if (Boolean.TRUE != AccurevLauncher.runCommand("Populate workspace command", launcher, popcmd, null,
                         getOptionalLock(), accurevEnv, workspace, listener, logger, new ParsePopulate(),
@@ -531,7 +535,10 @@ public class AccurevSCM extends SCM {
             if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                 popcmd.add(".");
             } else {
-                popcmd.add(workspaceSubPath);
+                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+            	while (st.hasMoreElements()) {
+            		popcmd.add(st.nextToken().trim());
+				}
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate from snapshot command", launcher, popcmd, null,
@@ -554,7 +561,10 @@ public class AccurevSCM extends SCM {
             if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                 popcmd.add(".");
             } else {
-                popcmd.add(workspaceSubPath);
+                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+            	while (st.hasMoreElements()) {
+            		popcmd.add(st.nextToken().trim());
+				}
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate command", launcher, popcmd, null,
