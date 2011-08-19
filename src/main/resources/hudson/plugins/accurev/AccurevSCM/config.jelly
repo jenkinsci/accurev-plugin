@@ -50,6 +50,9 @@
                 <f:textbox name="accurev.snapshotNameFormat" value="${scm.snapshotNameFormat}"/>
             </f:entry>
         </f:optionalBlock>
+        <f:entry title="Ignore parent changes" help="/plugin/accurev/help/project/ignore-stream-parent.html">
+            <f:checkbox name="accurev.ignoreStreamParent" checked="${scm.ignoreStreamParent}"/>
+        </f:entry>
     </f:advanced>
 
 </j:jelly>

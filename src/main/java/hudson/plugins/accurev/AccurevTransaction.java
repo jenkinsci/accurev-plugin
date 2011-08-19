@@ -122,4 +122,22 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     public void setId(int id) {
         this.id = id;
     }
+
+    private static final String FIELD_SEPARATOR = ", ";
+    private static final String EQ = "=";
+
+    @Override
+    public String toString() {
+        return '[' + //
+                "id" + EQ + id + //
+                FIELD_SEPARATOR + //
+                "date" + EQ + date + //
+                FIELD_SEPARATOR + //
+                "author" + EQ + author + //
+                FIELD_SEPARATOR + //
+                "action" + EQ + action + //
+                FIELD_SEPARATOR + //
+                "msg" + EQ + (msg == null ? "" : msg) + //
+                ']';
+    }
 }

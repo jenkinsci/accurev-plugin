@@ -1,0 +1,20 @@
+<div>
+	<p>
+		If checked then, when issuing an "accurev show ... streams"
+		command, the plugin will use the "-s <i>streamname</i>" option to
+		restrict the output to just the stream in question, look at the result
+		to determine the basis stream and then repeat for that
+		stream's parent etc until the full ancestry is obtained. If not checked,
+		when the plugin needs to know about the stream it is using, it'll simply
+		get all of the streams from the server (which can involve a lot of
+		data). <br />
+		<br />
+		This is best enabled on accurev servers with a lot of streams,
+		snapshots, workspaces etc.<br />
+		When there are relatively few streams and snapshots aren't used, it is
+		typically quicker to get all the streams that the server knows about in
+		one single command. When there are a lot of them, it's often faster to
+		send multiple commands that get the stream you want, and then its parent,
+		and its parent etc until you reach the top of the chain.
+	</p>
+</div>
