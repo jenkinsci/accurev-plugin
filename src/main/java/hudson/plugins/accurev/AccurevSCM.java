@@ -913,10 +913,9 @@ public class AccurevSCM extends SCM {
             final String accurevPath, //
             final Launcher launcher) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        if(isMac()){
-            if ( !"root".equals(System.getProperty("user.name")) ){
-                cmd.add("sudo");
-            }
+        
+        if(launcher.isUnix()){
+        	cmd.add("sudo");
         }
         cmd.add(accurevPath);
         cmd.add("synctime");
@@ -924,11 +923,6 @@ public class AccurevSCM extends SCM {
         final boolean success = AccurevLauncher.runCommand("Synctime command", launcher, cmd, null, getOptionalLock(),
                 accurevEnv, workspace, listener, logger);
         return success;
-    }
-    
-    public static boolean isMac() {
-        String os = System.getProperty("os.name").toLowerCase();
-        return (os.indexOf("mac") >= 0);
     }
 
     private Map<String, AccurevStream> getStreams(//
