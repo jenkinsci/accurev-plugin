@@ -591,7 +591,7 @@ public class AccurevSCM extends SCM {
 
             if (stream == null) {
                 // if there was a problem, fall back to simple stream check
-                return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                return captureChangelog(server, accurevEnv, workspace, workspaceSubPath, listener, accurevPath, launcher,
                         startDateOfPopulate, startTime == null ? null : startTime.getTime(),
                         localStream, changelogFile);
             }
@@ -601,14 +601,14 @@ public class AccurevSCM extends SCM {
                 // This is a best effort to get as close to the changes as possible
                 if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
                         stream.getName(), startTime == null ? null : startTime.getTime())) {
-                    return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                    return captureChangelog(server, accurevEnv, workspace, workspaceSubPath, listener, accurevPath, launcher,
                             startDateOfPopulate, startTime == null ? null : startTime
                             .getTime(), stream.getName(), changelogFile);
                 }
                 stream = stream.getParent();
             } while (stream != null && stream.isReceivingChangesFromParent());
         }
-        return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+        return captureChangelog(server, accurevEnv, workspace, workspaceSubPath, listener, accurevPath, launcher,
                 startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
                 changelogFile);
     }
@@ -646,6 +646,7 @@ public class AccurevSCM extends SCM {
     private boolean captureChangelog(AccurevServer server,
                                      Map<String, String> accurevEnv,
                                      FilePath workspace,
+                                     String workspaceSubPath,
                                      BuildListener listener,
                                      String accurevPath,
                                      Launcher launcher,
@@ -658,7 +659,6 @@ public class AccurevSCM extends SCM {
         cmd.add("hist");
         addServer(cmd, server);
         cmd.add("-fx");
-        cmd.add("-a");
         cmd.add("-s");
         cmd.add(stream);
         cmd.add("-t");
@@ -669,6 +669,14 @@ public class AccurevSCM extends SCM {
             dateRange += ".100";
         }
         cmd.add(dateRange); // if this breaks windows there's going to be fun
+        if (workspaceSubPath != null) {
+            final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+        	while (st.hasMoreElements()) {
+        		cmd.add(st.nextToken().trim() + "/*");
+            }
+        } else {
+            cmd.add("-a");
+        }
         final String commandDescription = "Changelog command";
         final Boolean success = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, getOptionalLock(),
                 accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
