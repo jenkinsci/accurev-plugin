@@ -64,7 +64,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     }
 
     public String getMsg() {
-        return msg;
+        return (null == msg ? "" : msg);
     }
 
     public void setMsg(String msg) {
@@ -137,7 +137,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
                 FIELD_SEPARATOR + //
                 "action" + EQ + action + //
                 FIELD_SEPARATOR + //
-                "msg" + EQ + (msg == null ? "" : msg) + //
+                "msg" + EQ + getMsg() + //
                 ']';
     }
 }
