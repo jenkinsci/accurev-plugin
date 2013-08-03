@@ -93,18 +93,18 @@ public class AccurevSCM extends SCM {
      */
     @DataBoundConstructor
     public AccurevSCM(String serverName,
-                      String depot,
-                      String stream,
-                      boolean useWorkspace,
-                      String workspace,
-                      String workspaceSubPath,
-                      boolean synctime,
-                      boolean useUpdate,
-                      boolean usePurgeIfLastFailed,
-                      boolean useRevert,
-                      boolean useSnapshot,
-                      String snapshotNameFormat,
-                      boolean ignoreStreamParent) {
+            String depot,
+            String stream,
+            boolean useWorkspace,
+            String workspace,
+            String workspaceSubPath,
+            boolean synctime,
+            boolean useUpdate,
+            boolean usePurgeIfLastFailed,
+            boolean useRevert,
+            boolean useSnapshot,
+            String snapshotNameFormat,
+            boolean ignoreStreamParent) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -291,8 +291,8 @@ public class AccurevSCM extends SCM {
             for (Object o : changeSet.getItems()) {
                 AccurevTransaction t = (AccurevTransaction) o;
                 if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                   lastTransaction = t.getRevision();
-                   break;
+                    lastTransaction = t.getRevision();
+                    break;
                 }
             }
             /*
@@ -313,7 +313,7 @@ public class AccurevSCM extends SCM {
      * {@inheritDoc}
      */
     public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener,
-                            File changelogFile) throws IOException, InterruptedException {
+            File changelogFile) throws IOException, InterruptedException {
 
         final AccurevServer server = DESCRIPTOR.getServer(serverName);
 
@@ -489,11 +489,11 @@ public class AccurevSCM extends SCM {
                 if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                     popcmd.add(".");
                 } else {
-		            final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-		        	while (st.hasMoreElements()) {
-		        		popcmd.add(st.nextToken().trim());
-		            }
-				}
+                    final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+                    while (st.hasMoreElements()) {
+                        popcmd.add(st.nextToken().trim());
+                    }
+                }
                 startDateOfPopulate = new Date();
                 if (Boolean.TRUE != AccurevLauncher.runCommand("Populate workspace command", launcher, popcmd, null,
                         getOptionalLock(), accurevEnv, workspace, listener, logger, new ParsePopulate(),
@@ -536,9 +536,9 @@ public class AccurevSCM extends SCM {
                 popcmd.add(".");
             } else {
                 final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-            	while (st.hasMoreElements()) {
-            		popcmd.add(st.nextToken().trim());
-				}
+                while (st.hasMoreElements()) {
+                    popcmd.add(st.nextToken().trim());
+                }
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate from snapshot command", launcher, popcmd, null,
@@ -562,9 +562,9 @@ public class AccurevSCM extends SCM {
                 popcmd.add(".");
             } else {
                 final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-            	while (st.hasMoreElements()) {
-            		popcmd.add(st.nextToken().trim());
-				}
+                while (st.hasMoreElements()) {
+                    popcmd.add(st.nextToken().trim());
+                }
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate command", launcher, popcmd, null,
@@ -587,27 +587,45 @@ public class AccurevSCM extends SCM {
         }
 
         {
-            AccurevStream stream = streams == null ? null : streams.get(localStream);
+			AccurevStream stream = streams == null ? null : streams.get(localStream);
 
-            if (stream == null) {
-                // if there was a problem, fall back to simple stream check
-                return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                        startDateOfPopulate, startTime == null ? null : startTime.getTime(),
-                        localStream, changelogFile);
-            }
-            // There may be changes in a parent stream that we need to factor in.
-            // TODO produce a consolidated list of changes from the parent streams
-            do {
-                // This is a best effort to get as close to the changes as possible
-                if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                        stream.getName(), startTime == null ? null : startTime.getTime())) {
-                    return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                            startDateOfPopulate, startTime == null ? null : startTime
-                            .getTime(), stream.getName(), changelogFile);
-                }
-                stream = stream.getParent();
-            } while (stream != null && stream.isReceivingChangesFromParent());
-        }
+			if (stream == null) {
+				// if there was a problem, fall back to simple stream check
+				return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+						startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+						localStream, changelogFile);
+			}
+			// There may be changes in a parent stream that we need to factor in.
+			boolean capturedChangelog = false;
+			boolean foundChange = false;
+			List<String> changedStreams = new ArrayList<String>();
+			do {
+				// This is a best effort to get as close to the changes as possible
+				if (!foundChange) {
+					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
+							stream.getName(), startTime == null ? null : startTime.getTime());
+				}
+				if (foundChange) {
+					do {
+						File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
+						capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+								startDateOfPopulate, startTime == null ? null : startTime
+								.getTime(), stream.getName(), streamChangeLog);
+						if (capturedChangelog) {
+							changedStreams.add(streamChangeLog.getName());
+						}
+						stream = stream.getParent();
+					} while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
+				}
+				if (stream != null) {
+					stream = stream.getParent();
+				}
+			} while (stream != null && stream.isReceivingChangesFromParent() && !foundChange);
+			if (foundChange) {
+				XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile);
+				return capturedChangelog;
+			}
+		}
         return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
                 startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
                 changelogFile);
@@ -623,11 +641,11 @@ public class AccurevSCM extends SCM {
     }
 
     private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
-                                                        Map<String, String> accurevEnv,
-                                                        FilePath workspace,
-                                                        TaskListener listener,
-                                                        String accurevPath,
-                                                        Launcher launcher)
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher)
             throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
@@ -644,15 +662,15 @@ public class AccurevSCM extends SCM {
     }
 
     private boolean captureChangelog(AccurevServer server,
-                                     Map<String, String> accurevEnv,
-                                     FilePath workspace,
-                                     BuildListener listener,
-                                     String accurevPath,
-                                     Launcher launcher,
-                                     Date buildDate,
-                                     Date startDate,
-                                     String stream,
-                                     File changelogFile) throws IOException, InterruptedException {
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            BuildListener listener,
+            String accurevPath,
+            Launcher launcher,
+            Date buildDate,
+            Date startDate,
+            String stream,
+            File changelogFile) throws IOException, InterruptedException {
         ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
         cmd.add("hist");
@@ -853,9 +871,9 @@ public class AccurevSCM extends SCM {
                             .equals(requiredUsername);
                     listener.getLogger().println(
                             "Currently authenticated with Accurev server as '"
-                                    + currentUsername
-                                    + (loginRequired ? "', login required"
-                                            : "', not logging in again."));
+                            + currentUsername
+                            + (loginRequired ? "', login required"
+                            : "', not logging in again."));
                 }
             } else {
                 loginRequired = true;
@@ -1069,13 +1087,13 @@ public class AccurevSCM extends SCM {
      * @throws InterruptedException
      */
     private boolean checkStreamForChanges(AccurevServer server,
-                                          Map<String, String> accurevEnv,
-                                          FilePath workspace,
-                                          TaskListener listener,
-                                          String accurevPath,
-                                          Launcher launcher,
-                                          String stream,
-                                          Date buildDate)
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher,
+            String stream,
+            Date buildDate)
             throws IOException, InterruptedException {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         latestCodeChangeTransaction.setDate(NO_TRANS_DATE);
@@ -1095,7 +1113,7 @@ public class AccurevSCM extends SCM {
 
         listener.getLogger().println(//
                 "Checking transactions of type " + Arrays.asList(validTransactionTypes) + //
-                        " in stream [" + stream + "]");
+                " in stream [" + stream + "]");
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = getLatestTransaction(server, accurevEnv, workspace,
