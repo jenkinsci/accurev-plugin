@@ -417,12 +417,13 @@ public class AccurevSCM extends SCM {
                 addServer(chwscmd, server);
                 chwscmd.add("-w");
                 chwscmd.add(this.workspace);
-
-                if (!localStream.equals(accurevWorkspace.getStream().getParent().getName())) {
-                    listener.getLogger().println("Parent stream needs to be updated.");
-                    needsRelocation = true;
-                    chwscmd.add("-b");
-                    chwscmd.add(localStream);
+                if (!isIgnoreStreamParent()) { //workspace.getStream == null if it never generated parent list
+	                if (!localStream.equals(accurevWorkspace.getStream().getParent().getName())) {
+	                    listener.getLogger().println("Parent stream needs to be updated.");
+	                    needsRelocation = true;
+	                    chwscmd.add("-b");
+	                    chwscmd.add(localStream);
+	                }
                 }
                 if (!accurevWorkspace.getHost().equals(remoteDetails.getHostName())) {
                     listener.getLogger().println("Host needs to be updated.");
@@ -445,9 +446,11 @@ public class AccurevSCM extends SCM {
                     listener.getLogger().println("  New host: " + remoteDetails.getHostName());
                     listener.getLogger().println("  Old storage: " + oldStorage);
                     listener.getLogger().println("  New storage: " + remoteDetails.getPath());
-                    listener.getLogger().println("  Old parent stream: " + accurevWorkspace.getStream().getParent()
-                            .getName());
-                    listener.getLogger().println("  New parent stream: " + localStream);
+                    if (!isIgnoreStreamParent()) { //workspace.getStream == null if it never generated parent list
+	                    listener.getLogger().println("  Old parent stream: " + accurevWorkspace.getStream().getParent()
+	                            .getName());
+	                    listener.getLogger().println("  New parent stream: " + localStream);
+                    }
                     if (!AccurevLauncher.runCommand("Workspace relocation command", launcher, chwscmd, null,
                             getOptionalLock(), accurevEnv, workspace, listener, logger, true)) {
                         return false;
