@@ -428,7 +428,7 @@ public final class AccurevLauncher {
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
         final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-        final String msg = hostname + ": " + commandDescription + " (" + command.toStringWithQuote() + ")"
+        final String msg = hostname + ": " + commandDescription + " (" + maskPasswordFromLogOutput ( command.toStringWithQuote() ) + ")"
                 + " failed with " + exception.toString();
         logException(msg, exception, loggerToLogFailuresTo, taskListener);
     }
@@ -455,7 +455,7 @@ public final class AccurevLauncher {
             final TaskListener taskListener) {
         if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.INFO)) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-            final String msg = hostname + ": " + command.toStringWithQuote();
+            final String msg = hostname + ": " + maskPasswordFromLogOutput ( command.toStringWithQuote() );
             loggerToLogFailuresTo.log(Level.INFO, msg);
         }
     }
