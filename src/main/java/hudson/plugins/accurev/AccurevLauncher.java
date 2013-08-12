@@ -352,8 +352,8 @@ public final class AccurevLauncher {
             final InputStream commandStderrOrNull, //
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
-        final String msg = commandDescription + " (" + command.toStringWithQuote() + ")" + " failed with exit code "
-                + commandExitCode;
+        final String msg = commandDescription + " (" + maskPasswordFromLogOutput( command.toStringWithQuote() ) + ")" 
+            + " failed with exit code " + commandExitCode;
         String stderr = null;
         try {
             stderr = getCommandErrorOutput(commandStdoutOrNull, commandStderrOrNull);
@@ -375,6 +375,17 @@ public final class AccurevLauncher {
             }
             taskListener.fatalError(msg);
         }
+    }
+    
+    /** AccurevSCM builds login command with username/pass as last pair of params */
+    private static String maskPasswordFromLogOutput(String inputCommand) {
+    	String sanitized = inputCommand;
+    	if (sanitized != null) {
+    		if (sanitized.contains("login")) {
+    			sanitized = sanitized.replaceAll("[^\\s]+$", "***********");  //last word of phrase
+    		}
+    	}
+    	return sanitized;
     }
 
     private static String getCommandErrorOutput(final InputStream commandStdoutOrNull,
