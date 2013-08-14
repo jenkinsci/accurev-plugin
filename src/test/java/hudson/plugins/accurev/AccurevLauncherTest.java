@@ -56,4 +56,16 @@ public class AccurevLauncherTest {
 		String permutation5 = "accurev.exe login -n thisisme thisIsMyPassword";
 		assertEquals("accurev.exe login -n thisisme ***********", ourMethod.invoke(launcher, permutation5));
 	}
+	
+	@Test
+	public void loginFails_NeedsToMasksPassword_perm6() throws Exception{
+		String permutation6 = "accurev.exe login -H somehostwithlogininitsnameforsomereason:1234 -n thisisme thisIsMyPassword";
+		assertEquals("accurev.exe login -H somehostwithlogininitsnameforsomereason:1234 -n thisisme ***********", ourMethod.invoke(launcher, permutation6));
+	}
+	
+	@Test
+	public void loginFails_NeedsToMasksPassword_perm7() throws Exception{
+		String permutation7 = "accurev.exe update -H somehostwithlogininitsnameforsomereason:1234 someworkspace thisisntrelatedtologins";
+		assertEquals("accurev.exe update -H somehostwithlogininitsnameforsomereason:1234 someworkspace thisisntrelatedtologins", ourMethod.invoke(launcher, permutation7));
+	}
 }

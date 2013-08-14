@@ -381,7 +381,7 @@ public final class AccurevLauncher {
     private static String maskPasswordFromLogOutput(String inputCommand) {
     	String sanitized = inputCommand;
     	if (sanitized != null) {
-    		if (sanitized.contains("login")) {
+    		if (sanitized.contains(" login ")) {
     			sanitized = sanitized.replaceAll("[^\\s]+$", "***********");  //last word of phrase
     		}
     	}
