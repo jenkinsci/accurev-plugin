@@ -30,6 +30,11 @@ class ParseChangeLog extends ChangeLogParser {
      */
     public ChangeLogSet<AccurevTransaction> parse(AbstractBuild build, File changelogFile)//
             throws IOException, SAXException {
+        List<AccurevTransaction> transactions = parse(changelogFile);
+        return new AccurevChangeLogSet(build, transactions);
+    }
+
+	private List<AccurevTransaction> parse(File changelogFile) throws IOException{
         List<AccurevTransaction> transactions = null;
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
@@ -39,7 +44,7 @@ class ParseChangeLog extends ChangeLogParser {
                 fis = new FileReader(changelogFile);
                 bis = new BufferedReader(fis);
                 parser.setInput(bis);
-                transactions = parseTransactions(parser);
+                transactions = parseTransactions(parser, changelogFile);
             } finally {
                 if (bis != null) {
                     bis.close();
@@ -54,15 +59,15 @@ class ParseChangeLog extends ChangeLogParser {
         } catch (XmlPullParserException e) {
             throw new IOException2(e);
         }
-
+		
         logger.info("transactions size = " + transactions.size());
-        return new AccurevChangeLogSet(build, transactions);
-    }
-
-    private List<AccurevTransaction> parseTransactions(XmlPullParser parser) throws IOException, XmlPullParserException {
+		return transactions;
+	}
+    private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile) throws IOException, XmlPullParserException {
         List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
         AccurevTransaction currentTransaction = null;
         boolean inComment = false;
+		boolean inConsolidatedChangeLog = false;
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:
@@ -72,6 +77,7 @@ class ParseChangeLog extends ChangeLogParser {
             case XmlPullParser.START_TAG:
                 final String tagName = parser.getName();
                 inComment = "comment".equalsIgnoreCase(tagName);
+				inConsolidatedChangeLog = "ChangeLog".equalsIgnoreCase(tagName);
                 if ("transaction".equalsIgnoreCase(tagName)) {
                     currentTransaction = new AccurevTransaction();
                     transactions.add(currentTransaction);
@@ -98,6 +104,10 @@ class ParseChangeLog extends ChangeLogParser {
                 if (inComment && currentTransaction != null) {
                     currentTransaction.setMsg(parser.getText());
                 }
+				if (inConsolidatedChangeLog){
+					File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
+					transactions.addAll(parse(subChangeLog));
+				}
                 break;
             }
         }
