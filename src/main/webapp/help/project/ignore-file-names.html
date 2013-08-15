@@ -2,8 +2,11 @@
 	<p>
 		If checked then:<br/>
 		<br />
-		All polling will have its file results filtered through these regular expressions. (Standard java regex impl syntax)<br/>
-		Any file change found to be matching any of the regexes will be ignored and will not contribute to possibly triggering a build.<br/>
-		NOTE: this setting changes the behavior of polling from only pulling a single transaction to pulling the latest, which is a heavier call on both the Accurev server and the runtime of the polling.
-		</p>
+		All polling will have its file results filtered through these regular expressions. (Standard java regex syntax)<br/>
+		Example syntax:  .*\.java    to match all .java extension files, note the single escape on the .<br/>
+		Example syntax:  .*/scripts/.*    to match anything inside a dir named scripts<br/>
+		Any file change found to be matching any of the regexes will be IGNORED and will not contribute to possibly triggering a build.<br/>
+		File paths returned by accurev typically resemble: "foo/bar/Baz.java", note the use of unix-style file seperators.</br>
+		NOTE: this setting changes the behavior of polling from only polling a single transaction and testing transaction # high watermarks to polling the latest and testing all of the retrieved files, which is a heavier call on both the Accurev server and the runtime of the polling.
+	</p>
 </div>

@@ -16,6 +16,7 @@ import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
+import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.jetty.security.Password;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
@@ -624,7 +625,7 @@ public class AccurevSCM extends SCM {
 				// This is a best effort to get as close to the changes as possible
 				if (!foundChange) {
 					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
-							stream.getName(), startTime == null ? null : startTime.getTime());
+							stream.getName(), startTime == null ? null : startTime.getTime(), false);
 				}
 				if (foundChange) {
 					do {
@@ -842,13 +843,13 @@ public class AccurevSCM extends SCM {
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
             return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, localStream,
-                    buildDate);
+                    buildDate, true);
         }
         // There may be changes in a parent streams that we need to factor in.
         int currentDepth = 0;
         do {
             if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(),
-                    buildDate)) {
+                    buildDate, true)) {
                 return true;
             }
             //Clamps down on this recursion if ignoring a set # of parent streams.
@@ -1121,7 +1122,8 @@ public class AccurevSCM extends SCM {
             String accurevPath,
             Launcher launcher,
             String stream,
-            Date buildDate)
+            Date buildDate,
+            boolean isPolling)
             throws IOException, InterruptedException {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         latestCodeChangeTransaction.setDate(NO_TRANS_DATE);
@@ -1145,7 +1147,7 @@ public class AccurevSCM extends SCM {
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = getLatestTransaction(server, accurevEnv, workspace,
-                        listener, accurevPath, launcher, stream, transactionType);
+                        listener, accurevPath, launcher, stream, transactionType, isPolling);
                 if (tempTransaction != null) {
                     listener.getLogger().println(
                             "Last transaction of type [" + transactionType + "] is " + tempTransaction);
@@ -1197,7 +1199,8 @@ public class AccurevSCM extends SCM {
             final String accurevPath, //
             final Launcher launcher, //
             final String stream, //
-            final String transactionType) throws Exception {
+            final String transactionType, //
+            final boolean isPolling) throws Exception {
         // initialize code that extracts the latest transaction of a certain
         // type using -k flag
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
@@ -1210,15 +1213,22 @@ public class AccurevSCM extends SCM {
         cmd.add("-s");
         cmd.add(stream);
         cmd.add("-t");
-        cmd.add("now.1");
+        cmd.add((isPolling && useIgnoreFiles) ? "now.25" : "now.1");
         cmd.add("-k");
         cmd.add(transactionType);
-
+        
+        final ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> parser;
+        if (isPolling && useIgnoreFiles) {
+        	parser = new ParseHistory(ignoreFilesPatterns);
+        } else {
+        	parser = new ParseHistory(null);
+        }
+        
         // execute code that extracts the latest transaction
-        final List<AccurevTransaction> transaction = new ArrayList<AccurevTransaction>(1);
+        final List<AccurevTransaction> transaction = new ArrayList<AccurevTransaction>();
         final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, null,
                 getOptionalLock(), accurevEnv, workspace, listener, logger, XmlParserFactory.getFactory(),
-                new ParseHistory(), transaction);
+                parser, transaction);
         if (transactionFound == null) {
             final String msg = "History command failed when trying to get the latest transaction of type "
                     + transactionType;
