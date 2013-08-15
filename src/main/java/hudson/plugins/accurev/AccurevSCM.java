@@ -82,15 +82,18 @@ public class AccurevSCM extends SCM {
     private final boolean useRevert;
     private final boolean useSnapshot;
     private final boolean useIgnoreDeep;
+    private final boolean useIgnoreFiles;
     private final int ignoreDeepAmount;
     private final String snapshotNameFormat;
     private final boolean synctime;
     private final String workspace;
     private final String workspaceSubPath;
+	private final List<String> ignoreFilesPatterns;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
-    /**
+
+	/**
      * Our constructor.
      */
     @DataBoundConstructor
@@ -108,7 +111,9 @@ public class AccurevSCM extends SCM {
                       String snapshotNameFormat,
                       boolean ignoreStreamParent,
                       boolean useIgnoreDeep,
-                      int ignoreDeepAmount) {
+                      int ignoreDeepAmount,
+                      boolean useIgnoreFiles,
+                      List<String> ignoreFilesPatterns) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -125,6 +130,8 @@ public class AccurevSCM extends SCM {
         this.ignoreStreamParent = ignoreStreamParent;
         this.useIgnoreDeep = useIgnoreDeep;
         this.ignoreDeepAmount = ignoreDeepAmount;
+        this.useIgnoreFiles = useIgnoreFiles;
+        this.ignoreFilesPatterns = ignoreFilesPatterns;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -245,6 +252,11 @@ public class AccurevSCM extends SCM {
     public boolean isUseWorkspace() {
         return useWorkspace;
     }
+    
+
+    public List<String> getIgnoreFilesPatterns() {
+		return ignoreFilesPatterns;
+	}
 
 // ------------------------ INTERFACE METHODS ------------------------
 
@@ -1314,6 +1326,10 @@ public class AccurevSCM extends SCM {
 		return ignoreDeepAmount;
 	}
 
+	public boolean isUseIgnoreFiles() {
+		return useIgnoreFiles;
+	}
+
 	public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
         /**
@@ -1359,7 +1375,18 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-            return new AccurevSCM( //
+            int ignoreDeep = 0;
+        	if (!isEmptyOrNull(req.getParameter("accurev.ignoreDeepAmount"))) {
+            	try {
+            		ignoreDeep = Integer.valueOf(req.getParameter("accurev.ignoreDeepAmount"));
+            	} catch (NumberFormatException e) {} //remains 0
+            }
+        	List<String> filePatterns = null;
+        	try {
+        		filePatterns = Arrays.asList(req.getParameterValues("accurev.ignoreFilesPatterns"));
+        	} catch (NullPointerException e) {} //remains null, means that the optional param wasnt set in config
+        	
+        	return new AccurevSCM( //
                     req.getParameter("accurev.serverName"), //
                     req.getParameter("accurev.depot"), //
                     req.getParameter("accurev.stream"), //
@@ -1374,9 +1401,15 @@ public class AccurevSCM extends SCM {
                     req.getParameter("accurev.snapshotNameFormat"), //
                     req.getParameter("accurev.ignoreStreamParent") != null,
                     req.getParameter("accurev.useIgnoreDeep") != null,
-                    (Integer.valueOf(req.getParameter("accurev.ignoreDeepAmount"))));
+                    ignoreDeep,
+                    req.getParameter("accurev.useIgnoreFiles") != null,
+                    filePatterns);
         }
-
+        
+        private boolean isEmptyOrNull(String s) {
+        	return (s==null || s.isEmpty());
+        }
+        
         /**
          * Getter for property 'servers'.
          *

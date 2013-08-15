@@ -53,12 +53,22 @@
         <f:entry title="Ignore parent changes" help="/plugin/accurev/help/project/ignore-stream-parent.html">
             <f:checkbox name="accurev.ignoreStreamParent" checked="${scm.ignoreStreamParent}"/>
         </f:entry>
-        <f:optionalBlock title="Ignore deep stream parents for polling"
+        <f:optionalBlock title="Ignore deep stream parents when polling"
                          help="/plugin/accurev/help/project/ignore-deep-parents.html"
                          name="accurev.ignoreDeep" checked="${scm.useIgnoreDeep}">
             <f:entry title="# of Parent streams to poll for SCM changes">
                 <f:textbox name="accurev.ignoreDeepAmount" value="${scm.ignoreDeepAmount}"/>
             </f:entry>
+        </f:optionalBlock>
+        <f:optionalBlock title="Ignore specific file names when polling"
+                         help="/plugin/accurev/help/project/ignore-file-names.html"
+                         name="accurev.useIgnoreFiles" checked="${scm.useIgnoreFiles}">
+            	<f:entry title="Regex to exclude:">
+	            	<f:repeatable items="${scm.ignoreFilesPatterns}" var="patterns" minimum="1">
+	            		<f:textbox name="accurev.ignoreFilesPatterns" value="${patterns}" />
+	            		<f:repeatableDeleteButton/>
+	            	</f:repeatable>
+            	</f:entry>
         </f:optionalBlock>
     </f:advanced>
 
