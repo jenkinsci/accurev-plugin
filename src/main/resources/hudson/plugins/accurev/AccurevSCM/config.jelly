@@ -53,6 +53,13 @@
         <f:entry title="Ignore parent changes" help="/plugin/accurev/help/project/ignore-stream-parent.html">
             <f:checkbox name="accurev.ignoreStreamParent" checked="${scm.ignoreStreamParent}"/>
         </f:entry>
+        <f:optionalBlock title="Ignore deep stream parents for polling"
+                         help="/plugin/accurev/help/project/ignore-deep-parents.html"
+                         name="accurev.ignoreDeep" checked="${scm.useIgnoreDeep}">
+            <f:entry title="# of Parent streams to poll for SCM changes">
+                <f:textbox name="accurev.ignoreDeepAmount" value="${scm.ignoreDeepAmount}"/>
+            </f:entry>
+        </f:optionalBlock>
     </f:advanced>
 
 </j:jelly>

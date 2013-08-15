@@ -1,0 +1,11 @@
+<div>
+	<p>
+		If checked then:<br/>
+		<br />
+		This number defines the number of streams to walk up when querying for changes.  <br/>
+		In a structure where streams look like ROOT -> A -> B -> C -> D, if this job's stream is D, and this value is set to 1, it will query for changes in D and C, but not B, A, or ROOT. <br/>
+		The actual update will bring in all new files, even if they were promoted directly to A, but this will clamp down on build trigger polls.
+		<br />
+		Do NOT enable this alongside "Ignore parent changes" - too lazy to write a compound validator or trim that old code, but this replaces and augments that configs functionality.
+	</p>
+</div>

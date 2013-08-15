@@ -81,6 +81,8 @@ public class AccurevSCM extends SCM {
     private final boolean useUpdate;
     private final boolean useRevert;
     private final boolean useSnapshot;
+    private final boolean useIgnoreDeep;
+    private final int ignoreDeepAmount;
     private final String snapshotNameFormat;
     private final boolean synctime;
     private final String workspace;
@@ -104,7 +106,9 @@ public class AccurevSCM extends SCM {
                       boolean useRevert,
                       boolean useSnapshot,
                       String snapshotNameFormat,
-                      boolean ignoreStreamParent) {
+                      boolean ignoreStreamParent,
+                      boolean useIgnoreDeep,
+                      int ignoreDeepAmount) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -119,6 +123,8 @@ public class AccurevSCM extends SCM {
         this.useSnapshot = useSnapshot;
         this.snapshotNameFormat = snapshotNameFormat;
         this.ignoreStreamParent = ignoreStreamParent;
+        this.useIgnoreDeep = useIgnoreDeep;
+        this.ignoreDeepAmount = ignoreDeepAmount;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -808,12 +814,19 @@ public class AccurevSCM extends SCM {
             return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, localStream,
                     buildDate);
         }
-        // There may be changes in a parent stream that we need to factor in.
+        // There may be changes in a parent streams that we need to factor in.
+        int currentDepth = 0;
         do {
             if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(),
                     buildDate)) {
                 return true;
             }
+            //Clamps down on this recursion if ignoring a set # of parent streams.
+            if (useIgnoreDeep && currentDepth >= ignoreDeepAmount) {
+            	listener.getLogger().println("Stopping at stream depth "+ignoreDeepAmount+" from job configuration.");
+            	return false;
+            }
+            currentDepth++;
             stream = stream.getParent();
         } while (stream != null && stream.isReceivingChangesFromParent());
         return false;
@@ -1293,7 +1306,15 @@ public class AccurevSCM extends SCM {
 
 // -------------------------- INNER CLASSES --------------------------
 
-    public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
+    public boolean isUseIgnoreDeep() {
+		return useIgnoreDeep;
+	}
+
+	public int getIgnoreDeepAmount() {
+		return ignoreDeepAmount;
+	}
+
+	public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
         /**
          * The accurev server has been known to crash if more than one copy of the accurev has been run concurrently on
@@ -1351,7 +1372,9 @@ public class AccurevSCM extends SCM {
                     req.getParameter("accurev.useRevert") != null, //
                     req.getParameter("accurev.useSnapshot") != null, //
                     req.getParameter("accurev.snapshotNameFormat"), //
-                    req.getParameter("accurev.ignoreStreamParent") != null);
+                    req.getParameter("accurev.ignoreStreamParent") != null,
+                    req.getParameter("accurev.useIgnoreDeep") != null,
+                    (Integer.valueOf(req.getParameter("accurev.ignoreDeepAmount"))));
         }
 
         /**
