@@ -14,10 +14,12 @@ import org.xmlpull.v1.XmlPullParserException;
 
 final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
 	private List<String> ignoreFilePatterns;
+	private boolean includeMode;
 	private static final Logger logger = Logger.getLogger(ParseHistory.class.getName());
 	
-	public ParseHistory(List<String> ignoreFilesPatterns) {
+	public ParseHistory(List<String> ignoreFilesPatterns, boolean includeMode) {
 		this.ignoreFilePatterns = ignoreFilesPatterns;
+		this.includeMode = includeMode;
 	}
 
 	public Boolean parse(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput,
@@ -88,10 +90,12 @@ final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTra
 	
 	private boolean isAcceptable(String pathName) throws Exception {
 		for (String regex: ignoreFilePatterns) {
-    		if (pathName.matches(regex)) {
+    		if (!includeMode && pathName.matches(regex)) {
     			return false;
+    		} else if (includeMode && pathName.matches(regex)) {
+    			return true;
     		}
     	}
-		return true;
+		return !includeMode;
 	}
 }

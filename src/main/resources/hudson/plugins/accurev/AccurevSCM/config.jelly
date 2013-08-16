@@ -63,7 +63,10 @@
         <f:optionalBlock title="Ignore specific file names when polling"
                          help="/plugin/accurev/help/project/ignore-file-names.html"
                          name="accurev.useIgnoreFiles" checked="${scm.useIgnoreFiles}">
-            	<f:entry title="Regex to exclude:">
+                <f:entry title="Include Mode?">
+		            <f:checkbox name="accurev.includeMode" checked="${scm.includeMode}"/>
+		        </f:entry>
+            	<f:entry title="Regexes:">
 	            	<f:repeatable items="${scm.ignoreFilesPatterns}" var="patterns" minimum="1">
 	            		<f:textbox name="accurev.ignoreFilesPatterns" value="${patterns}" />
 	            		<f:repeatableDeleteButton/>

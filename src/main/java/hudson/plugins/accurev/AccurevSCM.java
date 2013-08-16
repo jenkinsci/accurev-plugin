@@ -87,6 +87,7 @@ public class AccurevSCM extends SCM {
     private final int ignoreDeepAmount;
     private final String snapshotNameFormat;
     private final boolean synctime;
+    private final boolean includeMode;
     private final String workspace;
     private final String workspaceSubPath;
 	private final List<String> ignoreFilesPatterns;
@@ -114,6 +115,7 @@ public class AccurevSCM extends SCM {
                       boolean useIgnoreDeep,
                       int ignoreDeepAmount,
                       boolean useIgnoreFiles,
+                      boolean includeMode,
                       List<String> ignoreFilesPatterns) {
         super();
         this.serverName = serverName;
@@ -132,6 +134,7 @@ public class AccurevSCM extends SCM {
         this.useIgnoreDeep = useIgnoreDeep;
         this.ignoreDeepAmount = ignoreDeepAmount;
         this.useIgnoreFiles = useIgnoreFiles;
+        this.includeMode = includeMode;
         this.ignoreFilesPatterns = ignoreFilesPatterns;
     }
 
@@ -1219,9 +1222,9 @@ public class AccurevSCM extends SCM {
         
         final ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> parser;
         if (isPolling && useIgnoreFiles) {
-        	parser = new ParseHistory(ignoreFilesPatterns);
+        	parser = new ParseHistory(ignoreFilesPatterns, includeMode);
         } else {
-        	parser = new ParseHistory(null);
+        	parser = new ParseHistory(null, includeMode);
         }
         
         // execute code that extracts the latest transaction
@@ -1358,6 +1361,10 @@ public class AccurevSCM extends SCM {
 		return useIgnoreFiles;
 	}
 
+	public boolean isIncludeMode() {
+		return includeMode;
+	}
+
 	public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
         /**
@@ -1431,6 +1438,7 @@ public class AccurevSCM extends SCM {
                     req.getParameter("accurev.useIgnoreDeep") != null,
                     ignoreDeep,
                     req.getParameter("accurev.useIgnoreFiles") != null,
+                    req.getParameter("accurev.includeMode") != null,
                     filePatterns);
         }
         
