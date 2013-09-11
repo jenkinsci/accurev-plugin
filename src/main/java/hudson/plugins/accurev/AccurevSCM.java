@@ -628,14 +628,12 @@ public class AccurevSCM extends SCM {
 			do outer: {
 				// This is a best effort to get as close to the changes as possible
 				if (!foundChange) {
-					System.out.println("DEBUGPOINT: COUNT: "+count);
 					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
 							stream.getName(), startTime == null ? null : startTime.getTime(), false);
 				}
 				if (foundChange) {
 					int innercount = 0;
 					do {
-						System.out.println("DEBUGPOINT: SECOND NESTED THING:  COUNT: "+count+"   INNERCOUNT: "+innercount);
 						File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
 						capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
 								startDateOfPopulate, startTime == null ? null : startTime
