@@ -624,14 +624,18 @@ public class AccurevSCM extends SCM {
 			boolean capturedChangelog = false;
 			boolean foundChange = false;
 			List<String> changedStreams = new ArrayList<String>();
-			do {
+			int count = 0;
+			do outer: {
 				// This is a best effort to get as close to the changes as possible
 				if (!foundChange) {
+					System.out.println("DEBUGPOINT: COUNT: "+count);
 					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
 							stream.getName(), startTime == null ? null : startTime.getTime(), false);
 				}
 				if (foundChange) {
+					int innercount = 0;
 					do {
+						System.out.println("DEBUGPOINT: SECOND NESTED THING:  COUNT: "+count+"   INNERCOUNT: "+innercount);
 						File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
 						capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
 								startDateOfPopulate, startTime == null ? null : startTime
@@ -640,7 +644,15 @@ public class AccurevSCM extends SCM {
 							changedStreams.add(streamChangeLog.getName());
 						}
 						stream = stream.getParent();
+						innercount++;
+						if (useIgnoreDeep && (count+innercount) > ignoreDeepAmount) {
+							break outer;
+						}
 					} while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
+				}
+				count++;
+				if (useIgnoreDeep && count > ignoreDeepAmount) {
+					break outer;
 				}
 				if (stream != null) {
 					stream = stream.getParent();
