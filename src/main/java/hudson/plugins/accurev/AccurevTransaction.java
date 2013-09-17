@@ -64,11 +64,11 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     }
 
     public String getMsg() {
-        return msg;
+        return (msg == null ? "" : msg);
     }
 
     public void setMsg(String msg) {
-        this.msg = msg;
+        this.msg = ( msg == null ? "" : msg) ;
     }
 
     public void setAction(String action) {
