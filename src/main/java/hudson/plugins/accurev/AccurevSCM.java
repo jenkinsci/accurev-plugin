@@ -611,61 +611,52 @@ public class AccurevSCM extends SCM {
             startTime = build.getPreviousBuild().getTimestamp();
         }
 
-        {
-			AccurevStream stream = streams == null ? null : streams.get(localStream);
+       
+		AccurevStream stream = streams == null ? null : streams.get(localStream);
 
-			if (stream == null) {
-				// if there was a problem, fall back to simple stream check
-				return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-						startDateOfPopulate, startTime == null ? null : startTime.getTime(),
-						localStream, changelogFile);
-			}
-			// There may be changes in a parent stream that we need to factor in.
-			boolean capturedChangelog = false;
-			boolean foundChange = false;
-			List<String> changedStreams = new ArrayList<String>();
-			int count = 0;
-			do outer: {
-				// This is a best effort to get as close to the changes as possible
-				if (!foundChange) {
-					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
-							stream.getName(), startTime == null ? null : startTime.getTime(), false);
-				}
-				if (foundChange) {
-					int innercount = 0;
-					do {
-						File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
-						capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-								startDateOfPopulate, startTime == null ? null : startTime
-								.getTime(), stream.getName(), streamChangeLog);
-						if (capturedChangelog) {
-							changedStreams.add(streamChangeLog.getName());
-						}
-						stream = stream.getParent();
-						innercount++;
-						if (useIgnoreDeep && (count+innercount) > ignoreDeepAmount) {
-							break outer;
-						}
-					} while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
-				}
-				count++;
-				if (useIgnoreDeep && count > ignoreDeepAmount) {
-					break outer;
-				}
-				if (stream != null) {
-					stream = stream.getParent();
-				}
-			} while (stream != null && stream.isReceivingChangesFromParent() && !foundChange);
-			if (foundChange) {
-				XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile);
-				return capturedChangelog;
-			}
+		if (stream == null) {
+			// if there was a problem, fall back to simple stream check
+			return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+					startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+					localStream, changelogFile);
 		}
-        return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
-                changelogFile);
+		// There may be changes in a parent stream that we need to factor in.
+		List<String> changedStreams = new ArrayList<String>();
+		int depth = 0;
+		
+		//     not at depot      dynamic stream                           not beyond depth in config
+		while (stream != null && stream.isReceivingChangesFromParent() && !beyondDepth(depth)) {
+			boolean foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
+					stream.getName(), startTime == null ? null : startTime.getTime(), false);
+			
+			if (foundChange) {
+				File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
+				boolean capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+						startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog);
+				if (capturedChangelog) {
+					changedStreams.add(streamChangeLog.getName());
+				}
+			}
+			
+			depth++;
+			stream = stream.getParent();
+		}
+		
+		if (changedStreams.size() != 0) {
+			XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile);
+			return true;
+		} else {  //something bad happened, just suck your thumb and return what will definitely be a blank transform
+			return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+	                startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
+	                changelogFile);
+		}
     }
 
+
+    private boolean beyondDepth(int depth) {
+    	return (useIgnoreDeep && (depth > ignoreDeepAmount)); 
+    }
+    
     private String calculateSnapshotName(final AbstractBuild build,
             final BuildListener listener) throws IOException, InterruptedException {
         final String actualFormat = (snapshotNameFormat == null || snapshotNameFormat
