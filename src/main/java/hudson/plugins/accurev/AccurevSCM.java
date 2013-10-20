@@ -20,8 +20,10 @@ import hudson.plugins.jetty.security.Password;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
+import hudson.scm.PollingResult;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCM;
+import hudson.scm.SCMRevisionState;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 
@@ -93,18 +95,18 @@ public class AccurevSCM extends SCM {
      */
     @DataBoundConstructor
     public AccurevSCM(String serverName,
-                      String depot,
-                      String stream,
-                      boolean useWorkspace,
-                      String workspace,
-                      String workspaceSubPath,
-                      boolean synctime,
-                      boolean useUpdate,
-                      boolean usePurgeIfLastFailed,
-                      boolean useRevert,
-                      boolean useSnapshot,
-                      String snapshotNameFormat,
-                      boolean ignoreStreamParent) {
+            String depot,
+            String stream,
+            boolean useWorkspace,
+            String workspace,
+            String workspaceSubPath,
+            boolean synctime,
+            boolean useUpdate,
+            boolean usePurgeIfLastFailed,
+            boolean useRevert,
+            boolean useSnapshot,
+            String snapshotNameFormat,
+            boolean ignoreStreamParent) {
         super();
         this.serverName = serverName;
         this.depot = depot;
@@ -268,7 +270,7 @@ public class AccurevSCM extends SCM {
      * @since 0.6.9
      */
     @Override
-    public void buildEnvVars(AbstractBuild build, Map<String, String> env) {
+    public void buildEnvVars(AbstractBuild<?,?> build, Map<String, String> env) {
         // call super even though SCM.buildEnvVars currently does nothing - this could change
         super.buildEnvVars(build, env);
         // add various accurev-specific variables to the environment
@@ -285,14 +287,14 @@ public class AccurevSCM extends SCM {
         // grab the last promote transaction from the changelog file
         String lastTransaction = null;
         // Abstract should have this since checkout should have already run
-        ChangeLogSet<AccurevTransaction> changeSet = build.getChangeSet();
+        ChangeLogSet<AccurevTransaction> changeSet = (ChangeLogSet<AccurevTransaction>) build.getChangeSet();
         if (!changeSet.isEmptySet()) {
             // first EDIT entry should be the last transaction we want
             for (Object o : changeSet.getItems()) {
                 AccurevTransaction t = (AccurevTransaction) o;
                 if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                   lastTransaction = t.getRevision();
-                   break;
+                    lastTransaction = t.getRevision();
+                    break;
                 }
             }
             /*
@@ -313,7 +315,7 @@ public class AccurevSCM extends SCM {
      * {@inheritDoc}
      */
     public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener,
-                            File changelogFile) throws IOException, InterruptedException {
+            File changelogFile) throws IOException, InterruptedException {
 
         final AccurevServer server = DESCRIPTOR.getServer(serverName);
 
@@ -489,11 +491,11 @@ public class AccurevSCM extends SCM {
                 if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
                     popcmd.add(".");
                 } else {
-		            final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-		        	while (st.hasMoreElements()) {
-		        		popcmd.add(st.nextToken().trim());
-		            }
-				}
+                    final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
+                    while (st.hasMoreElements()) {
+                        popcmd.add(st.nextToken().trim());
+                    }
+                }
                 startDateOfPopulate = new Date();
                 if (Boolean.TRUE != AccurevLauncher.runCommand("Populate workspace command", launcher, popcmd, null,
                         getOptionalLock(), accurevEnv, workspace, listener, logger, new ParsePopulate(),
@@ -536,9 +538,9 @@ public class AccurevSCM extends SCM {
                 popcmd.add(".");
             } else {
                 final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-            	while (st.hasMoreElements()) {
-            		popcmd.add(st.nextToken().trim());
-				}
+                while (st.hasMoreElements()) {
+                    popcmd.add(st.nextToken().trim());
+                }
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate from snapshot command", launcher, popcmd, null,
@@ -562,9 +564,9 @@ public class AccurevSCM extends SCM {
                 popcmd.add(".");
             } else {
                 final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-            	while (st.hasMoreElements()) {
-            		popcmd.add(st.nextToken().trim());
-				}
+                while (st.hasMoreElements()) {
+                    popcmd.add(st.nextToken().trim());
+                }
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate command", launcher, popcmd, null,
@@ -587,27 +589,45 @@ public class AccurevSCM extends SCM {
         }
 
         {
-            AccurevStream stream = streams == null ? null : streams.get(localStream);
+			AccurevStream stream = streams == null ? null : streams.get(localStream);
 
-            if (stream == null) {
-                // if there was a problem, fall back to simple stream check
-                return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                        startDateOfPopulate, startTime == null ? null : startTime.getTime(),
-                        localStream, changelogFile);
-            }
-            // There may be changes in a parent stream that we need to factor in.
-            // TODO produce a consolidated list of changes from the parent streams
-            do {
-                // This is a best effort to get as close to the changes as possible
-                if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                        stream.getName(), startTime == null ? null : startTime.getTime())) {
-                    return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-                            startDateOfPopulate, startTime == null ? null : startTime
-                            .getTime(), stream.getName(), changelogFile);
-                }
-                stream = stream.getParent();
-            } while (stream != null && stream.isReceivingChangesFromParent());
-        }
+			if (stream == null) {
+				// if there was a problem, fall back to simple stream check
+				return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+						startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+						localStream, changelogFile);
+			}
+			// There may be changes in a parent stream that we need to factor in.
+			boolean capturedChangelog = false;
+			boolean foundChange = false;
+			List<String> changedStreams = new ArrayList<String>();
+			do {
+				// This is a best effort to get as close to the changes as possible
+				if (!foundChange) {
+					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
+							stream.getName(), startTime == null ? null : startTime.getTime());
+				}
+				if (foundChange) {
+					do {
+						File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
+						capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+								startDateOfPopulate, startTime == null ? null : startTime
+								.getTime(), stream.getName(), streamChangeLog);
+						if (capturedChangelog) {
+							changedStreams.add(streamChangeLog.getName());
+						}
+						stream = stream.getParent();
+					} while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
+				}
+				if (stream != null) {
+					stream = stream.getParent();
+				}
+			} while (stream != null && stream.isReceivingChangesFromParent() && !foundChange);
+			if (foundChange) {
+				XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile);
+				return capturedChangelog;
+			}
+		}
         return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
                 startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
                 changelogFile);
@@ -623,11 +643,11 @@ public class AccurevSCM extends SCM {
     }
 
     private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
-                                                        Map<String, String> accurevEnv,
-                                                        FilePath workspace,
-                                                        TaskListener listener,
-                                                        String accurevPath,
-                                                        Launcher launcher)
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher)
             throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
@@ -644,15 +664,15 @@ public class AccurevSCM extends SCM {
     }
 
     private boolean captureChangelog(AccurevServer server,
-                                     Map<String, String> accurevEnv,
-                                     FilePath workspace,
-                                     BuildListener listener,
-                                     String accurevPath,
-                                     Launcher launcher,
-                                     Date buildDate,
-                                     Date startDate,
-                                     String stream,
-                                     File changelogFile) throws IOException, InterruptedException {
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            BuildListener listener,
+            String accurevPath,
+            Launcher launcher,
+            Date buildDate,
+            Date startDate,
+            String stream,
+            File changelogFile) throws IOException, InterruptedException {
         ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
         cmd.add("hist");
@@ -696,126 +716,6 @@ public class AccurevSCM extends SCM {
         return needSlaveForPolling;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener)
-            throws IOException, InterruptedException {
-        if( project.isInQueue()) {
-            listener.getLogger().println("Project build is currently in queue.");
-            return false;
-        }
-        if (workspace == null) {
-            // If we're claiming not to need a workspace in order to poll, then
-            // workspace will be null.  In that case, we need to run directly
-            // from the project folder on the master.
-            final File projectDir = project.getRootDir();
-            workspace = new FilePath(projectDir);
-            launcher = Hudson.getInstance().createLauncher(listener);
-        }
-        listener.getLogger().println("Running commands from folder \""+workspace+'"');
-        AccurevServer server = DESCRIPTOR.getServer(serverName);
-
-        final String accurevPath = workspace.act(new FindAccurevClientExe(server));
-
-        final Map<String, String> accurevEnv = new HashMap<String, String>();
-
-        if (!ensureLoggedInToAccurev(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
-            listener.getLogger().println("Authentication failure");
-            return false;
-        }
-
-        if (synctime) {
-            listener.getLogger().println("Synchronizing clock with the server...");
-            if (!synctime(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
-                listener.getLogger().println("Synchronizing clock failure");
-                return false;
-            }
-        }
-
-        final Run lastBuild = project.getLastBuild();
-        if (lastBuild == null) {
-            listener.getLogger().println("Project has never been built");
-            return true;
-        }
-        final Date buildDate = lastBuild.getTimestamp().getTime();
-
-        listener.getLogger().println("Last build on " + buildDate);
-
-        final String localStream;
-
-        if (hasStringVariableReference(this.stream)) {
-            ParametersDefinitionProperty paramDefProp = (ParametersDefinitionProperty) project
-                    .getProperty(ParametersDefinitionProperty.class);
-
-            if (paramDefProp == null) {
-                listener.getLogger().println(
-                        "Polling is not supported when stream name has a variable reference '" + this.stream + "'.");
-
-                // as we don't know which stream to check we just state that
-                // there is no changes
-                return false;
-            }
-
-            // listener.getLogger().println("logout of parameter definitions ...");
-
-            Map<String, String> keyValues = new TreeMap<String, String>();
-
-            /* Scan for all parameter with an associated default values */
-            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-                // listener.getLogger().println("parameter definition for '" +
-                // paramDefinition.getName() + "':");
-
-                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-                if (defaultValue instanceof StringParameterValue) {
-                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-
-                    // listener.getLogger().println("parameter default value for '"
-                    // + defaultValue.getName() + " / " +
-                    // defaultValue.getDescription() + "' is '" +
-                    // strdefvalue.value + "'.");
-
-                    keyValues.put(defaultValue.getName(), strdefvalue.value);
-                }
-            }
-
-            final EnvVars environment = new EnvVars(keyValues);
-            localStream = environment.expand(this.stream);
-            listener.getLogger().println("... expanded '" + this.stream + "' to '" + localStream + "'.");
-        } else {
-            localStream = this.stream;
-        }
-
-        if (hasStringVariableReference(localStream)) {
-            listener.getLogger().println(
-                    "Polling is not supported when stream name has a variable reference '" + this.stream + "'.");
-
-            // as we don't know which stream to check we just state that there
-            // is no changes
-            return false;
-        }
-
-        final Map<String, AccurevStream> streams = this.ignoreStreamParent ? null : getStreams(localStream, server,
-                accurevEnv, workspace, listener, accurevPath, launcher);
-        AccurevStream stream = streams == null ? null : streams.get(localStream);
-
-        if (stream == null) {
-            // if there was a problem, fall back to simple stream check
-            return checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, localStream,
-                    buildDate);
-        }
-        // There may be changes in a parent stream that we need to factor in.
-        do {
-            if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(),
-                    buildDate)) {
-                return true;
-            }
-            stream = stream.getParent();
-        } while (stream != null && stream.isReceivingChangesFromParent());
-        return false;
-    }
-
     private boolean ensureLoggedInToAccurev(
             AccurevServer server,
             Map<String, String> accurevEnv,
@@ -853,9 +753,9 @@ public class AccurevSCM extends SCM {
                             .equals(requiredUsername);
                     listener.getLogger().println(
                             "Currently authenticated with Accurev server as '"
-                                    + currentUsername
-                                    + (loginRequired ? "', login required"
-                                            : "', not logging in again."));
+                            + currentUsername
+                            + (loginRequired ? "', login required"
+                            : "', not logging in again."));
                 }
             } else {
                 loginRequired = true;
@@ -1069,13 +969,13 @@ public class AccurevSCM extends SCM {
      * @throws InterruptedException
      */
     private boolean checkStreamForChanges(AccurevServer server,
-                                          Map<String, String> accurevEnv,
-                                          FilePath workspace,
-                                          TaskListener listener,
-                                          String accurevPath,
-                                          Launcher launcher,
-                                          String stream,
-                                          Date buildDate)
+            Map<String, String> accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            String accurevPath,
+            Launcher launcher,
+            String stream,
+            Date buildDate)
             throws IOException, InterruptedException {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         latestCodeChangeTransaction.setDate(NO_TRANS_DATE);
@@ -1095,7 +995,7 @@ public class AccurevSCM extends SCM {
 
         listener.getLogger().println(//
                 "Checking transactions of type " + Arrays.asList(validTransactionTypes) + //
-                        " in stream [" + stream + "]");
+                " in stream [" + stream + "]");
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = getLatestTransaction(server, accurevEnv, workspace,
@@ -1286,6 +1186,132 @@ public class AccurevSCM extends SCM {
      */
     private Lock getMandatoryLock() {
         return DESCRIPTOR.ACCUREV_LOCK;
+    }
+
+    @Override
+    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> ab, Launcher lnchr, TaskListener tl) throws IOException, InterruptedException {
+        return SCMRevisionState.NONE;
+    }
+
+    @Override
+    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+        if( project.isInQueue()) {
+            listener.getLogger().println("Project build is currently in queue.");
+            return PollingResult.NO_CHANGES;
+        }
+        if (workspace == null) {
+            // If we're claiming not to need a workspace in order to poll, then
+            // workspace will be null.  In that case, we need to run directly
+            // from the project folder on the master.
+            final File projectDir = project.getRootDir();
+            workspace = new FilePath(projectDir);
+            launcher = Hudson.getInstance().createLauncher(listener);
+        }
+        listener.getLogger().println("Running commands from folder \""+workspace+'"');
+        AccurevServer server = DESCRIPTOR.getServer(serverName);
+
+        final String accurevPath = workspace.act(new FindAccurevClientExe(server));
+
+        final Map<String, String> accurevEnv = new HashMap<String, String>();
+
+        if (!ensureLoggedInToAccurev(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+            listener.getLogger().println("Authentication failure");
+            return PollingResult.NO_CHANGES;
+        }
+
+        if (synctime) {
+            listener.getLogger().println("Synchronizing clock with the server...");
+            if (!synctime(server, accurevEnv, workspace, listener, accurevPath, launcher)) {
+                listener.getLogger().println("Synchronizing clock failure");
+                return PollingResult.NO_CHANGES;
+            }
+        }
+
+        final Run lastBuild = project.getLastBuild();
+        if (lastBuild == null) {
+            listener.getLogger().println("Project has never been built");
+            return PollingResult.BUILD_NOW;
+        }
+        final Date buildDate = lastBuild.getTimestamp().getTime();
+
+        listener.getLogger().println("Last build on " + buildDate);
+
+        final String localStream;
+
+        if (hasStringVariableReference(this.stream)) {
+            ParametersDefinitionProperty paramDefProp = (ParametersDefinitionProperty) project
+                    .getProperty(ParametersDefinitionProperty.class);
+
+            if (paramDefProp == null) {
+                listener.getLogger().println(
+                        "Polling is not supported when stream name has a variable reference '" + this.stream + "'.");
+
+                // as we don't know which stream to check we just state that
+                // there is no changes
+                return PollingResult.NO_CHANGES;
+            }
+
+            // listener.getLogger().println("logout of parameter definitions ...");
+
+            Map<String, String> keyValues = new TreeMap<String, String>();
+
+            /* Scan for all parameter with an associated default values */
+            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
+                // listener.getLogger().println("parameter definition for '" +
+                // paramDefinition.getName() + "':");
+
+                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
+
+                if (defaultValue instanceof StringParameterValue) {
+                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
+
+                    // listener.getLogger().println("parameter default value for '"
+                    // + defaultValue.getName() + " / " +
+                    // defaultValue.getDescription() + "' is '" +
+                    // strdefvalue.value + "'.");
+
+                    keyValues.put(defaultValue.getName(), strdefvalue.value);
+                }
+            }
+
+            final EnvVars environment = new EnvVars(keyValues);
+            localStream = environment.expand(this.stream);
+            listener.getLogger().println("... expanded '" + this.stream + "' to '" + localStream + "'.");
+        } else {
+            localStream = this.stream;
+        }
+
+        if (hasStringVariableReference(localStream)) {
+            listener.getLogger().println(
+                    "Polling is not supported when stream name has a variable reference '" + this.stream + "'.");
+
+            // as we don't know which stream to check we just state that there
+            // is no changes
+            return PollingResult.NO_CHANGES;
+        }
+
+        final Map<String, AccurevStream> streams = this.ignoreStreamParent ? null : getStreams(localStream, server,
+                accurevEnv, workspace, listener, accurevPath, launcher);
+        AccurevStream stream = streams == null ? null : streams.get(localStream);
+
+        if (stream == null) {
+            // if there was a problem, fall back to simple stream check
+            if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, localStream,
+                    buildDate)){
+                return PollingResult.BUILD_NOW;
+            }else{
+                return PollingResult.NO_CHANGES;
+            }
+        }
+        // There may be changes in a parent stream that we need to factor in.
+        do {
+            if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher, stream.getName(),
+                    buildDate)) {
+                return PollingResult.BUILD_NOW;
+            }
+            stream = stream.getParent();
+        } while (stream != null && stream.isReceivingChangesFromParent());
+        return PollingResult.NO_CHANGES;
     }
 
 // -------------------------- INNER CLASSES --------------------------
