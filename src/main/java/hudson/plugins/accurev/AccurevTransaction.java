@@ -4,6 +4,9 @@ import hudson.model.User;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -12,6 +15,7 @@ import java.util.List;
 /**
  * One commit.
  */
+@ExportedBean(defaultVisibility=999)
 public final class AccurevTransaction extends ChangeLogSet.Entry {
     private String revision;
     private User author;
@@ -21,6 +25,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     private List<String> affectedPaths = new ArrayList<String>();
     private int id;
 
+    @Exported
     public String getRevision() {
         return revision;
     }
@@ -29,6 +34,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
         this.revision = revision;
     }
 
+    @Exported
     public User getAuthor() {
         return author;
     }
@@ -43,6 +49,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      *
      * @return never null.
      */
+    @Exported
     public Collection<String> getAffectedPaths() {
         return affectedPaths;
     }
@@ -51,10 +58,12 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
         this.author = User.get(author);
     }
 
+    @Exported
     public String getUser() {// digester wants read/write property, even though it never reads. Duh.
         return author.getDisplayName();
     }
 
+    @Exported
     public Date getDate() {
         return date;
     }
@@ -63,8 +72,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
         this.date = date;
     }
 
+    @Exported
     public String getMsg() {
-        return msg;
+        return (null == msg ? "" : msg);
     }
 
     public void setMsg(String msg) {
@@ -82,6 +92,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
         super.setParent(parent);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
+    @Exported
     public EditType getEditType() {
         if (action.equals("promote"))
             return EditType.EDIT;
@@ -102,6 +113,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      * Enables accurate filtering by AccuRev transaction type since the metod getEditType censors the actual type.
      * @return transaction type of the AccuRev transaction
      */
+    @Exported
     public String getAction() {
         return action;
     }
@@ -111,6 +123,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      * Enables logging with AccuRev transaction id
      * @return transaction id of the AccuRev transaction
      */
+    @Exported
     public int getId() {
         return id;
     }
@@ -137,7 +150,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
                 FIELD_SEPARATOR + //
                 "action" + EQ + action + //
                 FIELD_SEPARATOR + //
-                "msg" + EQ + (msg == null ? "" : msg) + //
+                "msg" + EQ + getMsg() + //
                 ']';
     }
 }
