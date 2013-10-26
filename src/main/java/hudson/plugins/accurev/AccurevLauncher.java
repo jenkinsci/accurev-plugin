@@ -192,11 +192,10 @@ public final class AccurevLauncher {
                 listenerToLogFailuresTo, loggerToLogFailuresTo, new ICmdOutputParser<TResult, TContext>() {
                     public TResult parse(InputStream cmdOutput, TContext context) throws UnhandledAccurevCommandOutput,
                             IOException {
-                        final InputStreamReader readableXmlStream = new InputStreamReader(cmdOutput);
                         XmlPullParser parser = null;
                         try {
                             parser = xmlParserFactory.newPullParser();
-                            parser.setInput(readableXmlStream);
+                            parser.setInput(cmdOutput, null);
                             final TResult result = commandOutputParser.parse(parser, context);
                             parser.setInput(null);
                             parser = null;
@@ -214,7 +213,7 @@ public final class AccurevLauncher {
                                             humanReadableCommandName, ex, loggerToLogFailuresTo,
                                             listenerToLogFailuresTo);
                                 }
-                                readableXmlStream.close();
+                                cmdOutput.close();
                             }
                         }
                     }
