@@ -813,6 +813,10 @@ public class AccurevSCM extends SCM {
             final String accurevPath, //
             final Launcher launcher) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        
+        if(launcher.isUnix()){
+        	cmd.add("sudo");
+        }
         cmd.add(accurevPath);
         cmd.add("synctime");
         addServer(cmd, server);
