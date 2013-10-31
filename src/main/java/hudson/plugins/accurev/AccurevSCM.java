@@ -5,6 +5,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.BuildListener;
+import hudson.model.Cause;
 import hudson.model.ModelObject;
 import hudson.model.ParameterValue;
 import hudson.model.Result;
@@ -26,18 +27,28 @@ import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+import hudson.util.ListBoxModel.Option;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectStreamException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,12 +60,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
@@ -78,16 +97,23 @@ public class AccurevSCM extends SCM {
     private final String depot;
     private final String stream;
     private final boolean ignoreStreamParent;
-    private final boolean useWorkspace;
-    private final boolean usePurgeIfLastFailed;
-    private final boolean useUpdate;
-    private final boolean useRevert;
+    private final boolean useReftree;
+    
+    private final boolean cleanreftree;
+    
     private final boolean useSnapshot;
     private final String snapshotNameFormat;
     private final boolean synctime;
-    private final String workspace;
-    private final String workspaceSubPath;
-
+    private final String reftree;
+    private final String subPath;
+    private final String filterForPollSCM;
+    
+    
+    private static String globalServerName = null;
+    private static String globalDepotName = null;
+    private static String globalStreamName = null;
+    
+    
 // --------------------------- CONSTRUCTORS ---------------------------
 
     /**
@@ -95,29 +121,27 @@ public class AccurevSCM extends SCM {
      */
     @DataBoundConstructor
     public AccurevSCM(String serverName,
-            String depot,
-            String stream,
-            boolean useWorkspace,
-            String workspace,
-            String workspaceSubPath,
-            boolean synctime,
-            boolean useUpdate,
-            boolean usePurgeIfLastFailed,
-            boolean useRevert,
-            boolean useSnapshot,
-            String snapshotNameFormat,
-            boolean ignoreStreamParent) {
+                      String depot,
+                      String stream,
+                      boolean useReftree,
+                      String reftree,
+                      String subPath,
+                      String filterForPollSCM,
+                      boolean synctime,
+                      boolean cleanreftree,  
+                      boolean useSnapshot,
+                      String snapshotNameFormat,
+                      boolean ignoreStreamParent) {
         super();
         this.serverName = serverName;
         this.depot = depot;
         this.stream = stream;
-        this.useWorkspace = useWorkspace;
-        this.workspace = workspace;
-        this.workspaceSubPath = workspaceSubPath;
+        this.useReftree = useReftree;
+        this.reftree = reftree;
+        this.subPath = subPath;
+        this.filterForPollSCM = filterForPollSCM;
         this.synctime = synctime;
-        this.useUpdate = useUpdate;
-        this.usePurgeIfLastFailed = usePurgeIfLastFailed;
-        this.useRevert = useRevert;
+        this.cleanreftree = cleanreftree;
         this.useSnapshot = useSnapshot;
         this.snapshotNameFormat = snapshotNameFormat;
         this.ignoreStreamParent = ignoreStreamParent;
@@ -153,21 +177,30 @@ public class AccurevSCM extends SCM {
     }
 
     /**
-     * Getter for property 'workspace'.
+     * Getter for property 'reftree'.
      *
-     * @return Value for property 'workspace'.
+     * @return Value for property 'reftree'.
      */
-    public String getWorkspace() {
-        return workspace;
+    public String getReftree() {
+        return reftree;
     }
 
     /**
-     * Getter for property 'workspaceSubPath'.
+     * Getter for property 'subPath'.
      *
-     * @return Value for property 'workspaceSubPath'.
+     * @return Value for property 'subPath'.
      */
-    public String getWorkspaceSubPath() {
-        return workspaceSubPath;
+    public String getSubPath() {
+        return subPath;
+    }
+    
+    /**
+     * Getter for property 'filterForPollSCM'.
+     *
+     * @return Value for property 'filterForPollSCM'.
+     */
+    public String getFilterForPollSCM() {
+        return filterForPollSCM;
     }
 
     /**
@@ -197,31 +230,15 @@ public class AccurevSCM extends SCM {
         return synctime;
     }
 
-    /**
-     * Getter for property 'usePurgeIfLastFailed'.
-     *
-     * @return Value for property 'usePurgeIfLastFailed'.
-     */
-    public boolean isUsePurgeIfLastFailed() {
-        return usePurgeIfLastFailed;
-    }
+   
 
     /**
      * Getter for property 'useUpdate'.
      *
      * @return Value for property 'useUpdate'.
      */
-    public boolean isUseUpdate() {
-        return useUpdate;
-    }
-
-    /**
-     * Getter for property 'useRevert'.
-     *
-     * @return Value for property 'useRevert'.
-     */
-    public boolean isUseRevert() {
-        return useRevert;
+    public boolean isCleanreftree() {
+        return cleanreftree;
     }
 
     /**
@@ -234,12 +251,12 @@ public class AccurevSCM extends SCM {
     }
 
     /**
-     * Getter for property 'useWorkspace'.
+     * Getter for property 'useRefTree'.
      *
-     * @return Value for property 'useWorkspace'.
+     * @return Value for property 'useRefTree'.
      */
-    public boolean isUseWorkspace() {
-        return useWorkspace;
+    public boolean isUseReftree() {
+        return useReftree;
     }
 
 // ------------------------ INTERFACE METHODS ------------------------
@@ -263,7 +280,7 @@ public class AccurevSCM extends SCM {
      *  <li>ACCUREV_DEPOT - The depot name</li>
      *  <li>ACCUREV_STREAM - The stream name</li>
      *  <li>ACCUREV_SERVER - The server name</li>
-     *  <li>ACCUREV_WORKSPACE - The workspace name</li>
+     *  <li>ACCUREV_REFTREE - The workspace name</li>
      *  <li>ACCUREV_SUBPATH - The workspace subpath</li>
      *
      * </ul>
@@ -280,10 +297,10 @@ public class AccurevSCM extends SCM {
             env.put("ACCUREV_STREAM", stream);
         if (serverName != null)
             env.put("ACCUREV_SERVER", serverName);
-        if (workspace != null && useWorkspace)
-            env.put("ACCUREV_WORKSPACE", workspace);
-        if (workspaceSubPath != null)
-            env.put("ACCUREV_SUBPATH", workspaceSubPath);
+        if (reftree != null && useReftree)
+            env.put("ACCUREV_REFTREE", reftree);
+        if (subPath != null)
+            env.put("ACCUREV_SUBPATH", subPath);
         // grab the last promote transaction from the changelog file
         String lastTransaction = null;
         // Abstract should have this since checkout should have already run
@@ -293,8 +310,8 @@ public class AccurevSCM extends SCM {
             for (Object o : changeSet.getItems()) {
                 AccurevTransaction t = (AccurevTransaction) o;
                 if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                    lastTransaction = t.getRevision();
-                    break;
+                   lastTransaction = t.getRevision();
+                   break;
                 }
             }
             /*
@@ -315,23 +332,13 @@ public class AccurevSCM extends SCM {
      * {@inheritDoc}
      */
     public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener,
-            File changelogFile) throws IOException, InterruptedException {
+                            File changelogFile) throws IOException, InterruptedException {
 
         final AccurevServer server = DESCRIPTOR.getServer(serverName);
 
         final String accurevPath = workspace.act(new FindAccurevClientExe(server));
 
-        if (!useWorkspace
-                || !useUpdate
-                ||
-                    (
-                     usePurgeIfLastFailed &&
-                     build.getPreviousBuild() != null &&
-                     build.getPreviousBuild().getResult().isWorseThan(Result.UNSTABLE)
-                     )
-            ) {
-            workspace.act(new PurgeWorkspaceContents(listener));
-        }
+       
 
         final Map<String, String> accurevEnv = new HashMap<String, String>();
 
@@ -369,34 +376,34 @@ public class AccurevSCM extends SCM {
             listener.fatalError("The specified stream does not appear to exist!");
             return false;
         }
-        if (useWorkspace && (this.workspace == null || "".equals(this.workspace))) {
-            listener.fatalError("Must specify a workspace");
+        if (useReftree && (this.reftree == null || "".equals(this.reftree))) {
+            listener.fatalError("Must specify a reference tree");
             return false;
         }
 
         final Date startDateOfPopulate;
 
-        if (useWorkspace) {
-            listener.getLogger().println("Getting a list of workspaces...");
-            final Map<String, AccurevWorkspace> workspaces = getWorkspaces(server, accurevEnv, workspace, listener, accurevPath, launcher);
+        if (useReftree) {
+            listener.getLogger().println("Getting a list of reference trees...");
+            final Map<String, AccurevReferenceTree> reftrees = getReftrees(server, accurevEnv, workspace, listener, accurevPath, launcher);
 
-            if (workspaces == null) {
-                listener.fatalError("Cannot determine workspace configuration information");
+            if (reftrees == null) {
+                listener.fatalError("Cannot determine reference tree configuration information");
                 return false;
             }
-            if (!workspaces.containsKey(this.workspace)) {
-                listener.fatalError("The specified workspace does not appear to exist!");
+            if (!reftrees.containsKey(this.reftree)) {
+                listener.fatalError("The specified reference tree does not appear to exist!");
                 return false;
             }
-            AccurevWorkspace accurevWorkspace = workspaces.get(this.workspace);
-            if (!depot.equals(accurevWorkspace.getDepot())) {
-                listener.fatalError("The specified workspace, " + this.workspace + ", is based in the depot " + accurevWorkspace.getDepot() + " not " + depot);
+            AccurevReferenceTree accurevReftree = reftrees.get(this.reftree);
+            if (!depot.equals(accurevReftree.getDepot())) {
+                listener.fatalError("The specified reference tree, " + this.reftree + ", is based in the depot " + accurevReftree.getDepot() + " not " + depot);
                 return false;
             }
 
             for (AccurevStream accurevStream : streams.values()) {
-                if (accurevWorkspace.getStreamNumber().equals(accurevStream.getNumber())) {
-                    accurevWorkspace.setStream(accurevStream);
+                if (accurevReftree.getStreamNumber().equals(accurevStream.getNumber())) {
+                	accurevReftree.setStream(accurevStream);
                     break;
                 }
             }
@@ -405,34 +412,28 @@ public class AccurevSCM extends SCM {
             try {
                 remoteDetails = workspace.act(new DetermineRemoteHostname(workspace.getRemote()));
             } catch (IOException e) {
-                listener.fatalError("Unable to validate workspace host.");
+                listener.fatalError("Unable to validate reference tree host.");
                 e.printStackTrace(listener.getLogger());
                 return false;
             }
 
-            // handle workspace relocation
+            // handle reference tree relocation
             {
                 boolean needsRelocation = false;
                 final ArgumentListBuilder chwscmd = new ArgumentListBuilder();
                 chwscmd.add(accurevPath);
-                chwscmd.add("chws");
+                chwscmd.add("chref");
                 addServer(chwscmd, server);
-                chwscmd.add("-w");
-                chwscmd.add(this.workspace);
-
-                if (!localStream.equals(accurevWorkspace.getStream().getParent().getName())) {
-                    listener.getLogger().println("Parent stream needs to be updated.");
-                    needsRelocation = true;
-                    chwscmd.add("-b");
-                    chwscmd.add(localStream);
-                }
-                if (!accurevWorkspace.getHost().equals(remoteDetails.getHostName())) {
+                chwscmd.add("-r");
+                chwscmd.add(this.reftree);
+               
+                if (!accurevReftree.getHost().equals(remoteDetails.getHostName())) {
                     listener.getLogger().println("Host needs to be updated.");
                     needsRelocation = true;
                     chwscmd.add("-m");
                     chwscmd.add(remoteDetails.getHostName());
                 }
-                final String oldStorage = accurevWorkspace.getStorage()
+                final String oldStorage = accurevReftree.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
                 if (!oldStorage.equals(remoteDetails.getPath())) {
@@ -442,15 +443,13 @@ public class AccurevSCM extends SCM {
                     chwscmd.add(workspace.getRemote());
                 }
                 if (needsRelocation) {
-                    listener.getLogger().println("Relocating workspace...");
-                    listener.getLogger().println("  Old host: " + accurevWorkspace.getHost());
+                    listener.getLogger().println("Relocating Reference Tree...");
+                    listener.getLogger().println("  Old host: " + accurevReftree.getHost());
                     listener.getLogger().println("  New host: " + remoteDetails.getHostName());
                     listener.getLogger().println("  Old storage: " + oldStorage);
                     listener.getLogger().println("  New storage: " + remoteDetails.getPath());
-                    listener.getLogger().println("  Old parent stream: " + accurevWorkspace.getStream().getParent()
-                            .getName());
-                    listener.getLogger().println("  New parent stream: " + localStream);
-                    if (!AccurevLauncher.runCommand("Workspace relocation command", launcher, chwscmd, null,
+                    
+                    if (!AccurevLauncher.runCommand("Reference tree relocation command", launcher, chwscmd, null,
                             getOptionalLock(), accurevEnv, workspace, listener, logger, true)) {
                         return false;
                     }
@@ -458,52 +457,130 @@ public class AccurevSCM extends SCM {
                 }
             }
 
-            if (useRevert) {
-                listener.getLogger().println("attempting to get overlaps");
-                final List<String> overlaps = getOverlaps(server, accurevEnv, workspace, listener, accurevPath, launcher);
-                if (overlaps != null && overlaps.size() > 0) {
-                    workspace.act(new PurgeWorkspaceOverlaps(listener, overlaps));
-                }
-            }
-
-            // Update workspace to contain latest code
+            // Update reference tree to contain latest code
             {
-                listener.getLogger().println("Updating workspace...");
+                listener.getLogger().println("Updating reference tree...");
                 final ArgumentListBuilder updatecmd = new ArgumentListBuilder();
                 updatecmd.add(accurevPath);
                 updatecmd.add("update");
                 addServer(updatecmd, server);
-                if (!AccurevLauncher.runCommand("Workspace update command", launcher, updatecmd, null,
-                        getOptionalLock(), accurevEnv, workspace, listener, logger, true)) {
-                    return false;
-                }
-                listener.getLogger().println("Update completed successfully.");
-            }
-
-            // Now get that into local filesystem
-            {
-                listener.getLogger().println("Populating workspace...");
-                final ArgumentListBuilder popcmd = new ArgumentListBuilder();
-                popcmd.add(accurevPath);
-                popcmd.add("pop");
-                addServer(popcmd, server);
-                popcmd.add("-R");
-                if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
-                    popcmd.add(".");
+                updatecmd.add("-r");
+                updatecmd.add(this.reftree);
+                if ((subPath == null) || (subPath.trim().length() == 0)) {
+                    
                 } else {
-                    final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-                    while (st.hasMoreElements()) {
-                        popcmd.add(st.nextToken().trim());
+		            final StringTokenizer st = new StringTokenizer(subPath, ",");
+		        	while (st.hasMoreElements()) {
+		        		updatecmd.add(st.nextToken().trim());
+		            }
+				}
+                if (AccurevLauncher.runCommand("Reference tree update command", launcher, updatecmd, null,
+                        getOptionalLock(), accurevEnv, workspace, listener, logger, true)) {
+                	listener.getLogger().println("Update completed successfully.");
+                	// Now get that into local filesystem
+                    {
+                        listener.getLogger().println("Populating Reference Tree...");
+                        final ArgumentListBuilder popcmd = new ArgumentListBuilder();
+                        popcmd.add(accurevPath);
+                        popcmd.add("pop");
+                        addServer(popcmd, server);
+                        popcmd.add("-O");
+                        popcmd.add("-R");
+                        if ((subPath == null) || (subPath.trim().length() == 0)) {
+                            popcmd.add(".");
+                        } else {
+        		            final StringTokenizer st = new StringTokenizer(subPath, ",");
+        		        	while (st.hasMoreElements()) {
+        		        		popcmd.add(st.nextToken().trim());
+        		            }
+        				}
+                        startDateOfPopulate = new Date();
+                        if (Boolean.TRUE != AccurevLauncher.runCommand("Populate reference tree command", launcher, popcmd, null,
+                                getOptionalLock(), accurevEnv, workspace, listener, logger, new ParsePopulate(),
+                                listener.getLogger())) {
+                            return false;
+                        }
+                        listener.getLogger().println("Populate completed successfully.");
+                    }
+                    if(cleanreftree){
+                    	final Map<String, RefTreeExternalFile> externalFiles = getReftreesStatus(server, accurevEnv, workspace, listener, accurevPath, launcher);
+                    	File toBeDeleted;
+                    	listener.getLogger().println("externalFiles size -"+externalFiles.size());
+                    	Collection<RefTreeExternalFile> extObjects = externalFiles.values();
+                    	for (RefTreeExternalFile o : extObjects)
+                    	{
+                    		listener.getLogger().println("External File path -"+o.getLocation());
+                    		toBeDeleted= new File(o.getLocation());
+                    		if(toBeDeleted.exists())
+                    		{
+                    			toBeDeleted.delete();
+                    		}
+                    	}          	    
+                    	                       	                           
+                    }
+                } else {
+                	      	
+                    {
+                	listener.getLogger().println("Update failed...");
+                	listener.getLogger().println("Run update -9");
+                    final ArgumentListBuilder update9cmd = new ArgumentListBuilder();
+                    update9cmd.add(accurevPath);
+                    update9cmd.add("update");
+                    addServer(update9cmd, server);
+                    update9cmd.add("-r");
+                    update9cmd.add(this.reftree);
+                    update9cmd.add("-9");
+                    if (!AccurevLauncher.runCommand("Reference tree update -9 command", launcher, update9cmd, null,
+                            getOptionalLock(), accurevEnv, workspace, listener, logger, true)) {
+                    	return false;
+                    }
+                    else{
+                    	// Now get that into local filesystem
+                        {
+                            listener.getLogger().println("Re-populating Reference Tree...");
+                            final ArgumentListBuilder repopcmd = new ArgumentListBuilder();
+                            repopcmd.add(accurevPath);
+                            repopcmd.add("pop");
+                            addServer(repopcmd, server);
+                            repopcmd.add("-O");
+                            repopcmd.add("-R");
+                            if ((subPath == null) || (subPath.trim().length() == 0)) {
+                            	repopcmd.add(".");
+                            } else {
+            		            final StringTokenizer st = new StringTokenizer(subPath, ",");
+            		        	while (st.hasMoreElements()) {
+            		        		repopcmd.add(st.nextToken().trim());
+            		            }
+            				}
+                            startDateOfPopulate = new Date();
+                            if (Boolean.TRUE != AccurevLauncher.runCommand("Re-populate reference tree command", launcher, repopcmd, null,
+                                    getOptionalLock(), accurevEnv, workspace, listener, logger, new ParsePopulate(),
+                                    listener.getLogger())) {
+                                return false;
+                            }
+                            listener.getLogger().println("Re-populate completed successfully.");
+                        }
+                        if(cleanreftree){
+                        	final Map<String, RefTreeExternalFile> externalFiles = getReftreesStatus(server, accurevEnv, workspace, listener, accurevPath, launcher);
+                        	File toBeDeleted;
+                        	for(int i=0; i<externalFiles.size(); i++)
+                        	{
+                        		RefTreeExternalFile extFileObject = externalFiles.get(i);
+                        		listener.getLogger().println("Update failed -- External File path -"+extFileObject.getLocation());
+                        		toBeDeleted= new File(extFileObject.getLocation());
+                        		if(toBeDeleted.exists())
+                        		{
+                        			toBeDeleted.delete();
+                        		}
+                        	}                        	                           
+                        }
+                    }
                     }
                 }
-                startDateOfPopulate = new Date();
-                if (Boolean.TRUE != AccurevLauncher.runCommand("Populate workspace command", launcher, popcmd, null,
-                        getOptionalLock(), accurevEnv, workspace, listener, logger, new ParsePopulate(),
-                        listener.getLogger())) {
-                    return false;
-                }
-                listener.getLogger().println("Populate completed successfully.");
+                
             }
+            
+            
         } else if ( isUseSnapshot() ) {
             final String snapshotName = calculateSnapshotName(build, listener);
             listener.getLogger().println("Creating snapshot: " + snapshotName + "...");
@@ -534,13 +611,13 @@ public class AccurevSCM extends SCM {
             popcmd.add("-L");
             popcmd.add(workspace.getRemote());
             popcmd.add("-R");
-            if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
+            if ((subPath == null) || (subPath.trim().length() == 0)) {
                 popcmd.add(".");
             } else {
-                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-                while (st.hasMoreElements()) {
-                    popcmd.add(st.nextToken().trim());
-                }
+                final StringTokenizer st = new StringTokenizer(subPath, ",");
+            	while (st.hasMoreElements()) {
+            		popcmd.add(st.nextToken().trim());
+				}
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate from snapshot command", launcher, popcmd, null,
@@ -560,13 +637,13 @@ public class AccurevSCM extends SCM {
             popcmd.add("-L");
             popcmd.add(workspace.getRemote());
             popcmd.add("-R");
-            if ((workspaceSubPath == null) || (workspaceSubPath.trim().length() == 0)) {
+            if ((subPath == null) || (subPath.trim().length() == 0)) {
                 popcmd.add(".");
             } else {
-                final StringTokenizer st = new StringTokenizer(workspaceSubPath, ",");
-                while (st.hasMoreElements()) {
-                    popcmd.add(st.nextToken().trim());
-                }
+                final StringTokenizer st = new StringTokenizer(subPath, ",");
+            	while (st.hasMoreElements()) {
+            		popcmd.add(st.nextToken().trim());
+				}
             }
             startDateOfPopulate = new Date();
             if (Boolean.TRUE != AccurevLauncher.runCommand("Populate command", launcher, popcmd, null,
@@ -589,45 +666,27 @@ public class AccurevSCM extends SCM {
         }
 
         {
-			AccurevStream stream = streams == null ? null : streams.get(localStream);
+            AccurevStream stream = streams == null ? null : streams.get(localStream);
 
-			if (stream == null) {
-				// if there was a problem, fall back to simple stream check
-				return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-						startDateOfPopulate, startTime == null ? null : startTime.getTime(),
-						localStream, changelogFile);
-			}
-			// There may be changes in a parent stream that we need to factor in.
-			boolean capturedChangelog = false;
-			boolean foundChange = false;
-			List<String> changedStreams = new ArrayList<String>();
-			do {
-				// This is a best effort to get as close to the changes as possible
-				if (!foundChange) {
-					foundChange = checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
-							stream.getName(), startTime == null ? null : startTime.getTime());
-				}
-				if (foundChange) {
-					do {
-						File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
-						capturedChangelog = captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
-								startDateOfPopulate, startTime == null ? null : startTime
-								.getTime(), stream.getName(), streamChangeLog);
-						if (capturedChangelog) {
-							changedStreams.add(streamChangeLog.getName());
-						}
-						stream = stream.getParent();
-					} while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
-				}
-				if (stream != null) {
-					stream = stream.getParent();
-				}
-			} while (stream != null && stream.isReceivingChangesFromParent() && !foundChange);
-			if (foundChange) {
-				XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile);
-				return capturedChangelog;
-			}
-		}
+            if (stream == null) {
+                // if there was a problem, fall back to simple stream check
+                return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                        startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+                        localStream, changelogFile);
+            }
+            // There may be changes in a parent stream that we need to factor in.
+            // TODO produce a consolidated list of changes from the parent streams
+            do {
+                // This is a best effort to get as close to the changes as possible
+                if (checkStreamForChanges(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                        stream.getName(), startTime == null ? null : startTime.getTime())) {
+                    return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
+                            startDateOfPopulate, startTime == null ? null : startTime
+                            .getTime(), stream.getName(), changelogFile);
+                }
+                stream = stream.getParent();
+            } while (stream != null && stream.isReceivingChangesFromParent());
+        }
         return captureChangelog(server, accurevEnv, workspace, listener, accurevPath, launcher,
                 startDateOfPopulate, startTime == null ? null : startTime.getTime(), localStream,
                 changelogFile);
@@ -641,38 +700,60 @@ public class AccurevSCM extends SCM {
         final String snapshotName = environment.expand(actualFormat);
         return snapshotName;
     }
-
-    private Map<String, AccurevWorkspace> getWorkspaces(AccurevServer server,
+    
+    private Map<String, AccurevReferenceTree> getReftrees(AccurevServer server,
             Map<String, String> accurevEnv,
             FilePath workspace,
             TaskListener listener,
             String accurevPath,
             Launcher launcher)
+		throws IOException, InterruptedException {
+		final ArgumentListBuilder cmd = new ArgumentListBuilder();
+		cmd.add(accurevPath);
+		cmd.add("show");
+		addServer(cmd, server);
+		cmd.add("-fx");        
+		cmd.add("refs");
+		final Map<String, AccurevReferenceTree> reftrees = AccurevLauncher.runCommand("Show ref trees command",
+		launcher, cmd, null, getOptionalLock(), accurevEnv, workspace, listener, logger,
+		XmlParserFactory.getFactory(), new ParseShowReftrees(), null);
+		return reftrees;
+    }
+    
+    //Get status of reference tree files
+    private Map<String, RefTreeExternalFile> getReftreesStatus(AccurevServer server,
+                                                        Map<String, String> accurevEnv,
+                                                        FilePath workspace,
+                                                        TaskListener listener,
+                                                        String accurevPath,
+                                                        Launcher launcher)
             throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
-        cmd.add("show");
+        cmd.add("stat");
         addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("-p");
-        cmd.add(depot);
-        cmd.add("wspaces");
-        final Map<String, AccurevWorkspace> workspaces = AccurevLauncher.runCommand("Show workspaces command",
+        cmd.add("*");
+        cmd.add("-fxa"); 
+        cmd.add("-x");
+        cmd.add("-R");
+        final Map<String, RefTreeExternalFile> externalFiles = AccurevLauncher.runCommand("Files with external file status command",
                 launcher, cmd, null, getOptionalLock(), accurevEnv, workspace, listener, logger,
-                XmlParserFactory.getFactory(), new ParseShowWorkspaces(), null);
-        return workspaces;
+                XmlParserFactory.getFactory(), new ParseRefTreeExternalFile(), null);
+        return externalFiles;
     }
+    
+   
 
     private boolean captureChangelog(AccurevServer server,
-            Map<String, String> accurevEnv,
-            FilePath workspace,
-            BuildListener listener,
-            String accurevPath,
-            Launcher launcher,
-            Date buildDate,
-            Date startDate,
-            String stream,
-            File changelogFile) throws IOException, InterruptedException {
+                                     Map<String, String> accurevEnv,
+                                     FilePath workspace,
+                                     BuildListener listener,
+                                     String accurevPath,
+                                     Launcher launcher,
+                                     Date buildDate,
+                                     Date startDate,
+                                     String stream,
+                                     File changelogFile) throws IOException, InterruptedException {
         ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
         cmd.add("hist");
@@ -731,11 +812,12 @@ public class AccurevSCM extends SCM {
             listener.getLogger().println("Setting " + accurevHomeEnvVar + " to \"" + accurevHome + '"');
         }
         if (server == null) {
-            return true;
+            return false;
         }
         final String requiredUsername = server.getUsername();
         if( requiredUsername==null || requiredUsername.trim().length()==0 ) {
-            return true;
+        	listener.getLogger().println("Authentication failure");
+            return false;
         }
         DESCRIPTOR.ACCUREV_LOCK.lock();
         try {
@@ -753,9 +835,9 @@ public class AccurevSCM extends SCM {
                             .equals(requiredUsername);
                     listener.getLogger().println(
                             "Currently authenticated with Accurev server as '"
-                            + currentUsername
-                            + (loginRequired ? "', login required"
-                            : "', not logging in again."));
+                                    + currentUsername
+                                    + (loginRequired ? "', login required"
+                                            : "', not logging in again."));
                 }
             } else {
                 loginRequired = true;
@@ -813,10 +895,6 @@ public class AccurevSCM extends SCM {
             final String accurevPath, //
             final Launcher launcher) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        
-        if(launcher.isUnix()){
-        	cmd.add("sudo");
-        }
         cmd.add(accurevPath);
         cmd.add("synctime");
         addServer(cmd, server);
@@ -973,13 +1051,13 @@ public class AccurevSCM extends SCM {
      * @throws InterruptedException
      */
     private boolean checkStreamForChanges(AccurevServer server,
-            Map<String, String> accurevEnv,
-            FilePath workspace,
-            TaskListener listener,
-            String accurevPath,
-            Launcher launcher,
-            String stream,
-            Date buildDate)
+                                          Map<String, String> accurevEnv,
+                                          FilePath workspace,
+                                          TaskListener listener,
+                                          String accurevPath,
+                                          Launcher launcher,
+                                          String stream,
+                                          Date buildDate)
             throws IOException, InterruptedException {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         latestCodeChangeTransaction.setDate(NO_TRANS_DATE);
@@ -999,7 +1077,26 @@ public class AccurevSCM extends SCM {
 
         listener.getLogger().println(//
                 "Checking transactions of type " + Arrays.asList(validTransactionTypes) + //
-                " in stream [" + stream + "]");
+                        " in stream [" + stream + "]");
+      
+        Iterator<String> affectedPaths;
+        Collection<String> serverPaths;
+
+        final String FFPSCM_DELIM = ",";
+       
+        Collection<String> Filter_For_Poll_SCM = null;
+        
+        if(filterForPollSCM != null && !(filterForPollSCM.isEmpty())){
+	        String FFPSCM_LIST = filterForPollSCM;
+	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
+	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+        }else{
+        	if(subPath != null && !(subPath.isEmpty())){
+        		String FFPSCM_LIST = subPath;
+    	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
+    	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+        	}
+        }
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = getLatestTransaction(server, accurevEnv, workspace,
@@ -1007,10 +1104,58 @@ public class AccurevSCM extends SCM {
                 if (tempTransaction != null) {
                     listener.getLogger().println(
                             "Last transaction of type [" + transactionType + "] is " + tempTransaction);
+                  
                     if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
-                        latestCodeChangeTransaction = tempTransaction;
+                    	//check the affected
+                    	serverPaths = tempTransaction.getAffectedPaths();
+                    	if(tempTransaction.getAffectedPaths().size()>0){
+                    		if(filterForPollSCM != null && !(filterForPollSCM.isEmpty())){
+		                    		boolean buildRequired = false;
+		                    		for(String filterPath: Filter_For_Poll_SCM){
+		                        		affectedPaths = serverPaths.iterator();
+		                                while(affectedPaths.hasNext()){
+			                                	
+			                                	if(affectedPaths.next().contains(filterPath)){
+			                                		buildRequired = true;
+			                                		break;
+			                                	}
+		                                	
+		                                }
+		                            }
+		                    		if(buildRequired){
+		                         	   
+		                            }else{
+		                         	   return false;
+		                            }
+	                    		}else{
+	                    			if(subPath != null && !(subPath.isEmpty())){
+
+			                    		boolean buildRequired = false;
+			                    		for(String filterPath: Filter_For_Poll_SCM){
+			                        		affectedPaths = serverPaths.iterator();
+			                                while(affectedPaths.hasNext()){
+				                                	
+				                                	if(affectedPaths.next().contains(filterPath)){
+				                                		buildRequired = true;
+				                                		break;
+				                                	}
+			                                	
+			                                }
+			                            }
+			                    		if(buildRequired){
+			                         	   
+			                            }else{
+			                         	   return false;
+			                            }		                    		
+	                    			}
+	                    		}
+                    	}
                     }
-                } else {
+                    latestCodeChangeTransaction = tempTransaction;
+                       
+                    }
+               
+            else {
                     listener.getLogger().println("No transactions of type [" + transactionType + "]");
                 }
             }
@@ -1258,7 +1403,7 @@ public class AccurevSCM extends SCM {
             // listener.getLogger().println("logout of parameter definitions ...");
 
             Map<String, String> keyValues = new TreeMap<String, String>();
-
+    
             /* Scan for all parameter with an associated default values */
             for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
                 // listener.getLogger().println("parameter definition for '" +
@@ -1317,11 +1462,12 @@ public class AccurevSCM extends SCM {
         } while (stream != null && stream.isReceivingChangesFromParent());
         return PollingResult.NO_CHANGES;
     }
-
+  
 // -------------------------- INNER CLASSES --------------------------
 
     public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
-
+  
+    	
         /**
          * The accurev server has been known to crash if more than one copy of the accurev has been run concurrently on
          * the local machine.
@@ -1331,8 +1477,17 @@ public class AccurevSCM extends SCM {
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
         private List<AccurevServer> servers;
+       
+        private static final Logger descriptorlogger = Logger.getLogger(AccurevSCMDescriptor.class.getName());
+        
+        
+   
         private boolean pollOnMaster;
-
+        
+       
+        AccurevServer serverforcmdexec;
+        String accurevPath;
+        
         /**
          * Constructs a new AccurevSCMDescriptor.
          */
@@ -1346,7 +1501,9 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public String getDisplayName() {
-            return "Accurev";
+            
+        	return "AccuRev";
+            
         }
 
         /**
@@ -1365,17 +1522,17 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+        	
             return new AccurevSCM( //
-                    req.getParameter("accurev.serverName"), //
-                    req.getParameter("accurev.depot"), //
-                    req.getParameter("accurev.stream"), //
-                    req.getParameter("accurev.useWorkspace") != null, //
-                    req.getParameter("accurev.workspace"), //
-                    req.getParameter("accurev.workspaceSubPath"), //
+            		globalServerName, //
+            		globalDepotName, //
+            		globalStreamName, //
+                    req.getParameter("accurev.useReftree") != null, //
+                    req.getParameter("accurev.reftree"), //
+                    req.getParameter("accurev.subPath"), //
+                    req.getParameter("accurev.filterForPollSCM"), //
                     req.getParameter("accurev.synctime") != null, //
-                    req.getParameter("accurev.useUpdate") != null, //
-                    req.getParameter("accurev.usePurgeIfLastFailed") != null, //
-                    req.getParameter("accurev.useRevert") != null, //
+                    req.getParameter("accurev.cleanreftree") != null, //  
                     req.getParameter("accurev.useSnapshot") != null, //
                     req.getParameter("accurev.snapshotNameFormat"), //
                     req.getParameter("accurev.ignoreStreamParent") != null);
@@ -1432,18 +1589,277 @@ public class AccurevSCM extends SCM {
             return null;
         }
 
-        /**
-         * Getter for property 'serverNames'.
-         *
-         * @return Value for property 'serverNames'.
-         */
-        public String[] getServerNames() {
-            String[] result = new String[servers.size()];
-            for (int i = 0; i < result.length; i++) {
-                result[i] = servers.get(i).getName();
+       
+        //This method will populate the servers in the select box
+        public ListBoxModel doFillServerNameItems(@QueryParameter String serverName) {  
+            ListBoxModel s = new ListBoxModel();
+            for (AccurevServer server : servers)
+            {            		
+            	s.add(server.getName(), server.getName());            		
             }
-            return result;
+            globalServerName = serverName; 
+            return s;
         }
+        private static String getExistingPath(String[] paths, String fallback) {
+            for (final String path : paths) {
+                if (new File(path).exists()) {
+                    return path;
+                }
+            }
+            // just hope it's on the environment's path
+            return fallback;
+        }
+        //Adding -H Host:Port to the command
+        private static void addServer(List<String> cmd, AccurevServer server) {
+            if (null != server && null != server.getHost() && !"".equals(server.getHost())) {
+                cmd.add("-H");
+                if (server.getPort() != 0) {                	
+                    cmd.add(server.getHost() + ":" + server.getPort());
+                } else {
+                    cmd.add(server.getHost());
+                }
+            }
+        }
+        //Converting the InputStream object to String
+        static String convertStreamToString(java.io.InputStream is) {
+    	    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+    	    return s.hasNext() ? s.next() : "";
+    	}
+        
+        //This method will populate the depots in the select box depending upon the server selected. 
+        public ListBoxModel doFillDepotItems(@QueryParameter String serverName,@QueryParameter String depot) {
+        	final AccurevServer server = getServer(serverName);
+            
+            if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+                // we are running on windows
+        		accurevPath= getExistingPath(server.getWinCmdLocations(), "accurev.exe");
+            } else {
+                // we are running on *nix
+            	accurevPath= getExistingPath(server.getNixCmdLocations(), "accurev");
+            }
+          
+        	ListBoxModel d = null;
+        	Option temp = null;
+        	List<String> depots = new ArrayList<String>();
+        	List<String> logincommand = new ArrayList<String>();
+        	logincommand.add(accurevPath);
+        	logincommand.add("login");
+        	addServer(logincommand,server);         	
+           
+            if (server.isUseNonexpiringLogin()) {
+            	logincommand.add("-n");
+            }
+            logincommand.add(server.getUsername());
+            //If the password is blank, "" should be passed 
+            logincommand.add(server.getPassword().length()==0 ? "\"\"" : server.getPassword());
+        	
+            ProcessBuilder processBuilder = new ProcessBuilder(logincommand);
+            processBuilder.redirectErrorStream(true);
+     
+            Process loginprocess;
+            //Execute the login command first & upon success of that run show depots command. If any of the command's exitvalue is 1 proper error message is logged
+			try {
+				loginprocess = processBuilder.start();
+	            InputStream stdout1 = loginprocess.getInputStream();
+	            String logincmdoutputdata = convertStreamToString(stdout1);
+	            loginprocess.waitFor();
+		            if(loginprocess.exitValue()==0){
+			            
+			            List<String> command2 = new ArrayList<String>();
+			            command2.add("accurev");
+			            command2.add("show");		
+			            addServer(command2,server);		
+			            command2.add("-fx");
+			            command2.add("depots");		            
+			           
+			            ProcessBuilder processBuilder2 = new ProcessBuilder(command2);		   
+			            processBuilder2.redirectErrorStream(true);
+			           
+			            Process depotprocess = processBuilder2.start();
+			            InputStream stdout = depotprocess.getInputStream();
+			            String showcmdoutputdata = convertStreamToString(stdout);
+			            depotprocess.waitFor();
+			            if(depotprocess.exitValue()==0){
+			    			 DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
+			    		        DocumentBuilder parser;
+			    		        parser = factory.newDocumentBuilder();
+		    					Document doc= parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes()));
+		    					doc.getDocumentElement().normalize();			 
+		    					NodeList nList = doc.getElementsByTagName("Element");		 
+		    					for (int i=0; i<nList.getLength(); i++) {
+		    						Node nNode = nList.item(i);
+		    						if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+		    							Element eElement = (Element) nNode;
+		    							depots.add(eElement.getAttribute("Name"));
+		    								 
+		    						}
+		    					}
+			            
+			            }else{
+			            	descriptorlogger.info(showcmdoutputdata);
+			            }
+						
+						
+						
+		            }else{
+		            	descriptorlogger.info(logincmdoutputdata);
+		            }
+	           
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            
+        	d = new ListBoxModel();
+            for (String dname : depots)
+            {            		
+            	d.add(dname, dname);            		           		
+            }          	
+            //Below while loop is for to retain the selected item when you open the Job to reconfigure
+            Iterator<Option> depotsIter = d.iterator();
+            while (depotsIter.hasNext()){
+               	temp = depotsIter.next();
+            	if(depot.equals(temp.name))
+            	{
+            		temp.selected = true;
+            	}
+            }
+            globalDepotName = depot;
+            return d;
+        }
+        
+        //Populating the streams 
+        //This method will populate the depots in the select box depending upon the server selected. 
+        public ListBoxModel doFillStreamItems(@QueryParameter String serverName,@QueryParameter String depot,@QueryParameter String stream) {
+        	
+        	List<PopulateStreams> streams = new ArrayList<PopulateStreams>();
+        	final AccurevServer server = getServer(serverName);
+            
+            if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+                // we are running on windows
+        		accurevPath= getExistingPath(server.getWinCmdLocations(), "accurev.exe");
+            } else {
+                // we are running on *nix
+            	accurevPath= getExistingPath(server.getNixCmdLocations(), "accurev");
+            }
+          
+        	ListBoxModel s = null;
+        	Option preselected = null;
+        	
+        	List<String> logincommand = new ArrayList<String>();
+        	logincommand.add(accurevPath);
+        	logincommand.add("login");
+        	addServer(logincommand,server);         	
+           
+            if (server.isUseNonexpiringLogin()) {
+            	logincommand.add("-n");
+            }
+            logincommand.add(server.getUsername());
+            //If the password is blank, "" should be passed 
+            logincommand.add(server.getPassword().length()==0 ? "\"\"" : server.getPassword());
+        	
+            ProcessBuilder processBuilder = new ProcessBuilder(logincommand);
+            processBuilder.redirectErrorStream(true);
+     
+            Process loginprocess;
+            //Execute the login command first & upon success of that run show streams command. If any of the command's exitvalue is 1 proper error message is logged
+			try {
+				loginprocess = processBuilder.start();
+	            InputStream stdout1 = loginprocess.getInputStream();
+	            String logincmdoutputdata = convertStreamToString(stdout1);
+	            loginprocess.waitFor();
+		            if(loginprocess.exitValue()==0){
+			            
+			            List<String> command2 = new ArrayList<String>();
+			            command2.add("accurev");
+			            command2.add("show");		
+			            addServer(command2,server);		
+			            command2.add("-fx");
+			            command2.add("-p");
+			            command2.add(depot);
+			            command2.add("streams");	
+			            			            		            
+			            ProcessBuilder processBuilder2 = new ProcessBuilder(command2);		   
+			            processBuilder2.redirectErrorStream(true);
+			           
+			            Process streamprocess = processBuilder2.start();
+			            InputStream stdout = streamprocess.getInputStream();
+			            String showcmdoutputdata = convertStreamToString(stdout);
+			            streamprocess.waitFor();
+			            if(streamprocess.exitValue()==0){
+			    			 DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
+			    		        DocumentBuilder parser;
+			    		        parser = factory.newDocumentBuilder();
+		    					Document doc= parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes()));
+		    					doc.getDocumentElement().normalize();			 
+		    					NodeList nList = doc.getElementsByTagName("stream");		 
+		    					for (int i=0; i<nList.getLength(); i++) {
+		    						Node nNode = nList.item(i);
+		    						if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+		    							Element eElement = (Element) nNode;
+		    							if(!(eElement.getAttribute("type").equals("workspace"))){
+			    							PopulateStreams as=new PopulateStreams(eElement.getAttribute("name"),eElement.getAttribute("streamNumber"));		    							
+			    							streams.add(as);
+			    							as = null;
+		    							}
+		    						}
+		    					}
+		    					Collections.sort(streams);
+			            
+			            }else{
+			            	descriptorlogger.info(showcmdoutputdata);
+			            }
+						
+						
+						
+		            }else{
+		            	descriptorlogger.info(logincmdoutputdata);
+		            }
+	           
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            
+        	s = new ListBoxModel();
+        	for (PopulateStreams sname : streams) 
+            {            		
+            	s.add(sname.getName(), sname.getName());            		           		
+            }          	
+            //Below while loop is for to retain the selected item when you open the Job to reconfigure
+            Iterator<Option> streamsIter = s.iterator();
+            while (streamsIter.hasNext()){
+               	preselected = streamsIter.next();
+            	if(stream.equals(preselected.name))
+            	{
+            		preselected.selected = true;
+            	}
+            }
+            
+            globalStreamName = stream;
+            return s;
+        }
+      
+       
+        
     }
 
     /**
@@ -1486,7 +1902,7 @@ public class AccurevSCM extends SCM {
         private static final String VTT_LIST = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<String>(Arrays.asList(VTT_LIST
                 .split(VTT_DELIM)));
-        private static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge";
+        private static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote";
 
         /**
          * Constructs a new AccurevServer.

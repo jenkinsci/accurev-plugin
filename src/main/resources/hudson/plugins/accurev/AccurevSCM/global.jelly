@@ -1,6 +1,6 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <f:section title="Accurev">
+    <f:section title="AccuRev">
         <f:entry title="Servers">
             <f:repeatable var="server" varStatus="loopStatus" items="${descriptor.servers}" minimum="1">
                 <table width="100%">
@@ -20,29 +20,11 @@
                         <input class="setting-input" type="password"
                                name="server.password" value="${server.password}"/>
                     </f:entry>
-                    <f:advanced>
-                        <f:entry title="Port">
+                    <f:entry title="Port">
                             <input class="setting-input number" type="text"
                                    name="server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
                         </f:entry>
-<!-- TODO: Add validation so only valid types can be specified -->
-                        <f:entry title="Valid transaction types" help="/plugin/accurev/help/validTransactionTypes.html" field="validTransactionTypes">
-                            <input class="setting-input" type="text"
-                                   name="server.validTransactionTypes" value="${h.ifThenElse(server==null,'add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge',server.validTransactionTypes)}" />
-                        </f:entry>
-                        <f:entry title="Synchronize AccuRev CLI Operations" help="/plugin/accurev/help/sync-operations.html">
-                            <f:checkbox name="server.syncOperations" checked="${server.syncOperations}" default="true" />
-                        </f:entry>
-                        <f:entry title="Minimise AccuRev Login Operations" help="/plugin/accurev/help/minimise-login-operations.html">
-                            <f:checkbox name="server.minimiseLogins" checked="${server.minimiseLogins}" default="false" />
-                        </f:entry>
-                        <f:entry title="Use Non-expiring Login" help="/plugin/accurev/help/use-nonexpiring-login.html">
-                            <f:checkbox name="server.useNonexpiringLogin" checked="${server.useNonexpiringLogin}" default="false" />
-                        </f:entry>
-                        <f:entry title="Show one stream at a time" help="/plugin/accurev/help/use-restricted-show-streams.html">
-                            <f:checkbox name="server.useRestrictedShowStreams" checked="${server.useRestrictedShowStreams}" default="false" />
-                        </f:entry>
-                    </f:advanced>
+                  
                 </table>
                 <div align="right">
                     <f:repeatableDeleteButton/>

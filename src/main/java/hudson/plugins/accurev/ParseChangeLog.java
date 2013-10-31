@@ -59,15 +59,21 @@ class ParseChangeLog extends ChangeLogParser {
         } catch (XmlPullParserException e) {
             throw new IOException2(e);
         }
-		
+
         logger.info("transactions size = " + transactions.size());
 		return transactions;
-	}
+    }
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile) throws IOException, XmlPullParserException {
         List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
         AccurevTransaction currentTransaction = null;
         boolean inComment = false;
-		boolean inConsolidatedChangeLog = false;
+        boolean inIssueNum = false;
+        boolean inVersion = false;
+        String path = "";
+        String realVersion = "";
+        String issueNum = "";
+        String affectedPathInfo = "";
+	boolean inConsolidatedChangeLog = false;
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:
@@ -77,7 +83,7 @@ class ParseChangeLog extends ChangeLogParser {
             case XmlPullParser.START_TAG:
                 final String tagName = parser.getName();
                 inComment = "comment".equalsIgnoreCase(tagName);
-				inConsolidatedChangeLog = "ChangeLog".equalsIgnoreCase(tagName);
+		inConsolidatedChangeLog = "ChangeLog".equalsIgnoreCase(tagName);
                 if ("transaction".equalsIgnoreCase(tagName)) {
                     currentTransaction = new AccurevTransaction();
                     transactions.add(currentTransaction);
@@ -87,27 +93,45 @@ class ParseChangeLog extends ChangeLogParser {
                             .setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("", "time")));
                     currentTransaction.setAction(parser.getAttributeValue("", "type"));
                 } else if ("version".equalsIgnoreCase(tagName) && currentTransaction != null) {
-                    String path = parser.getAttributeValue("", "path");
+                    path = parser.getAttributeValue("", "path");
                     if (path != null) {
                         path = path.replace("\\", "/");
                         if (path.startsWith("/./")) {
                             path = path.substring(3);
                         }
                     }
-                    currentTransaction.addAffectedPath(path);
+                    inVersion = true;
+                    realVersion = parser.getAttributeValue("", "real");
+                   
+                }else if ("issueNum".equalsIgnoreCase(tagName) && currentTransaction != null) {
+                	inIssueNum = true;
                 }
                 break;
             case XmlPullParser.END_TAG:
-                inComment = false;
+            	final String endTagName = parser.getName();
+            	if ("issueNum".equalsIgnoreCase(endTagName) && inVersion && inIssueNum && currentTransaction != null){
+            		affectedPathInfo = path + "<br/>" + "Version - " + realVersion + "&nbsp;&nbsp;&nbsp;&nbsp;" + "Issue Number - " + issueNum;
+            		currentTransaction.addAffectedPath(affectedPathInfo);
+            		inIssueNum = false;
+                    inVersion=false;
+            	}else if ("version".equalsIgnoreCase(endTagName) && inVersion && currentTransaction != null){
+            		affectedPathInfo = path + "<br/>" + "Version - " + realVersion;
+            		currentTransaction.addAffectedPath(affectedPathInfo);
+            		inVersion=false;
+            	}else if ("comment".equalsIgnoreCase(endTagName)){
+            	    inComment = false;
+            	}
                 break;
             case XmlPullParser.TEXT:
                 if (inComment && currentTransaction != null) {
                     currentTransaction.setMsg(parser.getText());
+                }else if (inVersion && inIssueNum && currentTransaction != null) {
+                	issueNum = parser.getText();                	
                 }
-				if (inConsolidatedChangeLog){
-					File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
-					transactions.addAll(parse(subChangeLog));
-				}
+		if (inConsolidatedChangeLog){
+			File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
+			transactions.addAll(parse(subChangeLog));
+                }
                 break;
             }
         }
