@@ -1,3 +1,5 @@
+.accurev
+.acignore
 target
 work
 .classpath
