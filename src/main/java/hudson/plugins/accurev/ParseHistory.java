@@ -26,6 +26,16 @@ final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTra
                 } else if (parser.getName().equalsIgnoreCase("comment")) {
                     // parse comments
                     resultTransaction.setMsg(parser.nextText());
+                }else if (parser.getName().equalsIgnoreCase("version")) {
+                    // parse path & convert it to standard format
+                	String path = parser.getAttributeValue("", "path");
+                    if (path != null) {
+                        path = path.replace("\\", "/");
+                        if (path.startsWith("/./")) {
+                            path = path.substring(3);
+                        }
+                    }
+                    resultTransaction.addAffectedPath(path);
                 }
             }
         }

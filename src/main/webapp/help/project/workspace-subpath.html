@@ -1,23 +1,17 @@
 <div>
     <p>
-        Some projects do not need to checkout the entire workspace as they only use a portion of the workspace.
-        For example, when accessing a large remote repository to build a sub-module.
+        Some projects only use a portion of the workspace and, in such cases, it is not necessary to check out the entire workspace. For example, when accessing a large remote repository to build a sub-module.
     </p>
 
     <p>
-        If you specify a sub-path "best-effort" will be made to ensure that only that sub-path is populated.
-        Best-effort means that at least the files within the sub-path will be fetched, but side-effects may result in
-        files from other paths being fetched as well:
+        If you specify a sub-path, the plugin makes a "best effort" to ensure that only the sub-path is populated. This means that the files within the sub-path will be fetched, at least, but side-effects may result in files from other paths being fetched as well.
     </p>
-    <ul>
-        <li>
-            The changelog does not currently filter by sub-path. Thus, any change in the repository will trigger a
-            build
-        </li>
-        <li>
-            When using a workspace, it is necessary to update the workspace, this will populate any changed files, not
-            just the ones in the sub-path. The subsequent populate will ensure that at least all the files within the
-            sub-path are fetched.
-        </li>
-    </ul>
-</div>
+    
+    <p>
+        Note that the changelog does not filter by sub-path. Thus, any change in the repository will trigger a build.
+    </p>
+    
+    <p>
+        When using a workspace, you must update the workspace which populates any changed files and not just the files in the sub-path. The subsequent populate ensures that all the files in the sub-path are fetched, at least.
+    </p>
+    

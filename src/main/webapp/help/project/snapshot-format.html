@@ -1,20 +1,13 @@
 <div>
     <p>
-    This configures the way the snapshot is named, allowing the use of environment variables using the same syntax as Ant uses for property expansion.<br/>
-    i.e. a literal <tt>$</tt> must be escaped as <tt>$$</tt>, and <tt>${</tt><i>name</i><tt>}</tt> resolves to the value of environment variable "<i>name</i>".<br/>
-    If not set, the snapshot name defaults to "<i>jobName</i>_<i>buildNumber</i>".
+    If the <b>Create and build from snapshot</b> check box is marked, you can specify the naming conventions for the snapshot in this field. The format you specify configures the manner in which the snapshot is named and it allows the use of environment variables using the same syntax as Apache Ant uses for property expansion. For example, a literal <tt>$</tt> must be escaped by using <tt>$$</tt>, and <tt>${</tt><i>name</i><tt>}</tt> resolves to the value of environment variable "<i>name</i>".
     </p>
+    
     <p>
-    The default is "<tt>${JOB_NAME}_${BUILD_NUMBER}</tt>".
-    It can be set to any combination of literal text and environment variables,
-    subject to AccuRev's snapshot naming restrictions:
-    "<i>The name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a backslash (\)</i>".<br/>
-    e.g. "<tt>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</tt>"
-    would take the name of the stream being built,
-    append an underscore,
-    append the build number
-    and finally append "_Snapshot",
-    which would result in a snapshot name of the form
-    "<tt>MyStreamName_1234_Snapshot</tt>".
+   The <b>Snapshot Name Format</b> can be set to any combination of literal text and environment variables, subject to naming restrictions for AccuRev snapshots. Specifically, the snapshot name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a backslash (\). For example, "<tt>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</tt>" would take the name of the stream being built, append an underscore, append the build number and, finally, append "_Snapshot", which would result in a snapshot name of the form "MyStreamName_1234_Snapshot".
+    </p>
+    
+    <p>
+   If this option is not set, the snapshot name defaults to "<tt>${JOB_NAME}_${BUILD_NUMBER}</tt>".
     </p>
 </div>
