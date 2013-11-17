@@ -26,6 +26,9 @@
 					<f:checkbox name="accurev.cleanreftree" checked="${scm.cleanreftree}"/>
 				</f:entry>           
 			</f:optionalBlock>
+		    <f:entry title="Directory Offset" help="/plugin/accurev/help/project/directoryoffset.html">
+				<f:textbox name="accurev.directoryOffset" value="${scm.directoryOffset}" />
+			</f:entry>
 			<f:entry title="Sub-path" help="/plugin/accurev/help/project/subpath.html">
 				<f:textbox name="accurev.subPath" value="${scm.subPath}"/>
 			</f:entry>
