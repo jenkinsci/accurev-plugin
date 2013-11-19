@@ -96,7 +96,7 @@ public class AccurevSCM extends SCM {
     private final String serverName;
     private final String depot;
     private final String stream;
-    private final AccuRevWorkspaceProcessor accurevWorkspace;
+    private final AccuRevWorkspaceProcessor _accurevWorkspace;
     private final boolean ignoreStreamParent;
     private final boolean useReftree;
     
@@ -141,7 +141,7 @@ public class AccurevSCM extends SCM {
         this.depot = depot;
         this.stream = stream;
         
-        this.accurevWorkspace = new AccuRevWorkspaceProcessor(req);
+        this._accurevWorkspace = new AccuRevWorkspaceProcessor(req);
 
         this.useReftree = useReftree;
         this.reftree = reftree;
@@ -495,6 +495,10 @@ public class AccurevSCM extends SCM {
           
           return true;
        }
+
+      public boolean is_useAccurevWorkspace() {
+         return _useAccurevWorkspace;
+      }
     }
     
     private class AccuRevRefTreeProcessor {
@@ -802,10 +806,10 @@ public class AccurevSCM extends SCM {
            boolean result = rTree.checkoutRefTree( launcher, listener, server, accurevEnv, jenkinsWorkspace, accurevClientExePath, accurevWorkingSpace, streams );
            if (!result) return result;
            startDateOfPopulate = rTree.get_startDateOfPopulate();
-        } else if ( this.accurevWorkspace._useAccurevWorkspace ) {
-           boolean result = this.accurevWorkspace.checkoutWorkspace( launcher, listener, server, accurevEnv, jenkinsWorkspace, accurevClientExePath, accurevWorkingSpace, streams, localStream );
+        } else if ( _accurevWorkspace != null && _accurevWorkspace.is_useAccurevWorkspace() ) {
+           boolean result = _accurevWorkspace.checkoutWorkspace( launcher, listener, server, accurevEnv, jenkinsWorkspace, accurevClientExePath, accurevWorkingSpace, streams, localStream );
            if (!result) return result;
-           startDateOfPopulate = this.accurevWorkspace.get_startDateOfPopulate();           
+           startDateOfPopulate = _accurevWorkspace.get_startDateOfPopulate();           
         } else if ( isUseSnapshot() ) {
             final String snapshotName = calculateSnapshotName(build, listener);
             listener.getLogger().println("Creating snapshot: " + snapshotName + "...");
