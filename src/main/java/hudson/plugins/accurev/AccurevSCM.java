@@ -5,27 +5,27 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.BuildListener;
-//import hudson.model.Cause;
 import hudson.model.ModelObject;
 import hudson.model.ParameterValue;
-//import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Hudson;
 import hudson.model.ParameterDefinition;
+import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.plugins.jetty.security.Password;
 import hudson.scm.ChangeLogParser;
-import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMDescriptor;
-import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
+import hudson.scm.ChangeLogSet;
+import hudson.scm.SCM;
 import hudson.util.ArgumentListBuilder;
+import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.ListBoxModel.Option;
@@ -35,9 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamException;
-//import java.io.OutputStream;
-//import java.io.PrintStream;
-//import java.io.PrintWriter;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,11 +71,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
- * Created by IntelliJ IDEA.
- *
  * @author connollys
  * @since 09-Oct-2007 16:17:34
  */
@@ -109,13 +103,7 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
-    
-    
-    private static String globalServerName = null;
-    private static String globalDepotName = null;
-    private static String globalStreamName = null;
-    
-    
+
 // --------------------------- CONSTRUCTORS ---------------------------
 
     /**
@@ -307,6 +295,7 @@ public class AccurevSCM extends SCM {
     public void buildEnvVars(AbstractBuild<?,?> build, Map<String, String> env) {
         // call super even though SCM.buildEnvVars currently does nothing - this could change
         super.buildEnvVars(build, env);
+        AccurevServer acserver = DESCRIPTOR.getServer(serverName);
         // add various accurev-specific variables to the environment
         if (depot != null)
             env.put("ACCUREV_DEPOT", depot);
@@ -314,6 +303,10 @@ public class AccurevSCM extends SCM {
             env.put("ACCUREV_STREAM", stream);
         if (serverName != null)
             env.put("ACCUREV_SERVER", serverName);
+        if (acserver != null && acserver.getHost() != null)
+        	env.put("ACCUREV_SERVER_HOSTNAME", acserver.getHost());
+        if (acserver != null && acserver.getPort() > 0) 
+        	env.put("ACCUREV_SERVER_PORT", Integer.toString(acserver.getPort()));
         if (reftree != null && useReftree)
             env.put("ACCUREV_REFTREE", reftree);
         if (subPath != null)
@@ -343,6 +336,7 @@ public class AccurevSCM extends SCM {
         if (lastTransaction != null) {
             env.put("ACCUREV_LAST_TRANSACTION", lastTransaction);
         }
+
     }
 
     private class AccuRevWorkspaceProcessor {
@@ -755,6 +749,7 @@ public class AccurevSCM extends SCM {
 
         final AccurevServer server = DESCRIPTOR.getServer(serverName);
         final String accurevClientExePath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
+        build.addAction(new ParametersAction(new StringParameterValue("ACCUREV_CLIENT_PATH", accurevClientExePath)));
         final FilePath accurevWorkingSpace = new FilePath (jenkinsWorkspace, directoryOffset == null ? "" : directoryOffset);
         final Map<String, String> accurevEnv = new HashMap<String, String>();
         
@@ -791,7 +786,7 @@ public class AccurevSCM extends SCM {
                 launcher);
 
         if (streams != null && !streams.containsKey(localStream)) {
-            listener.fatalError("The specified stream does not appear to exist!");
+            listener.fatalError("The specified stream, '" + localStream + "' does not appear to exist!");
             return false;
         }
         if (useReftree && (this.reftree == null || "".equals(this.reftree))) {
@@ -845,7 +840,28 @@ public class AccurevSCM extends SCM {
               return false;
            }            
         }
-
+        
+        listener.getLogger().println("Calculating latest transaction info for stream: " + localStream + ".");
+        try {
+			AccurevTransaction latestTransaction = getLatestTransaction(
+					server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher, localStream, null);
+			if (latestTransaction == null) {
+				throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
+			}
+			int latestTransactionID = latestTransaction.getId();
+			String latestTransactionDate = ACCUREV_DATETIME_FORMATTER.format(latestTransaction.getDate());
+			latestTransactionDate = latestTransactionDate == null ? "1970/01/01 00:00:00" : latestTransactionDate;
+			listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
+			listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
+			List<ParameterValue> params = new ArrayList<ParameterValue>();
+			params.add(new StringParameterValue("ACCUREV_LATEST_TRANSACTION_ID", Integer.toString(latestTransactionID)));
+			params.add(new StringParameterValue("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate));
+	    	build.addAction(new ParametersAction(params));
+        } catch (Exception e) {
+        	listener.error("There was a problem getting the latest transaction info from the stream.");
+        	e.printStackTrace(listener.getLogger());
+		}
+        
         listener.getLogger().println(
                 "Calculating changelog" + (ignoreStreamParent ? ", ignoring changes in parent" : "") + "...");
 
@@ -856,7 +872,7 @@ public class AccurevSCM extends SCM {
         } else {
             startTime = build.getPreviousBuild().getTimestamp();
         }
-
+                
         {
             AccurevStream stream = streams == null ? null : streams.get(localStream);
 
@@ -884,7 +900,7 @@ public class AccurevSCM extends SCM {
                 changelogFile);
     }
 
-    private String calculateSnapshotName(final AbstractBuild<?, ?> build,
+	private String calculateSnapshotName(final AbstractBuild<?, ?> build,
             final BuildListener listener) throws IOException, InterruptedException {
         final String actualFormat = (snapshotNameFormat == null || snapshotNameFormat
                 .trim().isEmpty()) ? DEFAULT_SNAPSHOT_NAME_FORMAT : snapshotNameFormat.trim();
@@ -1380,7 +1396,7 @@ public class AccurevSCM extends SCM {
      * @param accurevPath
      * @param launcher
      * @param stream
-     * @param transactionType Specify what type of transaction to search for
+     * @param transactionType Specify what type of transaction to search for (can be null)
      * @return the latest transaction of the specified type from the selected stream
      * @throws Exception
      */
@@ -1406,8 +1422,10 @@ public class AccurevSCM extends SCM {
         cmd.add(stream);
         cmd.add("-t");
         cmd.add("now.1");
-        cmd.add("-k");
-        cmd.add(transactionType);
+        if (transactionType != null) {
+	        cmd.add("-k");
+	        cmd.add(transactionType);
+        }
 
         // execute code that extracts the latest transaction
         final List<AccurevTransaction> transaction = new ArrayList<AccurevTransaction>(1);
@@ -1430,7 +1448,6 @@ public class AccurevSCM extends SCM {
      * Helper method to retrieve include/exclude rules for a given stream.
      *
      * @return HashMap key: String path , val: String (enum) incl/excl rule type
-     */
     private HashMap<String, String> getIncludeExcludeRules(//
             final AccurevServer server, //
             final Map<String, String> accurevEnv, //
@@ -1463,6 +1480,7 @@ public class AccurevSCM extends SCM {
 
         return locationToKindMap;
     }
+     */
 
     /**
      * @return The currently logged in user "Principal" name, which may be
@@ -1668,15 +1686,14 @@ public class AccurevSCM extends SCM {
          * client on the same machine logs in again.
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
-        private List<AccurevServer> servers;
+        private List<AccurevServer> _servers;
+        // The servers field is here for backwards compatibility.
+        // The transient modifier means it won't be written to the config file
+        private transient List<AccurevServer> servers;
        
         private static final Logger descriptorlogger = Logger.getLogger(AccurevSCMDescriptor.class.getName());
         
-        
-   
         private boolean pollOnMaster;
-        
-       
         AccurevServer serverforcmdexec;
         String accurevPath;
         
@@ -1703,7 +1720,7 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            servers = req.bindJSONToList(AccurevServer.class, formData.get("server"));
+            this._servers = req.bindJSONToList(AccurevServer.class, formData.get("server"));
             pollOnMaster = req.getParameter("descriptor.pollOnMaster") != null;
             save();
             return true;
@@ -1716,9 +1733,9 @@ public class AccurevSCM extends SCM {
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
         	
             return new AccurevSCM( //
-            		globalServerName, //
-            		globalDepotName, //
-            		globalStreamName, //
+            		req.getParameter("_.serverName"), //
+            		req.getParameter("_.depot"), //
+            		req.getParameter("_.stream"), //
             		req,
                     req.getParameter("accurev.useReftree") != null, //
                     req.getParameter("accurev.reftree"), //
@@ -1738,10 +1755,16 @@ public class AccurevSCM extends SCM {
          * @return Value for property 'servers'.
          */
         public List<AccurevServer> getServers() {
-            if (servers == null) {
-                servers = new ArrayList<AccurevServer>();
+            if (this._servers == null) {
+               this._servers = new ArrayList<AccurevServer>();
             }
-            return servers;
+            // We put this here to maintain backwards compatibility 
+            // because we changed the name of the 'servers' field to '_servers'
+            if (this.servers != null) {
+            	this._servers.addAll(servers);
+            	servers = null;
+            }
+            return this._servers;
         }
 
         /**
@@ -1750,7 +1773,7 @@ public class AccurevSCM extends SCM {
          * @param servers Value to set for property 'servers'.
          */
         public void setServers(List<AccurevServer> servers) {
-            this.servers = servers;
+           this._servers = servers;
         }
 
         /**
@@ -1775,7 +1798,7 @@ public class AccurevSCM extends SCM {
             if (name == null) {
                 return null;
             }
-            for (AccurevServer server : servers) {
+            for (AccurevServer server : this._servers) {
                 if (name.equals(server.getName())) {
                     return server;
                 }
@@ -1786,14 +1809,19 @@ public class AccurevSCM extends SCM {
        
         //This method will populate the servers in the select box
         public ListBoxModel doFillServerNameItems(@QueryParameter String serverName) {  
+   
             ListBoxModel s = new ListBoxModel();
-            for (AccurevServer server : servers)
-            {            		
-            	s.add(server.getName(), server.getName());            		
+   
+            if (this._servers == null)
+               return s;
+   
+            for (AccurevServer server : this._servers) {
+               s.add(server.getName(), server.getName());
             }
-            globalServerName = serverName; 
+            
             return s;
         }
+        
         private static String getExistingPath(String[] paths, String fallback) {
             for (final String path : paths) {
                 if (new File(path).exists()) {
@@ -1822,26 +1850,45 @@ public class AccurevSCM extends SCM {
     	    s.close();
     	    return stream;
     	}
+
+        private AccurevServer getServerAndPath(String serverName) {
+           final AccurevServer server = getServer(serverName);
+           
+           if ( server == null ) {
+              descriptorlogger.log(Level.INFO, "Server not found for server name:"+serverName);
+              return null;
+           }
+           
+           if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+              // we are running on windows
+              this.accurevPath = getExistingPath(server.getWinCmdLocations(), "accurev.exe");
+           } else {
+              // we are running on *nix
+              this.accurevPath = getExistingPath(server.getNixCmdLocations(), "accurev");
+           }
+           
+           if ( accurevPath == null ) {
+              descriptorlogger.log(Level.INFO, "Server accurev binary not found for server name:"+serverName);
+           }
+           
+           return server;
+        }
         
         //This method will populate the depots in the select box depending upon the server selected. 
         public ListBoxModel doFillDepotItems(@QueryParameter String serverName,@QueryParameter String depot) {
-        	final AccurevServer server = getServer(serverName);
-            
-            if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-                // we are running on windows
-        		accurevPath= getExistingPath(server.getWinCmdLocations(), "accurev.exe");
-            } else {
-                // we are running on *nix
-            	accurevPath= getExistingPath(server.getNixCmdLocations(), "accurev");
+            final AccurevServer server = getServerAndPath(serverName);
+            if ( server == null ) {
+               descriptorlogger.info("Failed to find server.");
+               return null;
             }
-          
-        	ListBoxModel d = null;
-        	Option temp = null;
-        	List<String> depots = new ArrayList<String>();
-        	List<String> logincommand = new ArrayList<String>();
-        	logincommand.add(accurevPath);
-        	logincommand.add("login");
-        	addServer(logincommand,server);         	
+            
+            ListBoxModel d = null;
+            Option temp = null;
+            List<String> depots = new ArrayList<String>();
+            List<String> logincommand = new ArrayList<String>();
+            logincommand.add(accurevPath);
+            logincommand.add("login");
+            addServer(logincommand, server);
            
             if (server.isUseNonexpiringLogin()) {
             	logincommand.add("-n");
@@ -1937,27 +1984,18 @@ public class AccurevSCM extends SCM {
             		temp.selected = true;
             	}
             }
-            globalDepotName = depot;
             return d;
         }
         
         //Populating the streams 
-        //This method will populate the depots in the select box depending upon the server selected. 
-        public ListBoxModel doFillStreamItems(@QueryParameter String serverName,@QueryParameter String depot,@QueryParameter String stream) {
-        	
-        	List<PopulateStreams> streams = new ArrayList<PopulateStreams>();
-        	final AccurevServer server = getServer(serverName);
-            
-            if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-                // we are running on windows
-        		accurevPath= getExistingPath(server.getWinCmdLocations(), "accurev.exe");
-            } else {
-                // we are running on *nix
-            	accurevPath= getExistingPath(server.getNixCmdLocations(), "accurev");
-            }
-          
-        	ListBoxModel s = null;
-        	Option preselected = null;
+        public ComboBoxModel doFillStreamItems(@QueryParameter String serverName, @QueryParameter String depot) {
+
+        	ComboBoxModel cbm = new ComboBoxModel();
+	        final AccurevServer server = getServerAndPath(serverName);
+	        if ( server == null ) {
+	           descriptorlogger.warning("Failed to find server.");
+	           return null;
+	        }
         	
         	List<String> logincommand = new ArrayList<String>();
         	logincommand.add(accurevPath);
@@ -1983,7 +2021,7 @@ public class AccurevSCM extends SCM {
 	            stdout1 = loginprocess.getInputStream();
 	            String logincmdoutputdata = convertStreamToString(stdout1);
 	            loginprocess.waitFor();
-		            if(loginprocess.exitValue()==0){
+		            if(loginprocess.exitValue()==0) {
 			            
 			            List<String> command2 = new ArrayList<String>();
 			            command2.add("accurev");
@@ -2001,7 +2039,7 @@ public class AccurevSCM extends SCM {
 			            stdout = streamprocess.getInputStream();
 			            String showcmdoutputdata = convertStreamToString(stdout);
 			            streamprocess.waitFor();
-			            if(streamprocess.exitValue()==0){
+			            if(streamprocess.exitValue() == 0) {
 			    			 DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
 			    		        DocumentBuilder parser;
 			    		        parser = factory.newDocumentBuilder();
@@ -2012,64 +2050,35 @@ public class AccurevSCM extends SCM {
 		    						Node nNode = nList.item(i);
 		    						if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 		    							Element eElement = (Element) nNode;
-		    							if(!(eElement.getAttribute("type").equals("workspace"))){
-			    							PopulateStreams as=new PopulateStreams(eElement.getAttribute("name"),eElement.getAttribute("streamNumber"));		    							
-			    							streams.add(as);
-			    							as = null;
-		    							}
+		    							cbm.add(eElement.getAttribute("name"));
 		    						}
 		    					}
-		    					Collections.sort(streams);
+		    					Collections.sort(cbm);
 			            
-			            }else{
-			            	descriptorlogger.info(showcmdoutputdata);
+			            } else {
+			            	descriptorlogger.warning("The show streams command produced an error: " + showcmdoutputdata);
 			            }
-						
-						
-						
-		            }else{
-		            	descriptorlogger.info(logincmdoutputdata);
+		            } else {
+		            	descriptorlogger.warning(logincmdoutputdata);
 		            }
 	           
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				descriptorlogger.log(Level.WARNING, "Could not populate stream list.", e);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				descriptorlogger.log(Level.WARNING, "Could not populate stream list.", e);
 			} catch (ParserConfigurationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				descriptorlogger.log(Level.WARNING, "Could not populate stream list.", e);
 			} catch (SAXException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				descriptorlogger.log(Level.WARNING, "Could not populate stream list.", e);
 			} finally {
 				try {
 					stdout.close();
 					stdout1.close();
 				} catch (IOException e) {}
-			}
+			}      	
             
-        	s = new ListBoxModel();
-        	for (PopulateStreams sname : streams) 
-            {            		
-            	s.add(sname.getName(), sname.getName());            		           		
-            }          	
-            //Below while loop is for to retain the selected item when you open the Job to reconfigure
-            Iterator<Option> streamsIter = s.iterator();
-            while (streamsIter.hasNext()){
-               	preselected = streamsIter.next();
-            	if(stream.equals(preselected.name))
-            	{
-            		preselected.selected = true;
-            	}
-            }
-            
-            globalStreamName = stream;
-            return s;
+            return cbm;
         }
-      
-       
         
     }
 
