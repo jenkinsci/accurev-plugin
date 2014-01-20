@@ -652,14 +652,12 @@ public class AccurevSCM extends SCM {
                      
                       if(cleanreftree){
                          final Map<String, RefTreeExternalFile> externalFiles = getReftreesStatus(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher);
-                         File toBeDeleted;
-                         for(int i=0; i<externalFiles.size(); i++)
-                         {
-                            RefTreeExternalFile extFileObject = externalFiles.get(i);
-                            listener.getLogger().println("Update failed -- External File path -"+extFileObject.getLocation());
-                            toBeDeleted= new File(extFileObject.getLocation());
-                            if(toBeDeleted.exists())
-                            {
+
+                         for(RefTreeExternalFile extFileObject : externalFiles.values()) {
+                            String fileLocation = extFileObject.getLocation();
+                            listener.getLogger().println("Update failed -- External File path - " + fileLocation);
+                            File toBeDeleted = new File(fileLocation);
+                            if(toBeDeleted.exists()) {
                                toBeDeleted.delete();
                             }
                          }                                                     
