@@ -425,7 +425,7 @@ public class AccurevSCM extends SCM {
                   chwscmd.add("-b");
                   chwscmd.add(localStream);
               }
-              if (!accurevWorkspace.getHost().equals(remoteDetails.getHostName())) {
+              if (!accurevWorkspace.getHost().equalsIgnoreCase(remoteDetails.getHostName())) {
                   listener.getLogger().println("Host needs to be updated.");
                   needsRelocation = true;
                   chwscmd.add("-m");
@@ -434,7 +434,7 @@ public class AccurevSCM extends SCM {
               final String oldStorage = accurevWorkspace.getStorage()
                       .replace("/", remoteDetails.getFileSeparator())
                       .replace("\\", remoteDetails.getFileSeparator());
-              if (!oldStorage.equals(remoteDetails.getPath())) {
+              if (!new File(oldStorage).equals(new File(remoteDetails.getPath()))) {
                   listener.getLogger().println("Storage needs to be updated.");
                   needsRelocation = true;
                   chwscmd.add("-l");
