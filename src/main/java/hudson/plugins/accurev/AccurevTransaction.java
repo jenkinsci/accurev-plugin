@@ -17,21 +17,52 @@ import java.util.List;
  */
 @ExportedBean(defaultVisibility=999)
 public final class AccurevTransaction extends ChangeLogSet.Entry {
-    private String revision;
+//    private String revision;
     private User author;
     private Date date;
     private String msg;
     private String action;
     private List<String> affectedPaths = new ArrayList<String>();
-    private int id;
-
+    private List<String> fileRevisions = new ArrayList<String>();
+    private String id;
+    private String issueNum;
+    private String webuiURLforTrans;
+    private String webuiURLforIssue;
+    
     @Exported
+    public String getIssueNum() {
+		return issueNum;
+	}
+
+	public void setIssueNum(String issueNum) {
+		this.issueNum = issueNum;
+	}
+
+	@Exported
+    public String getWebuiURLforTrans() {
+		return webuiURLforTrans;
+	}
+
+	public void setWebuiURLforTrans(String webuiURLforTrans) {
+		this.webuiURLforTrans = webuiURLforTrans;
+	}
+	
+	@Exported
+    public String getWebuiURLforIssue() {
+		return webuiURLforIssue;
+	}
+
+	public void setWebuiURLforIssue(String webuiURLforIssue) {
+		this.webuiURLforIssue = webuiURLforIssue;
+	}
+	
+	/*@Exported
     public String getRevision() {
         return revision;
-    }
+    }*/
 
-    public void setRevision(String revision) {
-        this.revision = revision;
+	public void addFileRevision(String revision) {
+		fileRevisions.add(revision);
     }
 
     @Exported
@@ -52,6 +83,11 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     @Exported
     public Collection<String> getAffectedPaths() {
         return affectedPaths;
+    }
+    
+    @Exported
+    public Collection<String> getFileRevisions() {
+        return fileRevisions;
     }
 
     public void setUser(String author) {
@@ -124,7 +160,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      * @return transaction id of the AccuRev transaction
      */
     @Exported
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -132,7 +168,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      * Setter for id
      * @param id transaction id of the AccuRev transaction
      */
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

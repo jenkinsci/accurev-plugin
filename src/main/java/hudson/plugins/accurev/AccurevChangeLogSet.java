@@ -3,9 +3,12 @@ package hudson.plugins.accurev;
 import hudson.model.AbstractBuild;
 import hudson.scm.ChangeLogSet;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import org.kohsuke.stapler.export.Exported;
 
 /**
  * Created by IntelliJ IDEA.
@@ -33,5 +36,14 @@ final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> {
 
     public Iterator<AccurevTransaction> iterator() {
         return transactions.iterator();
+    }
+
+	public Collection<AccurevTransaction> getLogs() {
+		return transactions;
+	}
+	
+	@Exported
+    public String getKind() {
+        return "accurev";
     }
 }

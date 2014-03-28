@@ -8,7 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-final class ParseOutputToFile implements ICmdOutputParser<Boolean, File> {
+public final class ParseOutputToFile implements ICmdOutputParser<Boolean, File> {
     public Boolean parse(InputStream cmdOutput, File fileToWriteTo) throws UnhandledAccurevCommandOutput, IOException {
         final FileOutputStream os = new FileOutputStream(fileToWriteTo);
         final byte[] buffer = new byte[4096];

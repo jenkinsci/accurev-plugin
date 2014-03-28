@@ -22,7 +22,24 @@
                         <td colspan="2" class="changeset">
                             <a name="detail${loop.index}"></a>
                             <div class="changeset-message">
-                                <b>Transaction ${cs.revision} by
+								
+								<j:choose>
+									<j:when test="${!empty(cs.issueNum) &amp;&amp; empty(cs.webuiURLforIssue)}">
+										<b>AccuWork Issue Number - ${cs.issueNum}</b>
+										<br/>
+									</j:when>
+									<j:when test="${!empty(cs.issueNum) &amp;&amp; !empty(cs.webuiURLforIssue)}">
+										<b>AccuWork Issue Number - <a href="${cs.webuiURLforIssue}">${cs.issueNum}</a></b>
+										<br/>
+									</j:when>
+									<j:otherwise></j:otherwise>									
+								</j:choose>								
+                                <b>Transaction 
+								<j:choose>
+									<j:when test="${empty(cs.webuiURLforTrans)}">${cs.id}</j:when>									
+									<j:otherwise><a href="${cs.webuiURLforTrans}">${cs.id}</a></j:otherwise>
+								</j:choose>
+								 by
                                     <a href="${rootURL}/${cs.author.url}/">${cs.author}</a>
                                     :
                                 </b>
@@ -37,9 +54,8 @@
                                 </td>
                                 <td>${p}</td>
                             </tr>
-                        </j:forEach>
+                        </j:forEach>						
                     </tr>
-
                 </j:forEach>
             </table>
         </j:otherwise>

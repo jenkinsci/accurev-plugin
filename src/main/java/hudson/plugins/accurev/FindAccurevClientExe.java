@@ -1,16 +1,18 @@
 package hudson.plugins.accurev;
 
 import hudson.FilePath;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.remoting.VirtualChannel;
 
 import java.io.File;
 import java.io.IOException;
 
+@SuppressWarnings("serial")
 final class FindAccurevClientExe implements FilePath.FileCallable<String> {
 
-    private final AccurevSCM.AccurevServer server;
+    private final AccurevServer server;
 
-    public FindAccurevClientExe(AccurevSCM.AccurevServer server) {
+    public FindAccurevClientExe(AccurevServer server) {
         this.server = server;
     }
 

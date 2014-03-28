@@ -17,16 +17,30 @@
 		</f:entry>
 		<f:section title="Advanced Options">
         <f:advanced>
-			<f:optionalBlock name="accurev.useReftree" title="Use Reference Tree" checked="${scm.useReftree}"
-							 help="/plugin/accurev/help/project/reftree.html">
+			<f:radioBlock name="accurev.wspaceORreftree" value="wspace" title="Use Workspace" checked="${scm.useWorkspace}"
+                  help="/plugin/accurev/help/project/workspace.html">
+				  <f:entry title="Workspace">
+					<f:textbox name="accurev.workspace" value="${scm.workspace}"/>
+				  </f:entry>
+			</f:radioBlock>			
+			<f:radioBlock name="accurev.wspaceORreftree" value="reftree" title="Use Reference Tree" checked="${scm.useReftree}"
+                  help="/plugin/accurev/help/project/reftree.html">
 				<f:entry title="Reference Tree">
 					<f:textbox name="accurev.reftree" value="${scm.reftree}"/>
 				</f:entry>            
 				<f:entry title="Clean Reference Tree" help="/plugin/accurev/help/project/cleanreftree.html">
 					<f:checkbox name="accurev.cleanreftree" checked="${scm.cleanreftree}"/>
-				</f:entry>           
-			</f:optionalBlock>
-		    <f:entry title="Directory Offset" help="/plugin/accurev/help/project/directoryoffset.html">
+				</f:entry>
+			</f:radioBlock>
+			<j:if test="${scm == null}">
+			<f:radioBlock name="accurev.wspaceORreftree" value="none" title="Neither" checked="${true}" />	
+			</j:if>
+			<j:if test="${scm != null}">
+			<f:radioBlock name="accurev.wspaceORreftree" value="none" title="Neither" checked="${scm.noWspaceNoReftree}" />	
+			</j:if>
+			<f:entry title=""></f:entry>
+			<f:entry title=""></f:entry>			
+			<f:entry title="Directory Offset" help="/plugin/accurev/help/project/directoryoffset.html">
 				<f:textbox name="accurev.directoryOffset" value="${scm.directoryOffset}" />
 			</f:entry>
 			<f:entry title="Sub-path" help="/plugin/accurev/help/project/subpath.html">

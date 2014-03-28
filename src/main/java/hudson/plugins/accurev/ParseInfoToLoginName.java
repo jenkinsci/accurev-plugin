@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-final class ParseInfoToLoginName implements ICmdOutputParser<String, Void> {
+public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void> {
     public String parse(InputStream cmdOutput, Void context) throws UnhandledAccurevCommandOutput, IOException {
         final String usernameHeading = "Principal:";
         final String controlCharsOrSpaceRegex = "[ \\x00-\\x1F\\x7F]+";

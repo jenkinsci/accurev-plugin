@@ -17,7 +17,7 @@ import java.io.Writer;
  * Filters the output of the populate command and just shows a summary of the
  * output. Helps prevent build logs being clogged up with the checkout.
  */
-final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStream> {
+public final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStream> {
     public Boolean parse(InputStream cmdOutput, OutputStream streamToCopyOutputTo)
             throws UnhandledAccurevCommandOutput, IOException {
         final String lineStartDirectory = "Creating dir:";
@@ -42,7 +42,7 @@ final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStream> {
                 }
                 line = lineReader.readLine();
             }
-            final String msg = "Populated " + countOfElements + " elements in " + countOfDirectories + " directories.";
+            final String msg = "Populated " + countOfElements + " elements and " + countOfDirectories + " directories.";
             streamToCopyOutputTo.write(msg.getBytes());
         } finally {
             lineReader.close();
