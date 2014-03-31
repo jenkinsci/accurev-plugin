@@ -79,64 +79,99 @@ public class ChangeLogCmd {
 		//==============================================================================================
 		//See the content of changelogfile
 
-		if(changelogFile!=null){
-			final ArgumentListBuilder getConfigcmd = new ArgumentListBuilder();
-			getConfigcmd.add(accurevPath);
-			getConfigcmd.add("getconfig");
-			Command.addServer(getConfigcmd, server);
-			getConfigcmd.add("-s");        
-			getConfigcmd.add("-r");
-			getConfigcmd.add("settings.xml");
-			GetConfigWebURL webuiURL = null;
-			final Map<String, GetConfigWebURL> webURL = AccurevLauncher.runCommand("Get config to fetch webURL",
-					launcher, getConfigcmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
-					XmlParserFactory.getFactory(), new ParseGetConfig(), null);
-			if(webURL != null && !webURL.isEmpty()){
-				
-				webuiURL = webURL.get("webuiURL");
-				DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder documentBuilder = null;
-				try {
-					documentBuilder = documentBuilderFactory.newDocumentBuilder();
-					Document document = documentBuilder.parse(changelogFile);
-					
-					NodeList nodes = document.getElementsByTagName("transaction");
-					
-					Element depotElement = document.createElement("depot");
-					if(nodes!=null && nodes.getLength()>0)
-						nodes.item(0).getParentNode().insertBefore(depotElement, nodes.item(0));
-					
-					depotElement.appendChild(document.createTextNode(scm.getDepot()));
-
-					Element webuiElement = document.createElement("webuiURL");
-					if(nodes!=null && nodes.getLength()>0)
-						nodes.item(0).getParentNode().insertBefore(webuiElement, nodes.item(0));
-					
-					if(webuiURL!=null)
-						webuiElement.appendChild(document.createTextNode((webuiURL.getWebURL().endsWith("/")?(webuiURL.getWebURL().substring(0, webuiURL.getWebURL().length()-2)):(webuiURL.getWebURL()))));
-					else
-						webuiElement.appendChild(document.createTextNode("")); 
-					
-					DOMSource source = new DOMSource(document);
-
-					TransformerFactory transformerFactory = TransformerFactory.newInstance();
-					Transformer transformer = transformerFactory.newTransformer();
-					StreamResult result = new StreamResult(changelogFile);
-					transformer.transform(source, result);
-				} catch (ParserConfigurationException e) {					
-					
-				} catch (SAXException e) {					
-					
-				} catch (TransformerConfigurationException e) {					
-					
-				} catch (TransformerException e) {					
-					
-				}
-			}
-
+		if ( changelogFile != null ) {
+		   applyWebURL( server, accurevEnv, workspace, listener, accurevPath, launcher, changelogFile, logger, scm ); 
 		}        
 		//=============================================================================================
 		listener.getLogger().println("Changelog calculated successfully.");
 		return true;
+	}
+
+	/**
+	 * Parse the settings.xml file to get the webui url and apply it to the changelog.
+	 * 
+	 * @param server
+	 * @param accurevEnv
+	 * @param workspace
+	 * @param listener
+	 * @param accurevPath
+	 * @param launcher
+	 * @param changelogFile
+	 * @param logger
+	 * @param scm
+	 */
+	private static void applyWebURL(AccurevServer server, 
+	      Map<String, String> accurevEnv, 
+	      FilePath workspace, 
+	      BuildListener listener, 
+	      String accurevPath, 
+	      Launcher launcher, 
+	      File changelogFile, 
+	      Logger logger, 
+	      AccurevSCM scm) {
+	   
+      final ArgumentListBuilder getConfigcmd = new ArgumentListBuilder();
+      getConfigcmd.add(accurevPath);
+      getConfigcmd.add("getconfig");
+      Command.addServer(getConfigcmd, server);
+      getConfigcmd.add("-s");        
+      getConfigcmd.add("-r");
+      getConfigcmd.add("settings.xml");
+      GetConfigWebURL webuiURL = null;
+      Map<String, GetConfigWebURL> webURL = null;
+      
+      try {
+          webURL = AccurevLauncher.runCommand("Get config to fetch webURL",
+               launcher, getConfigcmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
+               XmlParserFactory.getFactory(), new ParseGetConfig(), null);
+      } catch (Exception e) {
+         // Error getting settings.xml file.
+      }
+      
+      if( webURL == null || webURL.isEmpty() ) {
+         return;
+      }
+      
+      webuiURL = webURL.get("webuiURL");
+      DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+      DocumentBuilder documentBuilder = null;
+      try {
+         documentBuilder = documentBuilderFactory.newDocumentBuilder();
+         Document document = documentBuilder.parse(changelogFile);
+         
+         NodeList nodes = document.getElementsByTagName("transaction");
+         
+         Element depotElement = document.createElement("depot");
+         if(nodes!=null && nodes.getLength()>0)
+            nodes.item(0).getParentNode().insertBefore(depotElement, nodes.item(0));
+         
+         depotElement.appendChild(document.createTextNode(scm.getDepot()));
+
+         Element webuiElement = document.createElement("webuiURL");
+         if(nodes!=null && nodes.getLength()>0)
+            nodes.item(0).getParentNode().insertBefore(webuiElement, nodes.item(0));
+         
+         if(webuiURL!=null)
+            webuiElement.appendChild(document.createTextNode((webuiURL.getWebURL().endsWith("/")?(webuiURL.getWebURL().substring(0, webuiURL.getWebURL().length()-2)):(webuiURL.getWebURL()))));
+         else
+            webuiElement.appendChild(document.createTextNode("")); 
+         
+         DOMSource source = new DOMSource(document);
+
+         TransformerFactory transformerFactory = TransformerFactory.newInstance();
+         Transformer transformer = transformerFactory.newTransformer();
+         StreamResult result = new StreamResult(changelogFile);
+         transformer.transform(source, result);
+      } catch (ParserConfigurationException e) {               
+         
+      } catch (SAXException e) {             
+         
+      } catch (TransformerConfigurationException e) {             
+         
+      } catch (TransformerException e) {              
+         
+      } catch (IOException e) {
+
+      }
 	}
 }
