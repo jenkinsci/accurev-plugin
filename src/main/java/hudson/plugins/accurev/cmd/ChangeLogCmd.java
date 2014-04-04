@@ -152,7 +152,7 @@ public class ChangeLogCmd {
             nodes.item(0).getParentNode().insertBefore(webuiElement, nodes.item(0));
          
          if(webuiURL!=null)
-            webuiElement.appendChild(document.createTextNode((webuiURL.getWebURL().endsWith("/")?(webuiURL.getWebURL().substring(0, webuiURL.getWebURL().length()-2)):(webuiURL.getWebURL()))));
+            webuiElement.appendChild(document.createTextNode((webuiURL.getWebURL().endsWith("/")?(webuiURL.getWebURL().substring(0, webuiURL.getWebURL().length()-1)):(webuiURL.getWebURL()))));
          else
             webuiElement.appendChild(document.createTextNode("")); 
          
