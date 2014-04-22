@@ -5,10 +5,12 @@ import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -16,10 +18,6 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
  * Utility class that knows how to run AccuRev commands and (optionally) have
@@ -441,10 +439,10 @@ public final class AccurevLauncher {
             final FilePath directoryToRunCommandFrom, //
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
-        if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.INFO)) {
+        if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.FINE)) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
             final String msg = hostname + ": " + command.toStringWithQuote();
-            loggerToLogFailuresTo.log(Level.INFO, msg);
+            loggerToLogFailuresTo.log(Level.FINE, msg);
         }
     }
 
