@@ -441,10 +441,10 @@ public final class AccurevLauncher {
             final FilePath directoryToRunCommandFrom, //
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
-        if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.INFO)) {
+        if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.FINE)) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
             final String msg = hostname + ": " + command.toStringWithQuote();
-            loggerToLogFailuresTo.log(Level.INFO, msg);
+            loggerToLogFailuresTo.log(Level.FINE, msg);
         }
     }
 
