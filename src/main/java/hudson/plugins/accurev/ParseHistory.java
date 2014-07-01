@@ -9,7 +9,7 @@ import java.util.List;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
+public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
     public Boolean parse(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
         AccurevTransaction resultTransaction = null;
@@ -18,7 +18,7 @@ final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTra
                 if (parser.getName().equalsIgnoreCase("transaction")) {
                     resultTransaction = new AccurevTransaction();
                     // parse transaction-values
-                    resultTransaction.setId((Integer.parseInt(parser.getAttributeValue("", "id"))));
+                    resultTransaction.setId((parser.getAttributeValue("", "id")));
                     resultTransaction.setAction(parser.getAttributeValue("", "type"));
                     resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
                             "time")));

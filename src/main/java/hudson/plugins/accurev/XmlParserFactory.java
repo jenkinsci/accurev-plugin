@@ -38,7 +38,7 @@ public class XmlParserFactory {
      * @return a new {@link XmlPullParserFactory} configured for parsing Accurev
      *         XML files, or <code>null</code> if things go wrong.
      */
-    static XmlPullParserFactory getFactory() {
+    public static XmlPullParserFactory getFactory() {
         synchronized (PARSER_FACTORY_CACHE) {
             final XmlPullParserFactory existingFactory = PARSER_FACTORY_CACHE.get(XmlPullParserFactory.class);
             if (existingFactory != null) {

@@ -12,7 +12,7 @@ import java.util.Map;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
+public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
         final Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();

@@ -3,9 +3,13 @@ package hudson.plugins.accurev;
 import hudson.model.AbstractBuild;
 import hudson.scm.ChangeLogSet;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,7 +17,8 @@ import java.util.List;
  * @author connollys
  * @since 10-Oct-2007 13:12:40
  */
-final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> {
+@ExportedBean(defaultVisibility=999)
+public final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> {
     private final List<AccurevTransaction> transactions;
 
     AccurevChangeLogSet(AbstractBuild build, List<AccurevTransaction> transactions) {
@@ -33,5 +38,22 @@ final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> {
 
     public Iterator<AccurevTransaction> iterator() {
         return transactions.iterator();
+    }
+
+	public Collection<AccurevTransaction> getLogs() {
+		return transactions;
+	}
+	
+	public java.lang.Object[] toArray() {
+	   if ( transactions == null) {
+	      return null;
+	   }
+	   
+	   return transactions.toArray();
+	}
+	
+	@Exported
+    public String getKind() {
+        return "accurev";
     }
 }
