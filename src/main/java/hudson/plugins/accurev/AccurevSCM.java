@@ -439,7 +439,6 @@ public class AccurevSCM extends SCM {
 
         final AccurevServer server = DESCRIPTOR.getServer(serverName);
         final String accurevClientExePath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
-        build.addAction(new ParametersAction(new StringParameterValue("ACCUREV_CLIENT_PATH", accurevClientExePath)));
         final FilePath accurevWorkingSpace = new FilePath (jenkinsWorkspace, directoryOffset == null ? "" : directoryOffset);
         final Map<String, String> accurevEnv = new HashMap<String, String>();
         
@@ -468,6 +467,7 @@ public class AccurevSCM extends SCM {
         }
 
         final EnvVars environment = build.getEnvironment(listener);
+        environment.put("ACCUREV_CLIENT_PATH", accurevClientExePath);
 
         String localStream = environment.expand(stream);
 
@@ -549,10 +549,8 @@ public class AccurevSCM extends SCM {
 			latestTransactionDate = latestTransactionDate == null ? "1970/01/01 00:00:00" : latestTransactionDate;
 			listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
 			listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
-			List<ParameterValue> params = new ArrayList<ParameterValue>();
-			params.add(new StringParameterValue("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID));
-			params.add(new StringParameterValue("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate));
-	    	build.addAction(new ParametersAction(params));
+            environment.put("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID);
+            environment.put("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate);
         } catch (Exception e) {
         	listener.error("There was a problem getting the latest transaction info from the stream.");
         	e.printStackTrace(listener.getLogger());
