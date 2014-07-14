@@ -24,7 +24,20 @@
                             <input class="setting-input number" type="text"
                                    name="server.port" value="${h.ifThenElse(server==null,5050,server.port)}"/>
                         </f:entry>
-                  
+                    <f:advanced>
+                        <f:entry title="Synchronize AccuRev CLI Operations" help="/plugin/accurev/help/sync-operations.html">
+                            <f:checkbox name="server.syncOperations" checked="${server.syncOperations}" default="true" />
+                        </f:entry>
+                        <f:entry title="Minimise AccuRev Login Operations" help="/plugin/accurev/help/minimise-login-operations.html">
+                            <f:checkbox name="server.minimiseLogins" checked="${server.minimiseLogins}" default="false" />
+                        </f:entry>
+                        <f:entry title="Use Non-expiring Login" help="/plugin/accurev/help/use-nonexpiring-login.html">
+                            <f:checkbox name="server.useNonexpiringLogin" checked="${server.useNonexpiringLogin}" default="false" />
+                        </f:entry>
+                        <f:entry title="Show one stream at a time" help="/plugin/accurev/help/use-restricted-show-streams.html">
+                            <f:checkbox name="server.useRestrictedShowStreams" checked="${server.useRestrictedShowStreams}" default="false" />
+                        </f:entry>
+                    </f:advanced>
                 </table>
                 <div align="right">
                     <f:repeatableDeleteButton/>
