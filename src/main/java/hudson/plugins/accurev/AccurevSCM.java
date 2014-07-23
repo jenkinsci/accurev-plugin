@@ -19,8 +19,10 @@ import hudson.model.StringParameterValue;
 import hudson.plugins.accurev.cmd.ChangeLogCmd;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.plugins.accurev.cmd.History;
+import hudson.plugins.accurev.cmd.JustAccurev;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.PopulateCmd;
+import hudson.plugins.accurev.cmd.SetProperty;
 import hudson.plugins.accurev.cmd.ShowDepots;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.cmd.Synctime;
@@ -84,8 +86,7 @@ public class AccurevSCM extends SCM {
     private static final String DEFAULT_SNAPSHOT_NAME_FORMAT = "${JOB_NAME}_${BUILD_NUMBER}";
     private final String serverName;
     private final String depot;
-    private final String stream;
-   // private final AccuRevWorkspaceProcessor _accurevWorkspace;
+    private final String stream;   
     private final boolean ignoreStreamParent;
     private final String wspaceORreftree;
     private boolean useReftree;
@@ -109,8 +110,7 @@ public class AccurevSCM extends SCM {
     @DataBoundConstructor
     public AccurevSCM(String serverName,
                       String depot,
-                      String stream,
-                      //StaplerRequest req,
+                      String stream,                     
                       String wspaceORreftree,
                       String workspace,                                           
                       String reftree,                      
@@ -125,10 +125,7 @@ public class AccurevSCM extends SCM {
         super();
         this.serverName = serverName;
         this.depot = depot;
-        this.stream = stream;
-        
-       // this._accurevWorkspace = new AccuRevWorkspaceProcessor(req);
-        
+        this.stream = stream;        
         this.wspaceORreftree = wspaceORreftree;
         this.workspace = workspace;        
         this.reftree = reftree;
@@ -525,6 +522,16 @@ public class AccurevSCM extends SCM {
             } 
             listener.getLogger().println("Calculating latest transaction info for stream: " + localStream + ".");
         } else {
+        	/*Change the background color of the stream to white as default, this background color can be optionally changed by the users to green/red upon build success/failure
+             *using post build action plugins.
+             */
+             {
+          	   //For AccuRev 6.0.x versions
+          	   SetProperty.setproperty(this, accurevWorkingSpace, listener, accurevClientExePath, launcher, accurevEnv, server, localStream, "#FFFFFF", "style");
+          	   
+               //For AccuRev 6.1.x onwards
+               SetProperty.setproperty(this, accurevWorkingSpace, listener, accurevClientExePath, launcher, accurevEnv, server, localStream, "#FFFFFF", "streamStyle");                
+             }
            PopulateCmd pop = new PopulateCmd();
            if ( pop.populate(this, launcher, listener, server, accurevClientExePath, localStream, true, "from jenkins workspace", accurevWorkingSpace, accurevEnv) ) {
               startDateOfPopulate = pop.get_startDateOfPopulate();
@@ -912,65 +919,57 @@ public class AccurevSCM extends SCM {
  	       return s;
  	   }
 
- 	   private static String getExistingPath(String[] paths, String fallback) {
+ 	   private static String getExistingPath(String[] paths) {
  	      for (final String path : paths) {
  	         if (new File(path).exists()) {
  	            return path;
  	         }
  	      }
- 	      // just hope it's on the environment's path
- 	      return fallback;
+ 	      return "";
+ 	      
  	   }
 
  	   private AccurevServer getServerAndPath(String serverName) {
  	      final AccurevServer server = getServer(serverName);
-
- 	      if (server == null) {
- 	         //descriptorlogger.log(Level.INFO, "Server not found for server name:" + serverName);
+ 	      boolean envAccurevBin;
+ 	      
+ 	      if (server == null) { 	         
  	         return null;
  	      }
 
  	      if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
  	         // we are running on windows
- 	         this.accurevPath = getExistingPath(server.getWinCmdLocations(), "accurev.exe");
+ 	    	  //see if accurev bin is set in environment's path by running the below command
+ 	    	 envAccurevBin = JustAccurev.justAccuRev("accurev.exe");
+ 	    	 if(!envAccurevBin){
+ 	    		 //look for bin in the default windows locations
+ 	    		 this.accurevPath = getExistingPath(server.getWinCmdLocations());
+ 	    	 	 if(this.accurevPath.isEmpty()){
+ 	    	 		descriptorlogger.warning("AccuRev binary is not found or not set in the environment's path.");
+ 		        	return null;
+ 	    	 	 } 	    	 	
+ 	    	 }
+ 	    	 else{
+ 	    		this.accurevPath = "accurev.exe";
+ 	    	}
  	      } else {
  	         // we are running on *nix
- 	         this.accurevPath = getExistingPath(server.getNixCmdLocations(), "accurev");
+ 	    	//see if accurev bin is set in environment's path by running the below command
+ 	    	 envAccurevBin = JustAccurev.justAccuRev("accurev");
+ 	    	 if(!envAccurevBin){
+ 	    		//look for bin in the default windows locations
+ 	    		 this.accurevPath = getExistingPath(server.getNixCmdLocations());
+ 	    		 if(this.accurevPath.isEmpty()){
+ 	    	 		descriptorlogger.warning("AccuRev binary is not found or not set in the environment's path.");
+ 		        	return null;
+ 	    	 	 }
+ 	    			    		
+ 	    	 }
+ 	    	 else{
+ 	    		this.accurevPath = "accurev";
+ 	    	 }
  	      }
- 	      List<String> accurevCommand = new ArrayList<String>();
- 	      accurevCommand.add(accurevPath);
- 	     
- 	      ProcessBuilder processBuilder = new ProcessBuilder(accurevCommand);
- 	      processBuilder.redirectErrorStream(true);
-
- 	      Process accurevprocess;
- 	      InputStream stdout = null;
- 	      try {
- 	    	  accurevprocess = processBuilder.start();
- 	    	  stdout = accurevprocess.getInputStream();        
- 	          accurevprocess.waitFor();
- 	          if (accurevprocess.exitValue() == 0) {
- 	        	  
- 	          }else{
- 	        	  descriptorlogger.warning("AccuRev binary is not found or not set in the environment's path.");
- 	        	  return null;
- 	          }
- 	      } catch (InterruptedException e) {
- 	    	  descriptorlogger.log(Level.WARNING, "AccuRev binary is not found or not set in the environment's path.");
- 	    	  return null;
- 		} catch (IOException e) {
- 			descriptorlogger.log(Level.WARNING, "AccuRev binary is not found or not set in the environment's path.");
- 			return null;
- 		}finally {
- 	        try {
- 	       	 if(stdout!=null){
- 	       		 stdout.close();
- 	       	 }
- 	       	
- 	        } catch (IOException e) {
- 	        }
- 	     }
-
+ 	      
  	      return server;
  	   }
 
@@ -994,12 +993,10 @@ public class AccurevSCM extends SCM {
  				if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
  					depots = ShowDepots.getDepots(server, accurevPath, descriptorlogger);
  				 } 
- 			} catch (IOException e) {
+ 			} catch (IOException e) { 				
  				
- 				e.printStackTrace();
  			} catch (InterruptedException e) {
  				
- 				e.printStackTrace();
  			}
 
  	      d = new ListBoxModel();
@@ -1035,9 +1032,9 @@ public class AccurevSCM extends SCM {
  	         } 
 
  	      } catch (IOException e) {			
- 				e.printStackTrace();
+ 				
  			} catch (InterruptedException e) {			
- 				e.printStackTrace();
+ 				
  			}
  	      return cbm;
  	   }
@@ -1073,9 +1070,9 @@ public class AccurevSCM extends SCM {
          * The default search paths for Windows clients.
          */
         private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(//
+                "C:\\opt\\accurev\\bin\\accurev.exe", //
                 "C:\\Program Files\\AccuRev\\bin\\accurev.exe", //
-                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe", //
-                "C:\\opt\\accurev\\bin\\accurev.exe");
+                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
 
         /**
          * The default search paths for *nix clients
@@ -1084,7 +1081,7 @@ public class AccurevSCM extends SCM {
                 "/usr/local/bin/accurev", //
                 "/usr/bin/accurev", //
                 "/bin/accurev", //
-                "/local/bin/accurev", //
+                "/local/bin/accurev",
                 "/opt/accurev/bin/accurev");
 
         public static final String VTT_DELIM = ",";

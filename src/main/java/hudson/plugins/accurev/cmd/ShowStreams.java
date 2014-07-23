@@ -142,11 +142,10 @@ public class ShowStreams extends Command {
 	         final Logger descriptorlogger
 	         ) {
 		
-		  final List<String> depots = new ArrayList<String>();
-		  final ArgumentListBuilder cmd = new ArgumentListBuilder();
-		  List<String> showStreamsCmd = new ArrayList<String>();
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+		List<String> showStreamsCmd = new ArrayList<String>();
 		  
-        cmd.add("accurev");
+		cmd.add(accurevPath);
         cmd.add("show");
         addServer(cmd, server);
         cmd.add("-fx");
@@ -163,6 +162,7 @@ public class ShowStreams extends Command {
         Process streamprocess;
                        
 		try {
+			descriptorlogger.info(cmd.toStringWithQuote());
 			streamprocess = processBuilder.start();
 	        stdout = streamprocess.getInputStream();
 	        String showcmdoutputdata = convertStreamToString(stdout);

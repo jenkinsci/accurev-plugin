@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.plugins.accurev.cmd.PopulateCmd;
+import hudson.plugins.accurev.cmd.SetProperty;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
@@ -86,7 +87,18 @@ public class AccuRevWorkspaceProcessor {
            e.printStackTrace(listener.getLogger());
            return false;
        }
-
+       
+       /*Change the background color of the workspace to yellow as default, this background color can be optionally changed by the users to green/red upon build success/failure
+       *using post build action plugins.
+       */
+       {
+    	   //For AccuRev 6.0.x versions
+    	   SetProperty.setproperty(scm, accurevWorkingSpace, listener, accurevClientExePath, launcher, accurevEnv, server, _accurevWorkspace, "#FFEBB4", "style");
+    	   
+           //For AccuRev 6.1.x onwards
+           SetProperty.setproperty(scm, accurevWorkingSpace, listener, accurevClientExePath, launcher, accurevEnv, server, _accurevWorkspace, "#FFEBB4", "streamStyle");
+          
+       }
        // handle workspace relocation and update and pop on the workspace accordingly
        {
            boolean needsReparenting = false;

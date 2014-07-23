@@ -5,9 +5,6 @@ import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +15,10 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
  * Utility class that knows how to run AccuRev commands and (optionally) have

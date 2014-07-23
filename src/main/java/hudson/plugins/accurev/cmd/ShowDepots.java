@@ -33,7 +33,7 @@ public class ShowDepots extends Command {
 		  final ArgumentListBuilder cmd = new ArgumentListBuilder();
 		  List<String> showDepotsCmd = new ArrayList<String>();
 		  
-          cmd.add("accurev");
+		  cmd.add(accurevPath);
           cmd.add("show");
           addServer(cmd, server);
           cmd.add("-fx");
@@ -46,6 +46,7 @@ public class ShowDepots extends Command {
           
           Process depotprocess;
 		try {
+			descriptorlogger.info(cmd.toStringWithQuote());
 			depotprocess = processBuilder.start();
 			stdout = depotprocess.getInputStream();
 	          String showcmdoutputdata = convertStreamToString(stdout);
