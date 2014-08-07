@@ -585,14 +585,36 @@ public class AccurevSCM extends SCM {
             }
             // There may be changes in a parent stream that we need to factor in.
             // TODO produce a consolidated list of changes from the parent streams
+            boolean foundChange = false;
+            List<String> changedStreams = new ArrayList<String>();
             do {
-                // This is a best effort to get as close to the changes as possible
-                if (CheckForChanges.checkStreamForChanges(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,
-                        stream, startTime == null ? null : startTime.getTime(),logger,this)) {
-                    return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,
-                            startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), changelogFile, logger, this);
+                if (!foundChange) {
+                    foundChange = CheckForChanges.checkStreamForChanges(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,
+                            stream, startTime == null ? null : startTime.getTime(), logger, this);
                 }
-                stream = stream.getParent();
+
+                if (foundChange) {
+                    boolean capturedChangelog = false;
+                    // Found 1st stream with change. Get changes and loop all parents
+                    do {
+                        File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
+                        capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,
+                                startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog, logger, this);
+                        if (capturedChangelog) {
+                            changedStreams.add(streamChangeLog.getName());
+                        }
+                        stream = stream.getParent();
+                    } while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
+                    
+                    if (foundChange) {
+                        XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile);
+                        return capturedChangelog;
+                    }
+
+                }
+                if (stream != null) {
+                    stream = stream.getParent();
+                }
             } while (stream != null && stream.isReceivingChangesFromParent());
         }
         return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,

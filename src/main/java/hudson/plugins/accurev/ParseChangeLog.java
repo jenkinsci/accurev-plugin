@@ -34,7 +34,7 @@ class ParseChangeLog extends ChangeLogParser {
         return new AccurevChangeLogSet(build, transactions);
     }
 
-	private List<AccurevTransaction> parse(File changelogFile) throws IOException{
+    private List<AccurevTransaction> parse(File changelogFile) throws IOException{
         List<AccurevTransaction> transactions = null;
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
@@ -61,7 +61,7 @@ class ParseChangeLog extends ChangeLogParser {
         }
 
         logger.info("transactions size = " + transactions.size());
-		return transactions;
+        return transactions;
     }
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile) throws IOException, XmlPullParserException {
         List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
@@ -156,8 +156,8 @@ class ParseChangeLog extends ChangeLogParser {
                 	webuiURL = parser.getText();
                 }
                 if (inConsolidatedChangeLog){
-					File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
-					transactions.addAll(parse(subChangeLog));
+                    File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
+                    transactions.addAll(parse(subChangeLog));
                 }
                 break;
             }
