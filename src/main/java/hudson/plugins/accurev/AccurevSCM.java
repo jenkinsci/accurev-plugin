@@ -41,6 +41,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.ListBoxModel.Option;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamException;
@@ -421,12 +422,15 @@ public class AccurevSCM extends SCM {
                 lastTransaction = "NO_EDITS";
             }
         }
-        if (lastTransaction != null) {
-            env.put("ACCUREV_LAST_TRANSACTION", lastTransaction);
-        }else{
-        	 env.put("ACCUREV_LAST_TRANSACTION", "");
-        }
+      if (lastTransaction != null) {
+         env.put("ACCUREV_LAST_TRANSACTION", lastTransaction);
+      } else {
+         env.put("ACCUREV_LAST_TRANSACTION", "");
+      }
 
+      // ACCUREV_HOME is added to the build env variables
+      if (System.getenv("ACCUREV_HOME") != null)
+         env.put("ACCUREV_HOME", System.getenv("ACCUREV_HOME"));
     }
     
     /**
@@ -970,50 +974,86 @@ public class AccurevSCM extends SCM {
  	      
  	   }
 
- 	   private AccurevServer getServerAndPath(String serverName) {
- 	      final AccurevServer server = getServer(serverName);
- 	      boolean envAccurevBin;
- 	      
- 	      if (server == null) { 	         
- 	         return null;
- 	      }
+      private AccurevServer getServerAndPath(String serverName) {
+         final AccurevServer server = getServer(serverName);
+         boolean envAccurevBin;
+         String accurevBinName = "accurev";
 
- 	      if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
- 	         // we are running on windows
- 	    	  //see if accurev bin is set in environment's path by running the below command
- 	    	 envAccurevBin = JustAccurev.justAccuRev("accurev.exe");
- 	    	 if(!envAccurevBin){
- 	    		 //look for bin in the default windows locations
- 	    		 this.accurevPath = getExistingPath(server.getWinCmdLocations());
- 	    	 	 if(this.accurevPath.isEmpty()){
- 	    	 		descriptorlogger.warning("AccuRev binary is not found or not set in the environment's path.");
- 		        	return null;
- 	    	 	 } 	    	 	
- 	    	 }
- 	    	 else{
- 	    		this.accurevPath = "accurev.exe";
- 	    	}
- 	      } else {
- 	         // we are running on *nix
- 	    	//see if accurev bin is set in environment's path by running the below command
- 	    	 envAccurevBin = JustAccurev.justAccuRev("accurev");
- 	    	 if(!envAccurevBin){
- 	    		//look for bin in the default windows locations
- 	    		 this.accurevPath = getExistingPath(server.getNixCmdLocations());
- 	    		 if(this.accurevPath.isEmpty()){
- 	    	 		descriptorlogger.warning("AccuRev binary is not found or not set in the environment's path.");
- 		        	return null;
- 	    	 	 }
- 	    			    		
- 	    	 }
- 	    	 else{
- 	    		this.accurevPath = "accurev";
- 	    	 }
- 	      }
- 	      
- 	      return server;
- 	   }
+         if (server == null) {
+            return null;
+         }
 
+         String accurevBinDir = getEnvBinDir();
+
+         if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+            // we are running on windows
+            accurevBinName = "accurev.exe";
+            if (!JustAccurev.justAccuRev(accurevBinDir + File.separator + accurevBinName)) {
+               this.accurevPath = getExistingPath(server.getWinCmdLocations());
+            } else {
+               this.accurevPath = accurevBinDir + File.separator + accurevBinName;
+            }
+         } else {
+            // we are running on *nix
+            if (!JustAccurev.justAccuRev(accurevBinDir + File.separator + accurevBinName)) {
+               this.accurevPath = getExistingPath(server.getNixCmdLocations());
+            } else {
+               this.accurevPath = accurevBinDir + File.separator + accurevBinName;
+            }
+         }
+
+         if (this.accurevPath.isEmpty()) {
+            // if we still don't have a path to the accurev client let's try the
+            // system path
+            if (JustAccurev.justAccuRev(accurevBinName)) {
+               logger.info("Using the AccuRev client we found on the system path.");
+               this.accurevPath = accurevBinName;
+            } else {
+               throw new RuntimeException("AccuRev binary is not found or not set in the environment's path.");
+            }
+         }
+
+         return server;
+      }
+
+      private String getEnvBinDir() {
+         String accurevBinDir = "";
+
+         if (System.getenv("ACCUREV_BIN") != null) {
+            accurevBinDir = System.getenv("ACCUREV_BIN");
+            if (new File(accurevBinDir).exists() && new File(accurevBinDir).isDirectory()) {
+               logger.info("The ACCUREV_BIN environment variable was set to: " + accurevBinDir);
+               return accurevBinDir;
+            } else {
+               try {
+                  throw new FileNotFoundException(
+                        "The ACCUREV_BIN environment variable was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the variable. ACCUREV_BIN was set to: "
+                              + accurevBinDir);
+               } catch (FileNotFoundException e) {
+                  e.printStackTrace();
+               }
+            }
+         } 
+         
+         if (System.getProperty("accurev.bin") != null) {
+            accurevBinDir = System.getProperty("accurev.bin");
+            if (new File(accurevBinDir).exists() && new File(accurevBinDir).isDirectory()) {
+               logger.info("The accurev.bin system property was set to: " + accurevBinDir);
+               return accurevBinDir;
+            } else {
+               try {
+                  throw new FileNotFoundException(
+                        "The accurev.bin system property was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the property. 'accurev.bin' was set to: "
+                              + accurevBinDir);
+               } catch (FileNotFoundException e) {
+                  e.printStackTrace();
+               }
+            }
+         }     
+         
+         return accurevBinDir;
+      }
+      
  	   // This method will populate the depots in the select box depending upon the
  	   // server selected.
  	   public ListBoxModel doFillDepotItems(@QueryParameter String serverName, @QueryParameter String depot) {
