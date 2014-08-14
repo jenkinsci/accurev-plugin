@@ -70,6 +70,7 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
 /**
  * @author connollys
  * @since 09-Oct-2007 16:17:34
@@ -598,26 +599,32 @@ public class AccurevSCM extends SCM {
         }
         
         
-        try {
-        	if (useWorkspace){
-        		localStream = this.workspace;
-        	}
-			AccurevTransaction latestTransaction = History.getLatestTransaction(this,
-					server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher, localStream, null);
-			if (latestTransaction == null) {
-				throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
-			}
-			String latestTransactionID = latestTransaction.getId();
-			String latestTransactionDate = ACCUREV_DATETIME_FORMATTER.format(latestTransaction.getDate());
-			latestTransactionDate = latestTransactionDate == null ? "1970/01/01 00:00:00" : latestTransactionDate;
-			listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
-			listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
+      try {
+         if (useWorkspace) {
+            localStream = this.workspace;
+         }
+         AccurevTransaction latestTransaction = History.getLatestTransaction(this, 
+               server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher, localStream, null);
+         if (latestTransaction == null) {
+            throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
+         }
+         String latestTransactionID = latestTransaction.getId();
+         String latestTransactionDate = ACCUREV_DATETIME_FORMATTER.format(latestTransaction.getDate());
+         latestTransactionDate = latestTransactionDate == null ? "1970/01/01 00:00:00" : latestTransactionDate;
+         listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
+         listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
+
+         {
             environment.put("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID);
             environment.put("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate);
-        } catch (Exception e) {
-        	listener.error("There was a problem getting the latest transaction info from the stream.");
-        	e.printStackTrace(listener.getLogger());
-        }
+
+            build.addAction(new AccuRevHiddenParametersAction(environment));
+         }
+
+      } catch (Exception e) {
+         listener.error("There was a problem getting the latest transaction info from the stream.");
+         e.printStackTrace(listener.getLogger());
+      }
         
         listener.getLogger().println(
                 "Calculating changelog" + (ignoreStreamParent ? ", ignoring changes in parent" : "") + "...");
