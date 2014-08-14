@@ -153,6 +153,9 @@ public class ShowStreams extends Command {
         cmd.add(depot);
         cmd.add("streams");
         
+        if(depot==null || depot.equalsIgnoreCase("")){
+      	  return cbm;
+        }
         showStreamsCmd = cmd.toList();
         
         ProcessBuilder processBuilder = new ProcessBuilder(showStreamsCmd);
