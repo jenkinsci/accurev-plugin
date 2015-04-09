@@ -45,6 +45,7 @@ public class CheckForChanges {
                                          Logger logger,
                                          AccurevSCM scm)
            throws IOException, InterruptedException {
+	  
        AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
        String filterForPollSCM = scm.getFilterForPollSCM();
        String subPath = scm.getSubPath();
@@ -310,6 +311,4 @@ public class CheckForChanges {
         else        
         	return false;
     }
-
-
 }

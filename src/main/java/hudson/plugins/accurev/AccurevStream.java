@@ -165,6 +165,10 @@ public class AccurevStream implements Serializable {
                 return true;
             case SNAPSHOT:
                 return false;
+            case GATED:
+                return true;
+            case STAGING:
+                return true;
             case NORMAL:
                 // TODO need to add an optimization, namely check to see if a time is present, has it changed
                 // since last we checked.
@@ -178,7 +182,9 @@ public class AccurevStream implements Serializable {
         NORMAL("normal"),
         SNAPSHOT("snapshot"),
         WORKSPACE("workspace"),
-        PASSTHROUGH("passthrough"),;
+        PASSTHROUGH("passthrough"),
+        GATED("gated"),
+        STAGING("staging"),;
         private final String type;
 
         StreamType(String type) {

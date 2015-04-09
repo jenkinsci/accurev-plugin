@@ -603,6 +603,7 @@ public class AccurevSCM extends SCM {
          if (useWorkspace) {
             localStream = this.workspace;
          }
+        
          AccurevTransaction latestTransaction = History.getLatestTransaction(this, 
                server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher, localStream, null);
          if (latestTransaction == null) {
