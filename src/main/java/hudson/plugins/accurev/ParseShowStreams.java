@@ -49,8 +49,6 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                     final String streamStartTimeString = parser.getAttributeValue("", "startTime");
                     final Date streamStartTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
                     try {
-                    	logger.info("********************* streamTypeStr:"+streamTypeStr);
-                    	System.out.println("****************** streamTypeStr:"+streamTypeStr);
                         final Long streamNumber = streamNumberStr == null ? null : Long.valueOf(streamNumberStr);
                         final Long basisStreamNumber = basisStreamNumberStr == null ? null : Long.valueOf(basisStreamNumberStr);
                         final StreamType streamType = AccurevStream.StreamType.parseStreamType(streamTypeStr);
