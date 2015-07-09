@@ -97,6 +97,7 @@ public class AccurevSCM extends SCM {
     private final boolean cleanreftree;
     private final String workspace;
     private final boolean useSnapshot;
+    private final boolean dontPopContent;
     private final String snapshotNameFormat;
     private final boolean synctime;
     private final String reftree;
@@ -121,6 +122,7 @@ public class AccurevSCM extends SCM {
                       boolean synctime,
                       boolean cleanreftree,  
                       boolean useSnapshot,
+                      boolean dontPopContent,
                       String snapshotNameFormat,
                       String directoryOffset, 
                       boolean ignoreStreamParent) {
@@ -136,6 +138,7 @@ public class AccurevSCM extends SCM {
         this.synctime = synctime;
         this.cleanreftree = cleanreftree;
         this.useSnapshot = useSnapshot;
+        this.dontPopContent = dontPopContent;
         this.snapshotNameFormat = snapshotNameFormat;
         this.ignoreStreamParent = ignoreStreamParent;
         this.directoryOffset = directoryOffset;
@@ -248,6 +251,8 @@ public class AccurevSCM extends SCM {
      *
      * @return Value for property 'synctime'.
      */
+    
+    
     public void isWspaceORreftree() {
     	String wspaceORreftree = getWspaceORreftree();
     	if(wspaceORreftree!=null && !wspaceORreftree.isEmpty()){
@@ -272,9 +277,12 @@ public class AccurevSCM extends SCM {
     	}
     	
     }
-   
+  
+	public boolean isDontPopContent() {
+		return dontPopContent;
+	}
 
-    /**
+	/**
      * Getter for property 'cleanreftree'.
      *
      * @return Value for property 'cleanreftree'.
@@ -537,8 +545,8 @@ public class AccurevSCM extends SCM {
             listener.fatalError("Must specify a reference tree");
             return false;
         }
-
-        final Date startDateOfPopulate;
+     
+        Date  startDateOfPopulate = null;
         if (useWorkspace){// _accurevWorkspace != null && _accurevWorkspace.is_useAccurevWorkspace() ) {
         	AccuRevWorkspaceProcessor acWspace = new AccuRevWorkspaceProcessor(this);
            boolean result = acWspace.checkoutWorkspace( this, launcher, listener, server, accurevEnv, jenkinsWorkspace, accurevClientExePath, accurevWorkingSpace, streams, localStream );
@@ -571,12 +579,16 @@ public class AccurevSCM extends SCM {
             }
             listener.getLogger().println("Snapshot created successfully.");
             
+         if ( !isDontPopContent() ) {
             PopulateCmd pop = new PopulateCmd();
             if ( pop.populate(this, launcher, listener, server, accurevClientExePath, snapshotName, true, "from workspace", accurevWorkingSpace, accurevEnv) ) {
                startDateOfPopulate = pop.get_startDateOfPopulate();
-            } else {
+             } else {
                return false;
-            } 
+             } 
+          } else{
+        	  startDateOfPopulate = new Date();
+          }
             listener.getLogger().println("Calculating latest transaction info for stream: " + localStream + ".");
         } else {
         	/*Change the background color of the stream to white as default, this background color can be optionally changed by the users to green/red upon build success/failure
@@ -589,12 +601,19 @@ public class AccurevSCM extends SCM {
                //For AccuRev 6.1.x onwards
                SetProperty.setproperty(this, accurevWorkingSpace, listener, accurevClientExePath, launcher, accurevEnv, server, localStream, "#FFFFFF", "streamStyle");                
              }
+        
+         listener.getLogger().println("Don't Pop Content checkbox is :"+isDontPopContent());   
+        if ( !isDontPopContent() ) {
            PopulateCmd pop = new PopulateCmd();
            if ( pop.populate(this, launcher, listener, server, accurevClientExePath, localStream, true, "from jenkins workspace", accurevWorkingSpace, accurevEnv) ) {
               startDateOfPopulate = pop.get_startDateOfPopulate();
-           } else {
+             } else {
               return false;
-           }  
+            }  
+          }else{
+        	   startDateOfPopulate = new Date();        	  
+          }
+        
            listener.getLogger().println("Calculating latest transaction info for stream: " + localStream + ".");
         }
         
@@ -642,12 +661,12 @@ public class AccurevSCM extends SCM {
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,
-                    startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+            		startDateOfPopulate, startTime == null ? null : startTime.getTime(),
                     localStream, changelogFile, logger, this);
         }
         
         if (!getChangesFromStreams(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher,
-              startDateOfPopulate, startTime, stream, changelogFile)) {
+        		startDateOfPopulate, startTime, stream, changelogFile)) {
            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher, startDateOfPopulate,
                  startTime == null ? null : startTime.getTime(), localStream, changelogFile, logger, this);
         }
@@ -894,6 +913,7 @@ public class AccurevSCM extends SCM {
  	            req.getParameter("accurev.synctime") != null, //
  	            req.getParameter("accurev.cleanreftree") != null, //
  	            req.getParameter("accurev.useSnapshot") != null, //
+ 	            req.getParameter("accurev.dontPopContent") != null,
  	            req.getParameter("accurev.snapshotNameFormat"), //
  	            req.getParameter("accurev.directoryOffset"), //
  	            req.getParameter("accurev.ignoreStreamParent") != null);
@@ -1353,8 +1373,7 @@ public class AccurevSCM extends SCM {
             final String[] formValidTypes = value.split(VTT_DELIM);
             for (final String formValidType : formValidTypes) {
                 if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {
-                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: "
-                            + VTT_LIST);
+                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + VTT_LIST);
                 }
             }
             return FormValidation.ok();
