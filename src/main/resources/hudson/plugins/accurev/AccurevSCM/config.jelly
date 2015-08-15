@@ -56,6 +56,10 @@
 					<f:textbox name="accurev.snapshotNameFormat" value="${scm.snapshotNameFormat}"/>
 				</f:entry>
 			</f:optionalBlock>
+			<f:optionalBlock title="Don't Pop Content"
+							 help="/plugin/accurev/help/project/dontPopContent.html"
+							 name="accurev.dontPopContent" checked="${scm.dontPopContent}">
+			</f:optionalBlock>
         </f:advanced>
 		<f:entry >
 			</f:entry>

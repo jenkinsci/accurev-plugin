@@ -172,13 +172,14 @@ public class AccuRevWorkspaceProcessor {
                listener.getLogger().println("Update completed successfully.");
          	  //pop -O -R .
                // Now get that into local filesystem
+               if(!scm.isDontPopContent()){
                PopulateCmd pop = new PopulateCmd();
                if ( pop.populate(scm, launcher, listener, server, accurevClientExePath, null, true, "from workspace", accurevWorkingSpace, accurevEnv) ) {
                   _startDateOfPopulate = pop.get_startDateOfPopulate();
                } else {
                   return false;
                }           	  
-         	  
+              }
            
            }else{
          	  //if the backing stream is changed

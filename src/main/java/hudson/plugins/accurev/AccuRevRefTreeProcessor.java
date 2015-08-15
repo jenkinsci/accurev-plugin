@@ -25,10 +25,9 @@ public class AccuRevRefTreeProcessor {
     private Date _startDateOfPopulate;
     AccurevSCM scm;
     
-    
     AccuRevRefTreeProcessor(AccurevSCM scm) {
        this.scm = scm;
-       _reftree = scm.getReftree();      
+       _reftree = scm.getReftree();  
     }
     private Map<String, AccurevReferenceTree> getReftrees(AccurevServer server,
             Map<String, String> accurevEnv,
@@ -171,12 +170,15 @@ public class AccuRevRefTreeProcessor {
                    scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true)) {
                listener.getLogger().println("Update completed successfully.");
              // Now get that into local filesystem
+               if(!scm.isDontPopContent()){
                PopulateCmd pop = new PopulateCmd();
                if ( pop.populate(scm, launcher, listener, server, accurevClientExePath, null, true, "from reftree", accurevWorkingSpace, accurevEnv) ) {
                   _startDateOfPopulate = pop.get_startDateOfPopulate();
                } else {
                   return false;
                }
+             }
+               
                if(scm.isCleanreftree()){
                 final Map<String, RefTreeExternalFile> externalFiles = getReftreesStatus(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher);
                 File toBeDeleted;
@@ -211,13 +213,14 @@ public class AccuRevRefTreeProcessor {
                }
                else{
                 // Now get that into local filesystem
+            	   if(!scm.isDontPopContent()){
                   PopulateCmd pop = new PopulateCmd();
                   if ( pop.populate(scm, launcher, listener, server, accurevClientExePath, null, true, "from re-pop reftree", accurevWorkingSpace, accurevEnv) ) {
                      _startDateOfPopulate = pop.get_startDateOfPopulate();
                   } else {
                      return false;
                   }
-                  
+            	}
                    if(scm.isCleanreftree()){
                       final Map<String, RefTreeExternalFile> externalFiles = getReftreesStatus(server, accurevEnv, accurevWorkingSpace, listener, accurevClientExePath, launcher);
                       for(RefTreeExternalFile extFileObject : externalFiles.values()) {
