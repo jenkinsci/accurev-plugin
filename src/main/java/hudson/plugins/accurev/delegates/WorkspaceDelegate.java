@@ -68,8 +68,15 @@ public class WorkspaceDelegate extends ReftreeDelegate {
             if (!workspaceStreams.isEmpty()) {
                 AccurevStream workspaceStream = workspaceStreams.values().iterator().next();
                 accurevWorkspace.setStream(workspaceStream);
-                workspaceStream.setParent(streams.get(workspaceStream.getBasisName()));
-            }else{
+                String workspaceBasisStream = workspaceStream.getBasisName();
+                if (streams.containsKey(workspaceBasisStream)) {
+                    workspaceStream.setParent(streams.get(workspaceBasisStream));
+                } else {
+                    Map<String, AccurevStream> workspaceBasis = ShowStreams.getStreams(scm, workspaceBasisStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
+                            launcher);
+                    workspaceStream.setParent(workspaceBasis.get(workspaceBasisStream));
+                }
+            } else {
                 throw new IllegalArgumentException("Workspace stream not found " + _accurevWorkspace);
             }
         } else {
