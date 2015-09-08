@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.ParseShowStreams;
+import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 import hudson.plugins.accurev.XmlParserFactory;
 
 public class ShowStreams extends Command {

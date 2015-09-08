@@ -1,5 +1,8 @@
 package hudson.plugins.accurev;
 
+import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
+import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
+import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;

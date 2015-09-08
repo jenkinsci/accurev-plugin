@@ -17,59 +17,70 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class XmlConsolidateStreamChangeLog {
 
-	private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
-	private static final Map<Class<XMLOutputFactory>, XMLOutputFactory> OUTPUT_FACTORY_CACHE = new WeakHashMap<Class<XMLOutputFactory>, XMLOutputFactory>(1);
+    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
+    private static final Map<Class<XMLOutputFactory>, XMLOutputFactory> OUTPUT_FACTORY_CACHE = new WeakHashMap<Class<XMLOutputFactory>, XMLOutputFactory>(1);
 
-	static XMLOutputFactory getFactory() {
-		synchronized (OUTPUT_FACTORY_CACHE) {
-			final XMLOutputFactory existingFactory = OUTPUT_FACTORY_CACHE.get(XMLOutputFactory.class);
-			if (existingFactory != null) {
-				return existingFactory;
-			}
-			XMLOutputFactory newFactory = XMLOutputFactory.newFactory();
-			OUTPUT_FACTORY_CACHE.put(XMLOutputFactory.class, newFactory);
-			return newFactory;
-		}
+    static XMLOutputFactory getFactory() {
+        synchronized (OUTPUT_FACTORY_CACHE) {
+            final XMLOutputFactory existingFactory = OUTPUT_FACTORY_CACHE.get(XMLOutputFactory.class);
+            if (existingFactory != null) {
+                return existingFactory;
+            }
+            XMLOutputFactory newFactory = XMLOutputFactory.newFactory();
+            OUTPUT_FACTORY_CACHE.put(XMLOutputFactory.class, newFactory);
+            return newFactory;
+        }
 
-	}
+    }
 
-	public static File getStreamChangeLogFile(File changelogFile, AccurevStream stream) {
-		File dir = changelogFile.getParentFile();
-		File retVal = new File(dir, stream.getName() + "_" + changelogFile.getName());
-		return retVal;
-	}
+    public static File getStreamChangeLogFile(File changelogFile, AccurevStream stream) {
+        File dir = changelogFile.getParentFile();
+        File retVal = new File(dir, stream.getName() + "_" + changelogFile.getName());
+        return retVal;
+    }
 
-	public static void createChangeLog(List<String> streamFiles, File changeLogFile) {
-		FileOutputStream changeLogStream = null;
-		try {
-			changeLogStream = new FileOutputStream(changeLogFile);
-			XMLOutputFactory outputFactory = getFactory();
-			XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(changeLogStream);
-			streamWriter.writeStartDocument();
-			streamWriter.writeStartElement("ChangeLogs");
-			for (String streamFile : streamFiles) {
-				streamWriter.writeStartElement("ChangeLog");
-				streamWriter.writeCharacters(streamFile);
-				streamWriter.writeEndElement();
-			}
-			streamWriter.writeEndElement();
-			streamWriter.writeEndDocument();
-		} catch (FileNotFoundException ex) {
-			AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
-					logger, null);
-		} catch (XMLStreamException ex) {
-			AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
-					logger, null);
-		} finally {
-			try {
-				if (changeLogStream != null) {
-					changeLogStream.close();
-				}
-			} catch (IOException ex) {
-				AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
-						logger, null);
-			}
-		}
+    public static File getUpdateChangeLogFile(File changelogFile) {
+        File dir = changelogFile.getParentFile();
+        File retVal = new File(dir, "update_" + changelogFile.getName());
+        return retVal;
+    }
 
-	}
+    public static void createChangeLog(List<String> streamFiles, File changeLogFile, String updateFile) {
+        FileOutputStream changeLogStream = null;
+        try {
+            changeLogStream = new FileOutputStream(changeLogFile);
+            XMLOutputFactory outputFactory = getFactory();
+            XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(changeLogStream);
+            streamWriter.writeStartDocument();
+            streamWriter.writeStartElement("ChangeLogs");
+            if (updateFile != null) {
+                streamWriter.writeStartElement("UpdateLog");
+                streamWriter.writeCharacters(updateFile);
+                streamWriter.writeEndElement();
+            }
+            for (String streamFile : streamFiles) {
+                streamWriter.writeStartElement("ChangeLog");
+                streamWriter.writeCharacters(streamFile);
+                streamWriter.writeEndElement();
+            }
+            streamWriter.writeEndElement();
+            streamWriter.writeEndDocument();
+        } catch (FileNotFoundException ex) {
+            AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
+                    logger, null);
+        } catch (XMLStreamException ex) {
+            AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
+                    logger, null);
+        } finally {
+            try {
+                if (changeLogStream != null) {
+                    changeLogStream.close();
+                }
+            } catch (IOException ex) {
+                AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
+                        logger, null);
+            }
+        }
+
+    }
 }

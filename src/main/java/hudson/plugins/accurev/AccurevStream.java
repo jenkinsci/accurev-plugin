@@ -41,7 +41,7 @@ public class AccurevStream implements Serializable {
      *
      * @param parent Value to set for property 'parent'.
      */
-    void setParent(AccurevStream parent) {
+    public void setParent(AccurevStream parent) {
         if (this.parent != parent) {
             if (this.parent != null) {
                 this.parent.getChildren().remove(this);

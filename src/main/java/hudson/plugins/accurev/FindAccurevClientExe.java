@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 @SuppressWarnings("serial")
-final class FindAccurevClientExe implements FilePath.FileCallable<String> {
+public final class FindAccurevClientExe implements FilePath.FileCallable<String> {
 
     private final AccurevServer server;
     private static final Logger logger = Logger.getLogger(FindAccurevClientExe.class.getName());

@@ -1,12 +1,13 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.parsers.output;
 
+import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-final class ParseOutputToStream implements AccurevLauncher.ICmdOutputParser<Boolean, OutputStream> {
+public final class ParseOutputToStream implements AccurevLauncher.ICmdOutputParser<Boolean, OutputStream> {
     public Boolean parse(InputStream cmdOutput, OutputStream streamToCopyOutputTo)
             throws UnhandledAccurevCommandOutput, IOException {
         final byte[] buffer = new byte[4096];

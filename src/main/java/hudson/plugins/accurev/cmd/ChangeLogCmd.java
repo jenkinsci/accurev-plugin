@@ -3,12 +3,13 @@ package hudson.plugins.accurev.cmd;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.GetConfigWebURL;
-import hudson.plugins.accurev.ParseGetConfig;
-import hudson.plugins.accurev.ParseOutputToFile;
+import hudson.plugins.accurev.parsers.xml.ParseGetConfig;
+import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.util.ArgumentListBuilder;
 
@@ -38,7 +39,7 @@ public class ChangeLogCmd {
 	public static boolean captureChangelog(AccurevServer server,
 			Map<String, String> accurevEnv,
 			FilePath workspace,
-			BuildListener listener,
+			TaskListener listener,
 			String accurevPath,
 			Launcher launcher,
 			Date buildDate,
@@ -103,7 +104,7 @@ public class ChangeLogCmd {
 	private static void applyWebURL(AccurevServer server, 
 	      Map<String, String> accurevEnv, 
 	      FilePath workspace, 
-	      BuildListener listener, 
+	      TaskListener listener, 
 	      String accurevPath, 
 	      Launcher launcher, 
 	      File changelogFile, 

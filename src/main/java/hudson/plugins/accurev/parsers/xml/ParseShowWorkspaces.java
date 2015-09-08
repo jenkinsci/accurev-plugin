@@ -1,7 +1,8 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.parsers.xml;
 
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
+import hudson.plugins.accurev.AccurevWorkspace;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -10,7 +11,7 @@ import java.util.Map;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-final class ParseShowWorkspaces implements ICmdOutputXmlParser<Map<String, AccurevWorkspace>, Void> {
+public final class ParseShowWorkspaces implements ICmdOutputXmlParser<Map<String, AccurevWorkspace>, Void> {
     public Map<String, AccurevWorkspace> parse(XmlPullParser parser, Void context)
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         final Map<String, AccurevWorkspace> workspaces = new HashMap<String, AccurevWorkspace>();

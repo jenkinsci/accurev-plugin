@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.ParseInfoToLoginName;
+import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 
 public class Login extends Command {
    private static final Logger logger = Logger.getLogger(Login.class.getName());

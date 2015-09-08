@@ -23,6 +23,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     private String msg;
     private String action;
     private List<String> affectedPaths = new ArrayList<String>();
+    private List<String> affectedRawPaths = new ArrayList<String>();
     private List<String> fileRevisions = new ArrayList<String>();
     private String id;
     private String issueNum;
@@ -84,6 +85,10 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     public Collection<String> getAffectedPaths() {
         return affectedPaths;
     }
+
+    public List<String> getAffectedRawPaths() {
+        return affectedRawPaths;
+    }
     
     @Exported
     public Collection<String> getFileRevisions() {
@@ -143,6 +148,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     public void addAffectedPath(String path) {
         affectedPaths.add(path);
+    }
+    public void addAffectedRawPath(String path) {
+        affectedRawPaths.add(path);
     }
     /**
      * Getter for action

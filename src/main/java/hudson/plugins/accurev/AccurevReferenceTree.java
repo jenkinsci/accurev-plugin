@@ -23,7 +23,7 @@ public class AccurevReferenceTree implements Serializable {
      *
      * @param stream Value to set for property 'stream'.
      */
-    void setStream(AccurevStream stream) {
+    public void setStream(AccurevStream stream) {
         this.stream = stream;
     }
 

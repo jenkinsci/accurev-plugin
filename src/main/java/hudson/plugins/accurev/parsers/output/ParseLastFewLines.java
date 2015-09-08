@@ -1,4 +1,4 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.parsers.output;
 
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 
@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Filters the output of any command and just returns the last few lines.
  */
-final class ParseLastFewLines implements ICmdOutputParser<List<String>, Integer> {
+public final class ParseLastFewLines implements ICmdOutputParser<List<String>, Integer> {
     public List<String> parse(InputStream cmdOutput, Integer numberOfLines) throws 
             IOException {
         final LinkedList<String> result = new LinkedList<String>();

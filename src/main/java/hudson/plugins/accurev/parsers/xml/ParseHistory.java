@@ -1,7 +1,9 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.parsers.xml;
 
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
+import hudson.plugins.accurev.AccurevTransaction;
+import hudson.plugins.accurev.ParseChangeLog;
 
 import java.io.IOException;
 import java.util.List;
