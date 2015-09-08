@@ -1,4 +1,4 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.parsers.output;
 
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;

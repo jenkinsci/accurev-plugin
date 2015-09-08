@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails, UnknownHostException> {
+public class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails, UnknownHostException> {
 
     private final String path;
 

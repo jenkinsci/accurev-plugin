@@ -7,14 +7,14 @@ import java.util.logging.Logger;
 import hudson.Launcher;
 import hudson.FilePath;
 
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 
 import hudson.util.ArgumentListBuilder;
 
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.ParsePopulate;
+import hudson.plugins.accurev.parsers.output.ParsePopulate;
 public class PopulateCmd extends Command  {
 
 	   
@@ -42,7 +42,7 @@ public class PopulateCmd extends Command  {
 	    * @param accurevEnv
 	    * @return
 	    */
-	  public boolean populate(AccurevSCM scm, Launcher launcher, BuildListener listener, 
+	  public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener, 
 	        AccurevServer server, String accurevClientExePath, 
 	        String streamName, 
 	        boolean overwrite, 

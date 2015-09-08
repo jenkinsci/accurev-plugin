@@ -14,7 +14,7 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.AccurevTransaction;
-import hudson.plugins.accurev.ParseHistory;
+import hudson.plugins.accurev.parsers.xml.ParseHistory;
 import hudson.plugins.accurev.XmlParserFactory;
 
 public class History extends Command {
