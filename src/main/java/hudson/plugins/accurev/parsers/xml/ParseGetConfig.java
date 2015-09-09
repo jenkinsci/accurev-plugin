@@ -1,7 +1,8 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.parsers.xml;
 
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
+import hudson.plugins.accurev.GetConfigWebURL;
 
 import java.io.IOException;
 import java.util.HashMap;

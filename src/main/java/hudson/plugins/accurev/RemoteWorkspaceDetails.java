@@ -2,7 +2,7 @@ package hudson.plugins.accurev;
 
 import java.io.Serializable;
 
-class RemoteWorkspaceDetails implements Serializable {
+public class RemoteWorkspaceDetails implements Serializable {
 
     private final String hostName;
     private final String path;
