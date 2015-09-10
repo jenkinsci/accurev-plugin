@@ -328,8 +328,8 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    protected boolean populate() {
-        if (isPopulateRequired()) {
+    protected boolean populate(boolean populateRequired) {
+        if (populateRequired) {
             PopulateCmd pop = new PopulateCmd();
             if (pop.populate(scm, launcher, listener, server, accurevPath, getPopulateStream(), true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
                 startDateOfPopulate = pop.get_startDateOfPopulate();
@@ -340,6 +340,10 @@ public abstract class AbstractModeDelegate {
             startDateOfPopulate = new Date();
         }
         return true;
+        
+    }
+    protected boolean populate() {
+        return populate(isPopulateRequired());
     }
 
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {

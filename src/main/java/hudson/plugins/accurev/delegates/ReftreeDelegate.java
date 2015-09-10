@@ -133,15 +133,14 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             if (!relocate(relocation)) {
                 return false;
             }
-            if (popRequired) {
-                if (!populate()) {
-                    return false;
-                }
+            if (!populate(popRequired)) {
+                return false;
             }
         }
 
         return doUpdate(changeLogFile);
     }
+
 
     private boolean doUpdate(File changeLogFile) throws IOException, InterruptedException {
         updateLogFile = XmlConsolidateStreamChangeLog.getUpdateChangeLogFile(changeLogFile);
