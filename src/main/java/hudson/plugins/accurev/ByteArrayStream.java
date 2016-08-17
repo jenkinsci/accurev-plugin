@@ -45,7 +45,6 @@ public class ByteArrayStream implements Closeable {
         return mOutputStream.toInputStream();
     }
 
-    @Override
     public void close() throws IOException {
         mOutputStream.reset();
         mOutputStream.close();
