@@ -192,6 +192,14 @@ public class AccurevSCM extends SCM {
     }
 
     /**
+     * Getter for AccuRev server
+     * @return AccuRevServer based on serverName;
+     */
+    public AccurevServer getServer() {
+        return ((AccurevSCMDescriptor) getDescriptor()).getServer(serverName);
+    }
+
+    /**
      * Getter for property 'stream'.
      *
      * @return Value for property 'stream'.
