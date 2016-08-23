@@ -10,6 +10,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -91,24 +93,13 @@ public class ParseChangeLog extends ChangeLogParser {
         List<AccurevTransaction> transactions = null;
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
-            FileReader fis = null;
-            BufferedReader bis = null;
-            try {
-                fis = new FileReader(changelogFile);
-                bis = new BufferedReader(fis);
-                parser.setInput(bis);
+            try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath(), StandardCharsets.UTF_8)) {
+                parser.setInput(br);
                 transactions = parseTransactions(parser, changelogFile, updateLog);
             } finally {
-                if (bis != null) {
-                    bis.close();
-                }
-                if (fis != null) {
-                    fis.close();
-                }
-                if (parser != null) {
-                    parser.setInput(null);
-                }
+                parser.setInput(null);
             }
+
         } catch (XmlPullParserException e) {
             throw new IOException(e);
         }
