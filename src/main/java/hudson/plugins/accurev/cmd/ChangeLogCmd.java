@@ -2,7 +2,6 @@ package hudson.plugins.accurev.cmd;
 
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
