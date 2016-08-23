@@ -70,16 +70,10 @@ public class ShowDepots extends Command {
 	          } else {
 	             descriptorlogger.warning("AccuRev Server: "+server.getName()+". "+showcmdoutputdata);
 	          }
-		} catch (IOException e) {    
+		} catch (IOException | ParserConfigurationException | InterruptedException e) {
 	    	  descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate depot list.", e.getCause());
 	          e.printStackTrace();
-	       } catch (InterruptedException e) { 
-	     	  descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate depot list.", e.getCause());
-	          e.printStackTrace();
-	       } catch (ParserConfigurationException e) {  
-	     	  descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate depot list.", e.getCause());
-	          e.printStackTrace();
-	       } catch (SAXException e) {         
+	       } catch (SAXException e) {
 	          e.printStackTrace();
 	       } finally {
 	          try {

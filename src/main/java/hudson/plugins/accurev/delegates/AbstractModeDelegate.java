@@ -351,9 +351,7 @@ public abstract class AbstractModeDelegate {
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
         try {
             setup(null, null, null);
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, "buildEnvVars", ex);
-        } catch (InterruptedException ex) {
+        } catch (IOException | InterruptedException ex) {
             logger.log(Level.SEVERE, "buildEnvVars", ex);
         }
 

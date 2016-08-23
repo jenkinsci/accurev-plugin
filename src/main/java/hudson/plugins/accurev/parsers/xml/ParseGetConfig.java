@@ -45,13 +45,9 @@ public class ParseGetConfig implements ICmdOutputXmlParser<Map<String, GetConfig
 		        }else{
 		        	getConfig.put("webuiURL", new GetConfigWebURL(""));		        			    	
 		        }
-    	} catch(UnhandledAccurevCommandOutput e){
+    	} catch(UnhandledAccurevCommandOutput | XmlPullParserException | IOException e){
     		
-    	} catch(IOException e){
-    		
-    	} catch (XmlPullParserException e){
-    		
-    	} 
-    	return getConfig;
+    	}
+		return getConfig;
     }
 }

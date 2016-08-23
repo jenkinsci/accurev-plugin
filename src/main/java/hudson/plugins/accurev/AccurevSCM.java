@@ -672,9 +672,7 @@ public class AccurevSCM extends SCM {
                 if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
                     depots = ShowDepots.getDepots(server, accurevPath, descriptorlogger);
                 }
-            } catch (IOException e) {
-
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
 
             }
 
@@ -708,9 +706,7 @@ public class AccurevSCM extends SCM {
                     cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm, descriptorlogger);
                 }
 
-            } catch (IOException e) {
-
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
 
             }
             return cbm;

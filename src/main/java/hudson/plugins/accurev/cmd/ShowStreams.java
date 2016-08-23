@@ -191,15 +191,9 @@ public class ShowStreams extends Command {
 	        } else {
 	           descriptorlogger.warning("AccuRev Server: "+server.getName()+". "+ showcmdoutputdata);
 	        }
-		} catch (IOException e) {
+		} catch (IOException | SAXException | ParserConfigurationException | InterruptedException e) {
 	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      } catch (InterruptedException e) {
-	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      } catch (ParserConfigurationException e) {
-	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      } catch (SAXException e) {
-	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      }finally {
+	      } finally {
 	          try {
 	         	 if(stdout!=null){
 	         		 stdout.close();

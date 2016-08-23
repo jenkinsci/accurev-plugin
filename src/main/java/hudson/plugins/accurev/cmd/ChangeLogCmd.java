@@ -162,16 +162,8 @@ public class ChangeLogCmd {
          Transformer transformer = transformerFactory.newTransformer();
          StreamResult result = new StreamResult(changelogFile);
          transformer.transform(source, result);
-      } catch (ParserConfigurationException e) {               
+      } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
          
-      } catch (SAXException e) {             
-         
-      } catch (TransformerConfigurationException e) {             
-         
-      } catch (TransformerException e) {              
-         
-      } catch (IOException e) {
-
       }
-	}
+    }
 }
