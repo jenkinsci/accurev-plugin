@@ -399,14 +399,16 @@ public abstract class AbstractModeDelegate {
         // grab the last promote transaction from the changelog file
         String lastTransaction = null;
         // Abstract should have this since checkout should have already run
-        ChangeLogSet<AccurevTransaction> changeSet = (ChangeLogSet<AccurevTransaction>) build.getChangeSet();
+        ChangeLogSet<?> changeSet = (ChangeLogSet<AccurevTransaction>) build.getChangeSet();
         if (!changeSet.isEmptySet()) {
             // first EDIT entry should be the last transaction we want
             for (Object o : changeSet.getItems()) {
-                AccurevTransaction t = (AccurevTransaction) o;
-                if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                    lastTransaction = t.getId();
-                    break;
+                if (o instanceof AccurevTransaction) {
+                    AccurevTransaction t = (AccurevTransaction) o;
+                    if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
+                        lastTransaction = t.getId();
+                        break;
+                    }
                 }
             }
             /*
