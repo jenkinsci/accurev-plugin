@@ -338,14 +338,14 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      *
-     * @param build
-     * @param launcher
-     * @param jenkinsWorkspace
-     * @param listener
-     * @param changelogFile
+     * @param build            build
+     * @param launcher         launcher
+     * @param jenkinsWorkspace jenkins workspace
+     * @param listener         listener
+     * @param changelogFile    change log file
      * @return boolean
-     * @throws java.io.IOException
-     * @throws java.lang.InterruptedException
+     * @throws java.io.IOException            on failing IO
+     * @throws java.lang.InterruptedException on failing interrupt
      */
     public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, BuildListener listener,
             File changelogFile) throws IOException, InterruptedException {
@@ -449,10 +449,10 @@ public class AccurevSCM extends SCM {
         /**
          * {@inheritDoc}
          *
-         * @param req
-         * @param formData
+         * @param req      request
+         * @param formData json object
          * @return boolean
-         * @throws hudson.model.Descriptor.FormException
+         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
@@ -465,10 +465,10 @@ public class AccurevSCM extends SCM {
         /**
          * {@inheritDoc}
          *
-         * @param req
-         * @param formData
+         * @param req      request
+         * @param formData json object
          * @return SCM
-         * @throws hudson.model.Descriptor.FormException
+         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {

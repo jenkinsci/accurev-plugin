@@ -30,11 +30,11 @@ public class ParseChangeLog extends ChangeLogParser {
     /**
      * {@inheritDoc}
      *
-     * @param build
-     * @param changelogFile
-     * @return ChangeLogSet<AccurevTransaction>
-     * @throws java.io.IOException
-     * @throws org.xml.sax.SAXException
+     * @param build build
+     * @param changelogFile change log file
+     * @return ChangeLogSet with AccurevTransactions
+     * @throws IOException  failing IO
+     * @throws SAXException failing XML SAX exception
      */
     public ChangeLogSet<AccurevTransaction> parse(AbstractBuild build, File changelogFile)//
             throws IOException, SAXException {

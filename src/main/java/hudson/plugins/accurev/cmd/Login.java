@@ -115,9 +115,14 @@ public class Login extends Command {
    
    
    /**
-    * This method is called from dofillstreams and dofilldepots while configuring the job
-    *         
-    */
+     * @param server           Accurev Server
+     * @param accurevPath      Accurev Path
+     * @param descriptorlogger logger
+     * @return boolean whether am successful
+     * @throws IOException          failing IO
+     * @throws InterruptedException failing interrupt
+     *                              This method is called from dofillstreams and dofilldepots while configuring the job
+     */
    public static boolean accurevLoginfromGlobalConfig(//
 	         final AccurevServer server,
 	         final String accurevPath,

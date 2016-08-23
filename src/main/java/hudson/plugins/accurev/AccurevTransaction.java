@@ -74,8 +74,6 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     /**
      * Returns a set of paths in the workspace that was
      * affected by this change.
-     * <p/>
-     * <p/>
      * Contains string like 'foo/bar/zot'. No leading/trailing '/',
      * and separator must be normalized to '/'.
      *

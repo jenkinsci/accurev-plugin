@@ -19,20 +19,21 @@ import java.util.logging.Logger;
 public class CheckForChanges {
 	
 	//checkStreamForChanges is overloaded method
-	/**
-    *
-    * @param server Server
-    * @param accurevEnv Accurev Environment
-    * @param workspace workspace
-    * @param listener listener
-    * @param accurevPath accurev path
-    * @param launcher launcher
-    * @param stream stream
-    * @param buildDate build date
-    * @return if there are any new transactions in the stream since the last build was done
-    * @throws IOException if there is issues with files
-    * @throws InterruptedException if failed to interrupt properly
-    */
+    /**
+     * @param server      Server
+     * @param accurevEnv  Accurev Environment
+     * @param workspace   workspace
+     * @param listener    listener
+     * @param accurevPath accurev path
+     * @param launcher    launcher
+     * @param stream      stream
+     * @param buildDate   build date
+     * @param logger      Logger
+     * @param scm         Accurev SCM
+     * @return if there are any new transactions in the stream since the last build was done
+     * @throws IOException          if there is issues with files
+     * @throws InterruptedException if failed to interrupt properly
+     */
   //stream param is of type String
    public static boolean checkStreamForChanges(AccurevServer server,
                                          Map<String, String> accurevEnv,
@@ -165,18 +166,19 @@ public class CheckForChanges {
    }
    
     /**
-     *
-     * @param server server
-     * @param accurevEnv accurev environment
-     * @param workspace workspace
-     * @param listener listener
+     * @param server      server
+     * @param accurevEnv  accurev environment
+     * @param workspace   workspace
+     * @param listener    listener
      * @param accurevPath accurev path
-     * @param launcher launcher
-     * @param stream stream
-     * @param buildDate build Date
+     * @param launcher    launcher
+     * @param stream      stream
+     * @param buildDate   build Date
+     * @param logger      logger
+     * @param scm         Accurev SCm
      * @return if there are any new transactions in the stream since the last build was done
-	 * @throws IOException if there is issues with files
-	 * @throws InterruptedException if failed to interrupt properly
+     * @throws IOException          if there is issues with files
+     * @throws InterruptedException if failed to interrupt properly
      */
    //stream param is of type AccurevStream
    public static boolean checkStreamForChanges(AccurevServer server,

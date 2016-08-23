@@ -21,20 +21,19 @@ public class History extends Command {
    private static final Logger logger = Logger.getLogger(History.class.getName());
    
    /**
-    * 
-    * 
-    * @param server server
-    * @param accurevEnv Accurev Enviroment
-    * @param workspace workspace
-    * @param listener listener
-    * @param accurevPath accurevPath
-    * @param launcher launcher
-    * @param stream stream
-    * @param transactionType Transaction type
-    *           Specify what type of transaction to search for (can be null)
-    * @return the latest transaction of the specified type from the selected
-    *         stream
-    * @throws Exception if no transaction was found
+     * @param server          server
+     * @param accurevEnv      Accurev Enviroment
+     * @param workspace       workspace
+     * @param listener        listener
+     * @param accurevPath     accurevPath
+     * @param launcher        launcher
+     * @param stream          stream
+     * @param transactionType Transaction type
+     *                        Specify what type of transaction to search for (can be null)
+     * @param scm             Accurev SCM
+     * @return the latest transaction of the specified type from the selected
+     * stream
+     * @throws Exception if no transaction was found
     */
    public static AccurevTransaction getLatestTransaction(//
          final AccurevSCM scm, //

@@ -25,6 +25,7 @@ public class Command {
     * Convert the output stream to string -- when the command is executed through ProcessBuilder from the Global config page of jenkins
     *
     * @param is stream where the command output is written when executed using the ProcessBuilder
+    * @return String
     */
    public static String convertStreamToString(java.io.InputStream is) {
 	      String stream = "";
