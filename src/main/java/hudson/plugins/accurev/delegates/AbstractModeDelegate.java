@@ -131,7 +131,7 @@ public abstract class AbstractModeDelegate {
     protected String getPollingStream(AbstractProject<?, ?> project) {
         String parsedLocalStream;
         if (hasStringVariableReference(scm.getStream())) {
-            ParametersDefinitionProperty paramDefProp = (ParametersDefinitionProperty) project
+            ParametersDefinitionProperty paramDefProp = project
                     .getProperty(ParametersDefinitionProperty.class);
 
             if (paramDefProp == null) {

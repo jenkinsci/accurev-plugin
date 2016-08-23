@@ -382,7 +382,7 @@ public final class AccurevLauncher {
             final InputStream commandStderrOrNull) throws IOException {
         final Integer maxNumberOfStderrLines = Integer.valueOf(10);
         final Integer maxNumberOfStdoutLines = Integer.valueOf(5);
-        final String newLine = (String) System.getProperty("line.separator");
+        final String newLine = System.getProperty("line.separator");
         final ParseLastFewLines tailParser = new ParseLastFewLines();
         final StringBuilder outputText = new StringBuilder();
         if (commandStdoutOrNull != null) {
