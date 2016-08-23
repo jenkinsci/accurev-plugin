@@ -178,7 +178,7 @@ public class AccurevStream implements Serializable {
         }
     }
 
-    public static enum StreamType {
+    public enum StreamType {
         NORMAL("normal"),
         SNAPSHOT("snapshot"),
         WORKSPACE("workspace"),
