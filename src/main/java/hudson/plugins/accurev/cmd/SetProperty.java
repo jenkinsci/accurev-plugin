@@ -39,11 +39,8 @@ public class SetProperty extends Command {
         bgColorStyleCmd.add("-r");
         bgColorStyleCmd.add(propertyName);
         bgColorStyleCmd.add(propertyValue);
-        if (AccurevLauncher.runCommand("setproperty background color", launcher, bgColorStyleCmd, null,
-                scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true)) {
-            return true;
-        }
+        return AccurevLauncher.runCommand("setproperty background color", launcher, bgColorStyleCmd, null,
+                scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true);
 
-        return false;
     }
 }

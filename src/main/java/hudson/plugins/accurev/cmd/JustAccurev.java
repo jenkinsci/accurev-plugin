@@ -21,11 +21,7 @@ public class JustAccurev {
 	    	  accurevprocess = processBuilder.start();
 	    	  stdout = accurevprocess.getInputStream();        
 	          accurevprocess.waitFor();
-	          if (accurevprocess.exitValue() == 0) {
-	        	  return true;
-	          }else{	        	  
-	        	  return false;
-	          }
+			  return accurevprocess.exitValue() == 0;
 	      } catch (InterruptedException e) {	    	 
 	    	  return false;
 		} catch (IOException e) {			

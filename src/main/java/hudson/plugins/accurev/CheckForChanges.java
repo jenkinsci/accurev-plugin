@@ -306,9 +306,6 @@ public class CheckForChanges {
                 logger.log(Level.WARNING, msg, e);
             }
         }
-        if(isTransLatestThanBuild)
-        	return true;
-        else        
-        	return false;
+       return isTransLatestThanBuild;
     }
 }
