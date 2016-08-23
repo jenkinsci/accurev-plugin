@@ -34,7 +34,7 @@ public class ParseChangeLog extends ChangeLogParser {
      *
      * @param build
      * @param changelogFile
-     * @return
+     * @return ChangeLogSet<AccurevTransaction>
      * @throws java.io.IOException
      * @throws org.xml.sax.SAXException
      */
@@ -112,7 +112,7 @@ public class ParseChangeLog extends ChangeLogParser {
                 }
             }
         } catch (XmlPullParserException e) {
-            throw new IOException2(e);
+            throw new IOException(e);
         }
         return transactions;
     }
@@ -257,7 +257,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     }
                 }
             } catch (XmlPullParserException e) {
-                throw new IOException2(e);
+                throw new IOException(e);
             }
         } catch (AccurevLauncher.UnhandledAccurevCommandOutput ex) {
             throw new IOException(ex);

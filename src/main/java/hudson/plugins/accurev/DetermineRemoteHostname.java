@@ -1,6 +1,7 @@
 package hudson.plugins.accurev;
 
 import hudson.remoting.Callable;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,5 +30,10 @@ public class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails,
         }
 
         return new RemoteWorkspaceDetails(addr.getCanonicalHostName(), path, File.separator);
+    }
+
+    @Override
+    public void checkRoles(RoleChecker roleChecker) throws SecurityException {
+        //TODO: Implement Role check
     }
 }

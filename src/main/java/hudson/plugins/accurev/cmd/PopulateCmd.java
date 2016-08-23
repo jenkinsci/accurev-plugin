@@ -24,7 +24,7 @@ public class PopulateCmd extends Command  {
 	   
 	   /**
 	    * 
-	    * @return
+	    * @return Date
 	    */
 	   public Date get_startDateOfPopulate() {
 	      return _startDateOfPopulate;
@@ -40,7 +40,7 @@ public class PopulateCmd extends Command  {
 	    * @param fromMessage
 	    * @param accurevWorkingSpace
 	    * @param accurevEnv
-	    * @return
+	    * @return boolean
 	    */
 	  public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener, 
 	        AccurevServer server, String accurevClientExePath, 

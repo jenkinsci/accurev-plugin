@@ -304,7 +304,7 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      *
-     * @return
+     * @return SCMDescriptor
      */
     @Override
     public SCMDescriptor<?> getDescriptor() {
@@ -344,7 +344,7 @@ public class AccurevSCM extends SCM {
      * @param jenkinsWorkspace
      * @param listener
      * @param changelogFile
-     * @return
+     * @return boolean
      * @throws java.io.IOException
      * @throws java.lang.InterruptedException
      */
@@ -357,7 +357,7 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      *
-     * @return
+     * @return ChangeLogParser
      */
     public ChangeLogParser createChangeLogParser() {
         return new AccurevChangeLogParser();
@@ -438,7 +438,7 @@ public class AccurevSCM extends SCM {
         /**
          * {@inheritDoc}
          *
-         * @return
+         * @return String
          */
         @Override
         public String getDisplayName() {
@@ -452,7 +452,7 @@ public class AccurevSCM extends SCM {
          *
          * @param req
          * @param formData
-         * @return
+         * @return boolean
          * @throws hudson.model.Descriptor.FormException
          */
         @Override
@@ -468,7 +468,7 @@ public class AccurevSCM extends SCM {
          *
          * @param req
          * @param formData
-         * @return
+         * @return SCM
          * @throws hudson.model.Descriptor.FormException
          */
         @Override

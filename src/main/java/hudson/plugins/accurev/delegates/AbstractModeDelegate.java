@@ -31,6 +31,8 @@ import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
+import jenkins.model.Jenkins;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -109,7 +111,7 @@ public abstract class AbstractModeDelegate {
             // from the project folder on the master.
             final File projectDir = project.getRootDir();
             jenkinsWorkspace = new FilePath(projectDir);
-            launcher = Hudson.getInstance().createLauncher(listener);
+            launcher = Jenkins.getInstance().createLauncher(listener);
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
         try {

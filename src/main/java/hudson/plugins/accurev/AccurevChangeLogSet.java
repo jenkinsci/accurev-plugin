@@ -22,7 +22,7 @@ public final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> 
     private final List<AccurevTransaction> transactions;
 
     AccurevChangeLogSet(AbstractBuild build, List<AccurevTransaction> transactions) {
-        super(build);
+        super(build, null);
         if (transactions == null) {
             throw new NullPointerException("Cannot have a null transaction list");
         }
