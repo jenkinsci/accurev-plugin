@@ -684,11 +684,9 @@ public class AccurevSCM extends SCM {
             }
             // Below while loop is for to retain the selected item when you open the
             // Job to reconfigure
-            Iterator<Option> depotsIter = d.iterator();
-            while (depotsIter.hasNext()) {
-                temp = depotsIter.next();
-                if (depot.equals(temp.name)) {
-                    temp.selected = true;
+            for (Option o : d) {
+                if (depot.equals(o.name)) {
+                    o.selected = true;
                 }
             }
             return d;
