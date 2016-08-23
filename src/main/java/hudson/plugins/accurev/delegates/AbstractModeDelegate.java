@@ -3,28 +3,9 @@ package hudson.plugins.accurev.delegates;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.ParameterDefinition;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersDefinitionProperty;
-import hudson.model.StringParameterValue;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccuRevHiddenParametersAction;
-import hudson.plugins.accurev.AccurevSCM;
-import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.AccurevTransaction;
-import hudson.plugins.accurev.FindAccurevClientExe;
-import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
-import hudson.plugins.accurev.cmd.ChangeLogCmd;
-import hudson.plugins.accurev.cmd.History;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.PopulateCmd;
-import hudson.plugins.accurev.cmd.SetProperty;
-import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.cmd.Synctime;
+import hudson.model.*;
+import hudson.plugins.accurev.*;
+import hudson.plugins.accurev.cmd.*;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 import hudson.scm.PollingResult;
@@ -34,15 +15,11 @@ import jenkins.model.Jenkins;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
 
 /**
  * Performs actual SCM operations
@@ -110,7 +87,9 @@ public abstract class AbstractModeDelegate {
             // from the project folder on the master.
             final File projectDir = project.getRootDir();
             jenkinsWorkspace = new FilePath(projectDir);
-            launcher = Jenkins.getInstance().createLauncher(listener);
+            if (Jenkins.getInstance() != null) {
+                launcher = Jenkins.getInstance().createLauncher(listener);
+            }
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
         try {
@@ -251,7 +230,9 @@ public abstract class AbstractModeDelegate {
         final Calendar startTime;
         if (null == build.getPreviousBuild()) {
             listener.getLogger().println("Cannot find a previous build to compare against. Computing all changes.");
-            startTime = null;
+            GregorianCalendar c = new GregorianCalendar();
+            c.setTimeInMillis(0);
+            startTime = c;
         } else {
             startTime = build.getPreviousBuild().getTimestamp();
         }
