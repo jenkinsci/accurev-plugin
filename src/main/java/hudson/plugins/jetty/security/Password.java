@@ -16,7 +16,7 @@ package hudson.plugins.jetty.security;
 
 /**
  * Password utility class.
- * <p/>
+ *
  * Passwords that begin with OBF: are de obfuscated.
  * Passwords can be obfuscated by run org.mortbay.util.Password as a
  * main class.  Obfuscated password are required if a system needs

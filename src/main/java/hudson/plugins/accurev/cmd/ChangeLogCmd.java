@@ -89,15 +89,15 @@ public class ChangeLogCmd {
 	/**
 	 * Parse the settings.xml file to get the webui url and apply it to the changelog.
 	 * 
-	 * @param server
-	 * @param accurevEnv
-	 * @param workspace
-	 * @param listener
-	 * @param accurevPath
-	 * @param launcher
-	 * @param changelogFile
-	 * @param logger
-	 * @param scm
+	 * @param server Server
+	 * @param accurevEnv Accurev Enviroment
+	 * @param workspace Workspace
+	 * @param listener listener
+	 * @param accurevPath AccurevPath
+	 * @param launcher Launcher
+	 * @param changelogFile Change log file
+	 * @param logger logger
+	 * @param scm Accurev SCM
 	 */
 	private static void applyWebURL(AccurevServer server, 
 	      Map<String, String> accurevEnv, 

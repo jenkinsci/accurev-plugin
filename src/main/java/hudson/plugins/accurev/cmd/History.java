@@ -23,18 +23,18 @@ public class History extends Command {
    /**
     * 
     * 
-    * @param server
-    * @param accurevEnv
-    * @param workspace
-    * @param listener
-    * @param accurevPath
-    * @param launcher
-    * @param stream
-    * @param transactionType
+    * @param server server
+    * @param accurevEnv Accurev Enviroment
+    * @param workspace workspace
+    * @param listener listener
+    * @param accurevPath accurevPath
+    * @param launcher launcher
+    * @param stream stream
+    * @param transactionType Transaction type
     *           Specify what type of transaction to search for (can be null)
     * @return the latest transaction of the specified type from the selected
     *         stream
-    * @throws Exception
+    * @throws Exception if no transaction was found
     */
    public static AccurevTransaction getLatestTransaction(//
          final AccurevSCM scm, //

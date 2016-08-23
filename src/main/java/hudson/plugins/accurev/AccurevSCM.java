@@ -86,21 +86,21 @@ public class AccurevSCM extends SCM {
     /**
      * Our constructor.
      *
-     * @param serverName
-     * @param depot
-     * @param stream
-     * @param wspaceORreftree
-     * @param workspace
-     * @param reftree
-     * @param subPath
-     * @param filterForPollSCM
-     * @param synctime
-     * @param cleanreftree
-     * @param useSnapshot
-     * @param dontPopContent
-     * @param snapshotNameFormat
-     * @param directoryOffset
-     * @param ignoreStreamParent
+     * @param serverName name for the server
+     * @param depot depot
+     * @param stream stream
+     * @param wspaceORreftree workspace or reftree
+     * @param workspace workspace
+     * @param reftree reftree
+     * @param subPath subPath
+     * @param filterForPollSCM filterForPollSCM
+     * @param synctime synctime
+     * @param cleanreftree cleanreftree
+     * @param useSnapshot useSnapshot
+     * @param dontPopContent Do not populate content
+     * @param snapshotNameFormat snapshot name format
+     * @param directoryOffset directory offset
+     * @param ignoreStreamParent ignore Parent Stream
      */
     @DataBoundConstructor
     public AccurevSCM(String serverName,
@@ -323,8 +323,8 @@ public class AccurevSCM extends SCM {
      *
      * </ul>
      *
-     * @param build
-     * @param env
+     * @param build build
+     * @param env enviroments
      * @since 0.6.9
      */
     @Override
@@ -530,7 +530,7 @@ public class AccurevSCM extends SCM {
         /**
          * Setter for property 'pollOnMaster'.
          *
-         * @param pollOnMaster
+         * @param pollOnMaster poll on aster
          */
         public void setPollOnMaster(boolean pollOnMaster) {
             this.pollOnMaster = pollOnMaster;
@@ -803,9 +803,8 @@ public class AccurevSCM extends SCM {
          * then this hack!
          *
          * @return This.
-         * @throws ObjectStreamException
          */
-        private Object readResolve() throws ObjectStreamException {
+        private Object readResolve() {
             if (winCmdLocations == null) {
                 winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
             }

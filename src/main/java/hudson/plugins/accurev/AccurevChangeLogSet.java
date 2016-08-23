@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import hudson.scm.RepositoryBrowser;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -23,6 +24,7 @@ public final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> 
 
     AccurevChangeLogSet(AbstractBuild build, List<AccurevTransaction> transactions) {
         super(build, null);
+        RepositoryBrowser<?> browser;
         if (transactions == null) {
             throw new NullPointerException("Cannot have a null transaction list");
         }

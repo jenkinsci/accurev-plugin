@@ -32,14 +32,14 @@ public class PopulateCmd extends Command  {
 	     
 	   /**
 	    * 
-	    * @param launcher
-	    * @param listener
-	    * @param server
-	    * @param accurevClientExePath
-	    * @param streamName
-	    * @param fromMessage
-	    * @param accurevWorkingSpace
-	    * @param accurevEnv
+	    * @param launcher launcher
+	    * @param listener listener
+	    * @param server server
+	    * @param accurevClientExePath Accurev Client Executable Path
+	    * @param streamName stream Name
+	    * @param fromMessage from Messge
+	    * @param accurevWorkingSpace Accurev Workspace
+	    * @param accurevEnv Accurev Environment
 	    * @return boolean
 	    */
 	  public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener, 

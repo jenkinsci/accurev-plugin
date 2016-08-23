@@ -174,6 +174,7 @@ public final class AccurevLauncher {
      *            parser. If this is <code>null</code> then no command will be
      *            executed and the function will return <code>null</code>
      *            immediately.
+     * 
      * @return See above.
      */
     public static <TResult, TContext> TResult runCommand(//
