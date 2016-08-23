@@ -18,10 +18,9 @@ public final class ParseLastFewLines implements ICmdOutputParser<List<String>, I
             IOException {
         final LinkedList<String> result = new LinkedList<String>();
         final Reader stringReader = new InputStreamReader(cmdOutput);
-        final BufferedReader lineReader = new BufferedReader(stringReader);
         int linesRemainingBeforeWeAreFull = numberOfLines;
         String line;
-        try {
+        try (BufferedReader lineReader = new BufferedReader(stringReader)) {
             line = lineReader.readLine();
             while (line != null) {
                 result.add(line);
@@ -32,8 +31,6 @@ public final class ParseLastFewLines implements ICmdOutputParser<List<String>, I
                 }
                 line = lineReader.readLine();
             }
-        } finally {
-            lineReader.close();
         }
         return result;
     }

@@ -14,9 +14,8 @@ public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void
         final String usernameHeading = "Principal:";
         final String controlCharsOrSpaceRegex = "[ \\x00-\\x1F\\x7F]+";
         final Reader stringReader = new InputStreamReader(cmdOutput);
-        final BufferedReader lineReader = new BufferedReader(stringReader);
         String line;
-        try {
+        try (BufferedReader lineReader = new BufferedReader(stringReader)) {
             line = lineReader.readLine();
             while (line != null) {
                 final String[] parts = line.split(controlCharsOrSpaceRegex);
@@ -31,8 +30,6 @@ public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void
                 }
                 line = lineReader.readLine();
             }
-        } finally {
-            lineReader.close();
         }
         throw new UnhandledAccurevCommandOutput("Output did not contain " + usernameHeading + " "
                 + controlCharsOrSpaceRegex + " <username>");
