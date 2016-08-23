@@ -90,7 +90,7 @@ public class ShowStreams extends Command {
          final TaskListener listener, //
          final String accurevPath, //
          final Launcher launcher) {
-      final Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+      final Map<String, AccurevStream> streams = new HashMap<>();
       String streamName = nameOfStreamRequired;
       while (streamName != null && !streamName.isEmpty()) {
          final Map<String, AccurevStream> oneStream = getOneStream(scm, streamName, server, accurevEnv, workspace, listener, accurevPath, launcher);
@@ -143,7 +143,7 @@ public class ShowStreams extends Command {
 	         ) {
 		
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-		List<String> showStreamsCmd = new ArrayList<String>();
+		List<String> showStreamsCmd = new ArrayList<>();
 		  
 		cmd.add(accurevPath);
         cmd.add("show");

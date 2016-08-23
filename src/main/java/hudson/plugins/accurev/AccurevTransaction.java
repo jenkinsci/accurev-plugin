@@ -22,9 +22,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     private Date date;
     private String msg;
     private String action;
-    private List<String> affectedPaths = new ArrayList<String>();
-    private List<String> affectedRawPaths = new ArrayList<String>();
-    private List<String> fileRevisions = new ArrayList<String>();
+    private List<String> affectedPaths = new ArrayList<>();
+    private List<String> affectedRawPaths = new ArrayList<>();
+    private List<String> fileRevisions = new ArrayList<>();
     private String id;
     private String issueNum;
     private String webuiURLforTrans;

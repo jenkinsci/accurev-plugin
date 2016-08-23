@@ -14,7 +14,7 @@ import org.xmlpull.v1.XmlPullParserException;
 public final class ParseShowWorkspaces implements ICmdOutputXmlParser<Map<String, AccurevWorkspace>, Void> {
     public Map<String, AccurevWorkspace> parse(XmlPullParser parser, Void context)
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
-        final Map<String, AccurevWorkspace> workspaces = new HashMap<String, AccurevWorkspace>();
+        final Map<String, AccurevWorkspace> workspaces = new HashMap<>();
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:

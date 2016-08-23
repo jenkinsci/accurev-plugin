@@ -92,7 +92,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
         final RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
 
-        List<RelocationOption> relocationOptions = new ArrayList<RelocationOption>();
+        List<RelocationOption> relocationOptions = new ArrayList<>();
         for (WorkspaceRelocation workspaceRelocationvalue : WorkspaceRelocation.values()) {
             if (workspaceRelocationvalue.isRequired(accurevWorkspace, remoteDetails, localStream)) {
                 relocationOptions.add(workspaceRelocationvalue);

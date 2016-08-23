@@ -22,7 +22,7 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
     	
-        final Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+        final Map<String, AccurevStream> streams = new HashMap<>();
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:

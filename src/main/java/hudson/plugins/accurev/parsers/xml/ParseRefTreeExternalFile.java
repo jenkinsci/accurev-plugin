@@ -14,7 +14,7 @@ import org.xmlpull.v1.XmlPullParserException;
 public class ParseRefTreeExternalFile implements ICmdOutputXmlParser<Map<String, RefTreeExternalFile>, Void> {
     public Map<String, RefTreeExternalFile> parse(XmlPullParser parser, Void context)
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
-    	final Map<String, RefTreeExternalFile> externalFiles = new HashMap<String, RefTreeExternalFile>();
+    	final Map<String, RefTreeExternalFile> externalFiles = new HashMap<>();
         
         while (true) {
             switch (parser.next()) {

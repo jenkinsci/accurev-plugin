@@ -9,7 +9,7 @@ public class JustAccurev {
 
 	
 	public static boolean justAccuRev(String osSpecificValue){
-		List<String> accurevCommand = new ArrayList<String>();
+		List<String> accurevCommand = new ArrayList<>();
 	      accurevCommand.add(osSpecificValue);
 	     
 	      ProcessBuilder processBuilder = new ProcessBuilder(accurevCommand);

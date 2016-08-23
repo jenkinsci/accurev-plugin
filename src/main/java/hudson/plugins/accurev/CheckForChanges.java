@@ -69,12 +69,12 @@ public class CheckForChanges {
        if(filterForPollSCM != null && !(filterForPollSCM.isEmpty())){
 	        String FFPSCM_LIST = filterForPollSCM;
 	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
        }else{
        	if(subPath != null && !(subPath.isEmpty())){
        		String FFPSCM_LIST = subPath;
    	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-   	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+   	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
        	}
        }
        for (final String transactionType : validTransactionTypes) {
@@ -223,12 +223,12 @@ public class CheckForChanges {
         if(filterForPollSCM != null && !(filterForPollSCM.isEmpty())){
 	        String FFPSCM_LIST = filterForPollSCM;
 	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
         }else{
         	if(subPath != null && !(subPath.isEmpty())){
         		String FFPSCM_LIST = subPath;
     	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-    	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+    	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
         	}
         }
         for (final String transactionType : validTransactionTypes) {

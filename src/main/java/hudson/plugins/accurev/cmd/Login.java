@@ -124,7 +124,7 @@ public class Login extends Command {
 	         final Logger descriptorlogger) throws IOException, InterruptedException {
 	   
 	   	  final ArgumentListBuilder cmd = new ArgumentListBuilder();
-	   	  List<String> logincommand = new ArrayList<String>();
+	   	  List<String> logincommand = new ArrayList<>();
 	   	  cmd.add(accurevPath);
 	   	  cmd.add("login");
 	      addServer(cmd, server);

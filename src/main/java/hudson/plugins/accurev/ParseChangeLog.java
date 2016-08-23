@@ -49,10 +49,10 @@ public class ParseChangeLog extends ChangeLogParser {
     private List<AccurevTransaction> filterTransactions(List<AccurevTransaction> transactions, UpdateLog updateLog){
         List<AccurevTransaction> retVal;
         if (updateLog.hasUpdate()){
-            retVal = new ArrayList<AccurevTransaction>();
+            retVal = new ArrayList<>();
             if (updateLog.hasChanges()){
                 List<String> changesFiles = updateLog.changedFiles;
-                List<String> filteredFiles = new ArrayList<String>(changesFiles);
+                List<String> filteredFiles = new ArrayList<>(changesFiles);
                 for (AccurevTransaction transaction : transactions) {
                     List<String> rawPaths = transaction.getAffectedRawPaths();
                     boolean includeTransaction = true;
@@ -118,7 +118,7 @@ public class ParseChangeLog extends ChangeLogParser {
     }
 
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile, UpdateLog updateLog) throws IOException, XmlPullParserException {
-        List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
+        List<AccurevTransaction> transactions = new ArrayList<>();
         AccurevTransaction currentTransaction = null;
         boolean inComment = false;
         boolean inIssueNum = false;
@@ -233,7 +233,7 @@ public class ParseChangeLog extends ChangeLogParser {
 
     private void parseUpdate(File updateLogFile, UpdateLog updateLog) throws XmlPullParserException, IOException {
         ParseUpdate parseUpdate = new ParseUpdate();
-        List<String> updatedFiles = new ArrayList<String>();
+        List<String> updatedFiles = new ArrayList<>();
         updateLog.changedFiles = updatedFiles;
         try {
             try {

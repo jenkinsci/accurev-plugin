@@ -29,9 +29,9 @@ public class ShowDepots extends Command {
 	         final Logger descriptorlogger
 	         ) {
 		
-		  final List<String> depots = new ArrayList<String>();
+		  final List<String> depots = new ArrayList<>();
 		  final ArgumentListBuilder cmd = new ArgumentListBuilder();
-		  List<String> showDepotsCmd = new ArrayList<String>();
+		  List<String> showDepotsCmd = new ArrayList<>();
 		  
 		  cmd.add(accurevPath);
           cmd.add("show");

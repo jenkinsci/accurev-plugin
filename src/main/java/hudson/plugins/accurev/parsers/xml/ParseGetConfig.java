@@ -16,7 +16,7 @@ public class ParseGetConfig implements ICmdOutputXmlParser<Map<String, GetConfig
 	
     public Map<String, GetConfigWebURL> parse(XmlPullParser parser, Void context)
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
-    	final Map<String, GetConfigWebURL> getConfig = new HashMap<String, GetConfigWebURL>();
+    	final Map<String, GetConfigWebURL> getConfig = new HashMap<>();
     	try{
 		        if(parser!=null){
 			        while (true) {

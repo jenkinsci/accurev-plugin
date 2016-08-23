@@ -83,7 +83,7 @@ public abstract class AbstractModeDelegate {
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
         server = DESCRIPTOR.getServer(scm.getServerName());
-        accurevEnv = new HashMap<String, String>();
+        accurevEnv = new HashMap<>();
         if (jenkinsWorkspace != null) {
             accurevPath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
@@ -141,7 +141,7 @@ public abstract class AbstractModeDelegate {
                         "Polling is not supported when stream name has a variable reference '" + scm.getStream() + "'.");
             }
 
-            Map<String, String> keyValues = new TreeMap<String, String>();
+            Map<String, String> keyValues = new TreeMap<>();
 
             /* Scan for all parameter with an associated default values */
             for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
@@ -277,7 +277,7 @@ public abstract class AbstractModeDelegate {
     }
 
     private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile) throws IOException, InterruptedException {
-        List<String> changedStreams = new ArrayList<String>();
+        List<String> changedStreams = new ArrayList<>();
         // Capture changes in all streams and parents
         boolean capturedChangelog = false;
         do {

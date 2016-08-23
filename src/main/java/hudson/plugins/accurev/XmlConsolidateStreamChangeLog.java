@@ -18,7 +18,7 @@ import javax.xml.stream.XMLStreamWriter;
 public class XmlConsolidateStreamChangeLog {
 
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
-    private static final Map<Class<XMLOutputFactory>, XMLOutputFactory> OUTPUT_FACTORY_CACHE = new WeakHashMap<Class<XMLOutputFactory>, XMLOutputFactory>(1);
+    private static final Map<Class<XMLOutputFactory>, XMLOutputFactory> OUTPUT_FACTORY_CACHE = new WeakHashMap<>(1);
 
     static XMLOutputFactory getFactory() {
         synchronized (OUTPUT_FACTORY_CACHE) {

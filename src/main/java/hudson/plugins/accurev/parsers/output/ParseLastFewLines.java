@@ -16,7 +16,7 @@ import java.util.List;
 public final class ParseLastFewLines implements ICmdOutputParser<List<String>, Integer> {
     public List<String> parse(InputStream cmdOutput, Integer numberOfLines) throws 
             IOException {
-        final LinkedList<String> result = new LinkedList<String>();
+        final LinkedList<String> result = new LinkedList<>();
         final Reader stringReader = new InputStreamReader(cmdOutput);
         int linesRemainingBeforeWeAreFull = numberOfLines;
         String line;

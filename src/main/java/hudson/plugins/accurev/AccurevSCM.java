@@ -499,7 +499,7 @@ public class AccurevSCM extends SCM {
          */
         public List<AccurevServer> getServers() {
             if (this._servers == null) {
-                this._servers = new ArrayList<AccurevServer>();
+                this._servers = new ArrayList<>();
             }
             // We put this here to maintain backwards compatibility
             // because we changed the name of the 'servers' field to '_servers'
@@ -663,7 +663,7 @@ public class AccurevSCM extends SCM {
 
             ListBoxModel d = null;
             Option temp = null;
-            List<String> depots = new ArrayList<String>();
+            List<String> depots = new ArrayList<>();
 
             // Execute the login command first & upon success of that run show depots
             // command. If any of the command's exitvalue is 1 proper error message is
@@ -759,7 +759,7 @@ public class AccurevSCM extends SCM {
         public static final String VTT_DELIM = ",";
         // keep all transaction types in a set for validation
         private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<String>(Arrays.asList(VTT_LIST
+        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
                 .split(VTT_DELIM)));
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
@@ -769,8 +769,8 @@ public class AccurevSCM extends SCM {
          * Constructs a new AccurevServer.
          */
         public AccurevServer() {
-            this.winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
-            this.nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+            this.winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
+            this.nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
         }
 
         @DataBoundConstructor
@@ -808,10 +808,10 @@ public class AccurevSCM extends SCM {
          */
         private Object readResolve() throws ObjectStreamException {
             if (winCmdLocations == null) {
-                winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
+                winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
             }
             if (nixCmdLocations == null) {
-                nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+                nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
             }
             return this;
         }

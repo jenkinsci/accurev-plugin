@@ -88,7 +88,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
 
         RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
 
-        List<RelocationOption> relocationOptions = new ArrayList<RelocationOption>();
+        List<RelocationOption> relocationOptions = new ArrayList<>();
 
         for (RefTreeRelocation refTreeRelocation : RefTreeRelocation.values()) {
             if (refTreeRelocation.isRequired(accurevReftree, remoteDetails)) {
