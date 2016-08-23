@@ -318,7 +318,7 @@ public final class AccurevLauncher {
                 synchronizationLockObjectOrNull.lock();
             }
             final int commandExitCode = starter.join();
-            return Integer.valueOf(commandExitCode);
+            return commandExitCode;
         } finally {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.unlock();
@@ -380,8 +380,8 @@ public final class AccurevLauncher {
 
     private static String getCommandErrorOutput(final InputStream commandStdoutOrNull,
             final InputStream commandStderrOrNull) throws IOException {
-        final Integer maxNumberOfStderrLines = Integer.valueOf(10);
-        final Integer maxNumberOfStdoutLines = Integer.valueOf(5);
+        final Integer maxNumberOfStderrLines = 10;
+        final Integer maxNumberOfStdoutLines = 5;
         final String newLine = System.getProperty("line.separator");
         final ParseLastFewLines tailParser = new ParseLastFewLines();
         final StringBuilder outputText = new StringBuilder();

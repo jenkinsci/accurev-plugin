@@ -19,7 +19,7 @@ public final class ParseLastFewLines implements ICmdOutputParser<List<String>, I
         final LinkedList<String> result = new LinkedList<String>();
         final Reader stringReader = new InputStreamReader(cmdOutput);
         final BufferedReader lineReader = new BufferedReader(stringReader);
-        int linesRemainingBeforeWeAreFull = numberOfLines.intValue();
+        int linesRemainingBeforeWeAreFull = numberOfLines;
         String line;
         try {
             line = lineReader.readLine();

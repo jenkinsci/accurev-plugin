@@ -72,7 +72,7 @@ public class History extends Command {
          final String msg = "History command failed when trying to get the latest transaction of type " + transactionType;
          throw new Exception(msg);
       }
-      if (transactionFound.booleanValue()) {
+      if (transactionFound) {
          return transaction.get(0);
       } else {
          return null;

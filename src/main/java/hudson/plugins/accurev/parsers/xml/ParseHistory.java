@@ -42,6 +42,6 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
             }
         }
         context.add(resultTransaction);
-        return Boolean.valueOf(resultTransaction != null);
+        return resultTransaction != null;
     }
 }
