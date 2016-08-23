@@ -220,7 +220,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
                         String oldStorage = accurevReftree.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
-                        return !oldStorage.equals(remoteDetails.getPath());
+                        return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
                     }
 
                     public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {

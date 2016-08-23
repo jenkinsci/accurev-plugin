@@ -14,6 +14,8 @@ import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
 import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -172,7 +174,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
                     @Override
                     protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
-                        return !accurevWorkspace.getHost().equals(remoteDetails.getHostName());
+                        return !accurevWorkspace.getHost().equalsIgnoreCase(remoteDetails.getHostName());
                     }
 
                     public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
@@ -188,7 +190,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
                         String oldStorage = accurevWorkspace.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
-                        return !oldStorage.equals(remoteDetails.getPath());
+                        return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
                     }
 
                     public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
