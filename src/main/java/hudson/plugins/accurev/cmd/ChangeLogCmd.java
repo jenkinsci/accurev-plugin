@@ -14,6 +14,7 @@ import hudson.util.ArgumentListBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -45,7 +46,7 @@ public class ChangeLogCmd {
 			String stream,
 			File changelogFile,
 			Logger logger,
-			AccurevSCM scm) throws IOException, InterruptedException {   
+			AccurevSCM scm) throws IOException, InterruptedException {
 
 		final String accurevACSYNCEnvVar = "AC_SYNC";
 		if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
@@ -62,9 +63,10 @@ public class ChangeLogCmd {
 		cmd.add("-s");
 		cmd.add(stream);
 		cmd.add("-t");
-		String dateRange = AccurevSCM.ACCUREV_DATETIME_FORMATTER.format(buildDate);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		String dateRange = formatter.format(buildDate);
 		if (startDate != null) {
-			dateRange += "-" + AccurevSCM.ACCUREV_DATETIME_FORMATTER.format(startDate);
+			dateRange += "-" + formatter.format(startDate);
 		} else {
 			dateRange += ".100";
 		}
@@ -72,7 +74,7 @@ public class ChangeLogCmd {
 		final String commandDescription = "Changelog command";
 		final Boolean success = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, scm.getOptionalLock(),
 				accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
-		if (success != Boolean.TRUE) {
+		if (!success) {
 			return false;
 		}
 		//==============================================================================================
@@ -124,6 +126,7 @@ public class ChangeLogCmd {
                launcher, getConfigcmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
                XmlParserFactory.getFactory(), new ParseGetConfig(), null);
       } catch (Exception e) {
+          logger.warning("Error loading settings.xml");
          // Error getting settings.xml file.
       }
       

@@ -129,7 +129,6 @@ public class Login extends Command {
 	         final Logger descriptorlogger) throws IOException, InterruptedException {
 	   
 	   	  final ArgumentListBuilder cmd = new ArgumentListBuilder();
-	   	  List<String> logincommand = new ArrayList<>();
 	   	  cmd.add(accurevPath);
 	   	  cmd.add("login");
 	      addServer(cmd, server);
@@ -140,8 +139,7 @@ public class Login extends Command {
 	      cmd.add(server.getUsername());
 	      // If the password is blank, "" should be passed
 	      cmd.add(server.getPassword().length() == 0 ? "\"\"" : server.getPassword());
-	      logincommand = cmd.toList();
-	      ProcessBuilder processBuilder = new ProcessBuilder(logincommand);
+	      ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
 	      processBuilder.redirectErrorStream(true);
 
 	      Process loginprocess;
@@ -166,6 +164,7 @@ public class Login extends Command {
 	         		 stdout.close();
 	         	 }
 	          } catch (IOException e) {
+                  logger.warning("Failed to close std out");
 	          }
 	       }
    }

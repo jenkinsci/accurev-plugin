@@ -6,6 +6,7 @@ import hudson.util.ArgumentListBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -31,16 +32,14 @@ public class ShowDepots extends Command {
 		
 		  final List<String> depots = new ArrayList<>();
 		  final ArgumentListBuilder cmd = new ArgumentListBuilder();
-		  List<String> showDepotsCmd = new ArrayList<>();
 		  
 		  cmd.add(accurevPath);
           cmd.add("show");
           addServer(cmd, server);
           cmd.add("-fx");
           cmd.add("depots");
-          
-          showDepotsCmd = cmd.toList();
-          ProcessBuilder processBuilder = new ProcessBuilder(showDepotsCmd);
+
+          ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
           processBuilder.redirectErrorStream(true);
           InputStream stdout = null;
           
@@ -55,7 +54,7 @@ public class ShowDepots extends Command {
 	             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	             DocumentBuilder parser;
 	             parser = factory.newDocumentBuilder();
-	             Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes()));
+	             Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes(Charset.defaultCharset())));
 	             doc.getDocumentElement().normalize();
 	             NodeList nList = doc.getElementsByTagName("Element");
 	             for (int i = 0; i < nList.getLength(); i++) {

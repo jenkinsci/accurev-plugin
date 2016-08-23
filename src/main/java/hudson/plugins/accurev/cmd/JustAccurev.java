@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class JustAccurev {
 
-	
+	private static final Logger logger = Logger.getLogger(JustAccurev.class.getName());
 	public static boolean justAccuRev(String osSpecificValue){
 		List<String> accurevCommand = new ArrayList<>();
 	      accurevCommand.add(osSpecificValue);
@@ -33,6 +34,7 @@ public class JustAccurev {
 	       	 }
 	       	
 	        } catch (IOException e) {
+				logger.warning("Failed to close std out");
 	        }
 	     }
 		

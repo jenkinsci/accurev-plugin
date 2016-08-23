@@ -1,5 +1,8 @@
 package hudson.plugins.accurev;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import java.io.Serializable;
 
 public class PopulateStreams implements Serializable,Comparable<PopulateStreams> {
@@ -31,9 +34,31 @@ public class PopulateStreams implements Serializable,Comparable<PopulateStreams>
         return number;
     }
 
+    @Override
 	public int compareTo(PopulateStreams o) {
 		// TODO Auto-generated method stub
-		return name.compareTo(o.name);
+		return name.compareTo(o.getName());
 	}
- 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PopulateStreams that = (PopulateStreams) o;
+
+        return new EqualsBuilder()
+                .append(name, that.name)
+                .append(number, that.number)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(name)
+                .append(number)
+                .toHashCode();
+    }
 }

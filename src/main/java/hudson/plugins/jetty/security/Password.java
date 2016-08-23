@@ -14,6 +14,11 @@
 
 package hudson.plugins.jetty.security;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+
 /**
  * Password utility class.
  *
@@ -31,9 +36,15 @@ public final class Password {
     private Password() {
     }
 
+    @SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
     public static String obfuscate(String s) {
         StringBuffer buf = new StringBuffer();
-        byte[] b = (s == null) ? "".getBytes() : s.getBytes();
+        byte[] b = new byte[0];
+        try {
+            b = (s == null) ? "".getBytes("UTF-8") : s.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         synchronized (buf) {
             buf.append(__OBFUSCATE);
             for (int i = 0; i < b.length; i++) {
@@ -72,6 +83,6 @@ public final class Password {
             int i2 = (i0 % 256);
             b[l++] = (byte) ((i1 + i2 - 254) / 2);
         }
-        return new String(b, 0, l);
+        return new String(b, 0, l, StandardCharsets.UTF_8);
     }
 }

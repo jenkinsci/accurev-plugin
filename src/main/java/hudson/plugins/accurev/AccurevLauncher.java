@@ -143,7 +143,7 @@ public final class AccurevLauncher {
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
-        return result == Boolean.TRUE;
+        return result;
     }
 
     /**

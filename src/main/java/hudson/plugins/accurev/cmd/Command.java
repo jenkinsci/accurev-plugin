@@ -3,6 +3,8 @@ package hudson.plugins.accurev.cmd;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 
+import java.nio.charset.Charset;
+
 public class Command {
    /**
     * Adds the server reference to the Arguments list.
@@ -29,7 +31,7 @@ public class Command {
     */
    public static String convertStreamToString(java.io.InputStream is) {
 	      String stream = "";
-	      java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+	      java.util.Scanner s = new java.util.Scanner(is, Charset.defaultCharset().name()).useDelimiter("\\A");
 	      stream = s.hasNext() ? s.next() : "";
 	      s.close();
 	      return stream;

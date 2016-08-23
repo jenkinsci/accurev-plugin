@@ -27,7 +27,7 @@ public class PopulateCmd extends Command  {
 	    * @return Date
 	    */
 	   public Date get_startDateOfPopulate() {
-	      return _startDateOfPopulate;
+	      return (Date) _startDateOfPopulate.clone();
 	   }
 	     
 	   /**
@@ -75,7 +75,7 @@ public class PopulateCmd extends Command  {
 	        }
 	     }
 	     _startDateOfPopulate = new Date();
-	     if (Boolean.TRUE != AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
+	     if (!AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
 	           accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger())) {
 	        return false;
 	     }

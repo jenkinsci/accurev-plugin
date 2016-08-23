@@ -11,6 +11,7 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -143,7 +144,6 @@ public class ShowStreams extends Command {
 	         ) {
 		
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-		List<String> showStreamsCmd = new ArrayList<>();
 		  
 		cmd.add(accurevPath);
         cmd.add("show");
@@ -156,9 +156,8 @@ public class ShowStreams extends Command {
         if(depot==null || depot.equalsIgnoreCase("")){
       	  return cbm;
         }
-        showStreamsCmd = cmd.toList();
         
-        ProcessBuilder processBuilder = new ProcessBuilder(showStreamsCmd);
+        ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
         processBuilder.redirectErrorStream(true);
         InputStream stdout = null;
         
@@ -174,7 +173,7 @@ public class ShowStreams extends Command {
 	           DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	           DocumentBuilder parser;
 	           parser = factory.newDocumentBuilder();
-	           Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes()));
+	           Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes(Charset.defaultCharset())));
 	           doc.getDocumentElement().normalize();
 	           NodeList nList = doc.getElementsByTagName("stream");
 	           for (int i = 0; i < nList.getLength(); i++) {

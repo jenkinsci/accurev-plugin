@@ -76,15 +76,16 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             throw new IllegalArgumentException("The specified reference tree, " + reftree + ", is based in the depot " + accurevReftree.getDepot() + " not " + scm.getDepot());
         }
 
-        if (streams != null) {
-            // Dont think we really use this can avoid the call
-            for (AccurevStream accurevStream : streams.values()) {
-                if (accurevReftree.getStreamNumber().equals(accurevStream.getNumber())) {
-                    accurevReftree.setStream(accurevStream);
-                    break;
-                }
-            }
-        }
+//        Redundant null check of value known to be null, remove? Since comment below suggests we are not using this.
+//        if (streams != null) {
+//            // Dont think we really use this can avoid the call
+//            for (AccurevStream accurevStream : streams.values()) {
+//                if (accurevReftree.getStreamNumber().equals(accurevStream.getNumber())) {
+//                    accurevReftree.setStream(accurevStream);
+//                    break;
+//                }
+//            }
+//        }
 
         RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
 

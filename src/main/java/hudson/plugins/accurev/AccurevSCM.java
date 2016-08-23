@@ -27,9 +27,7 @@ import hudson.util.ListBoxModel.Option;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -57,7 +55,6 @@ import org.kohsuke.stapler.StaplerRequest;
 public class AccurevSCM extends SCM {
 
 // ------------------------------ FIELDS ------------------------------
-    public static final SimpleDateFormat ACCUREV_DATETIME_FORMATTER = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     @Extension
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
@@ -672,7 +669,7 @@ public class AccurevSCM extends SCM {
                     depots = ShowDepots.getDepots(server, accurevPath, descriptorlogger);
                 }
             } catch (IOException | InterruptedException e) {
-
+                logger.warning(e.getMessage());
             }
 
             d = new ListBoxModel();
@@ -681,11 +678,7 @@ public class AccurevSCM extends SCM {
             }
             // Below while loop is for to retain the selected item when you open the
             // Job to reconfigure
-            for (Option o : d) {
-                if (depot.equals(o.name)) {
-                    o.selected = true;
-                }
-            }
+            d.stream().filter(o -> depot.equals(o.name)).forEachOrdered(o -> o.selected = true);
             return d;
         }
 
@@ -706,7 +699,7 @@ public class AccurevSCM extends SCM {
                 }
 
             } catch (IOException | InterruptedException e) {
-
+                logger.warning(e.getMessage());
             }
             return cbm;
         }
@@ -721,7 +714,6 @@ public class AccurevSCM extends SCM {
     }
 
     // --------------------------- Inner Class ---------------------------------------------------
-    @SuppressWarnings("serial")
     public static final class AccurevServer implements Serializable {
 
         private String name;
@@ -736,6 +728,7 @@ public class AccurevSCM extends SCM {
         private boolean minimiseLogins;
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
+        private static final long serialVersionUID = 3270850408409304611L;
 
         /**
          * The default search paths for Windows clients.

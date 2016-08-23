@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public final class ParseLastFewLines implements ICmdOutputParser<List<String>, I
     public List<String> parse(InputStream cmdOutput, Integer numberOfLines) throws 
             IOException {
         final LinkedList<String> result = new LinkedList<>();
-        final Reader stringReader = new InputStreamReader(cmdOutput);
+        final Reader stringReader = new InputStreamReader(cmdOutput, Charset.defaultCharset());
         int linesRemainingBeforeWeAreFull = numberOfLines;
         String line;
         try (BufferedReader lineReader = new BufferedReader(stringReader)) {

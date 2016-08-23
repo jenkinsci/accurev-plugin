@@ -8,12 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 
 public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void> {
     public String parse(InputStream cmdOutput, Void context) throws UnhandledAccurevCommandOutput, IOException {
         final String usernameHeading = "Principal:";
         final String controlCharsOrSpaceRegex = "[ \\x00-\\x1F\\x7F]+";
-        final Reader stringReader = new InputStreamReader(cmdOutput);
+        final Reader stringReader = new InputStreamReader(cmdOutput, Charset.defaultCharset());
         String line;
         try (BufferedReader lineReader = new BufferedReader(stringReader)) {
             line = lineReader.readLine();

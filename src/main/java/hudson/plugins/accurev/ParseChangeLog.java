@@ -1,5 +1,6 @@
 package hudson.plugins.accurev;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.AbstractBuild;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
@@ -10,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -93,7 +95,7 @@ public class ParseChangeLog extends ChangeLogParser {
         List<AccurevTransaction> transactions = null;
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
-            try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath(), StandardCharsets.UTF_8)) {
+            try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath(), Charset.defaultCharset())) {
                 parser.setInput(br);
                 transactions = parseTransactions(parser, changelogFile, updateLog);
             } finally {
@@ -106,6 +108,7 @@ public class ParseChangeLog extends ChangeLogParser {
         return transactions;
     }
 
+    @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT")
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile, UpdateLog updateLog) throws IOException, XmlPullParserException {
         List<AccurevTransaction> transactions = new ArrayList<>();
         AccurevTransaction currentTransaction = null;
@@ -227,23 +230,11 @@ public class ParseChangeLog extends ChangeLogParser {
         try {
             try {
                 XmlPullParser parser = XmlParserFactory.newParser();
-                FileReader fis = null;
-                BufferedReader bis = null;
-                try {
-                    fis = new FileReader(updateLogFile);
-                    bis = new BufferedReader(fis);
-                    parser.setInput(bis);
+                try (BufferedReader br = Files.newBufferedReader(updateLogFile.toPath(), Charset.defaultCharset())) {
+                    parser.setInput(br);
                     parseUpdate.parse(parser, updatedFiles);
                 } finally {
-                    if (bis != null) {
-                        bis.close();
-                    }
-                    if (fis != null) {
-                        fis.close();
-                    }
-                    if (parser != null) {
-                        parser.setInput(null);
-                    }
+                    parser.setInput(null);
                 }
             } catch (XmlPullParserException e) {
                 throw new IOException(e);

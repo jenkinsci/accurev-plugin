@@ -13,7 +13,6 @@ import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccuRevHiddenParametersAction;
 import hudson.plugins.accurev.AccurevSCM;
-import static hudson.plugins.accurev.AccurevSCM.ACCUREV_DATETIME_FORMATTER;
 import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevTransaction;
@@ -34,6 +33,7 @@ import jenkins.model.Jenkins;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -228,8 +228,8 @@ public abstract class AbstractModeDelegate {
                 throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
             }
             String latestTransactionID = latestTransaction.getId();
-            String latestTransactionDate = ACCUREV_DATETIME_FORMATTER.format(latestTransaction.getDate());
-            latestTransactionDate = latestTransactionDate == null ? "1970/01/01 00:00:00" : latestTransactionDate;
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            String latestTransactionDate = formatter.format(latestTransaction.getDate());
             listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
             listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
 
