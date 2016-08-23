@@ -230,7 +230,14 @@ public abstract class AbstractModeDelegate {
                 "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
-        startTime = build.getPreviousBuild().getTimestamp();
+        AbstractBuild<?, ?> prevbuild = null;
+        if (build != null) prevbuild = build.getPreviousBuild();
+        if (prevbuild != null) startTime = prevbuild.getTimestamp();
+        else {
+            GregorianCalendar c = new GregorianCalendar();
+            c.setTimeInMillis(0);
+            startTime = c;
+        }
 
         AccurevStream stream = streams == null ? null : streams.get(localStream);
         if (stream == null) {
