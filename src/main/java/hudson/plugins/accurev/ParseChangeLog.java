@@ -114,8 +114,6 @@ public class ParseChangeLog extends ChangeLogParser {
         } catch (XmlPullParserException e) {
             throw new IOException2(e);
         }
-
-        logger.log(Level.INFO, "transactions size = {0}", transactions.size());
         return transactions;
     }
 
