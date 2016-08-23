@@ -47,9 +47,9 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                     final String streamTypeStr = parser.getAttributeValue("", "type");
                     final String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
                     final String streamTimeString = parser.getAttributeValue("", "time");
-                    final Date streamTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamTimeString);
+                    final Date streamTime = streamTimeString == null ? new Date(0) : ParseChangeLog.convertAccurevTimestamp(streamTimeString);
                     final String streamStartTimeString = parser.getAttributeValue("", "startTime");
-                    final Date streamStartTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
+                    final Date streamStartTime = streamTimeString == null ? new Date(0) : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
                     try {
                         final Long streamNumber = streamNumberStr == null ? null : Long.valueOf(streamNumberStr);
                         final Long basisStreamNumber = basisStreamNumberStr == null ? null : Long.valueOf(basisStreamNumberStr);
