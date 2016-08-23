@@ -77,6 +77,10 @@ public abstract class AbstractModeDelegate {
     }
 
     public PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+        final Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IOException("Jenkins instance is not ready");
+        }
         if (project.isInQueue()) {
             listener.getLogger().println("Project build is currently in queue.");
             return PollingResult.NO_CHANGES;
@@ -87,9 +91,7 @@ public abstract class AbstractModeDelegate {
             // from the project folder on the master.
             final File projectDir = project.getRootDir();
             jenkinsWorkspace = new FilePath(projectDir);
-            if (Jenkins.getInstance() != null) {
-                launcher = Jenkins.getInstance().createLauncher(listener);
-            }
+            launcher = jenkins.createLauncher(listener);
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
         try {
@@ -228,26 +230,19 @@ public abstract class AbstractModeDelegate {
                 "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
-        if (null == build.getPreviousBuild()) {
-            listener.getLogger().println("Cannot find a previous build to compare against. Computing all changes.");
-            GregorianCalendar c = new GregorianCalendar();
-            c.setTimeInMillis(0);
-            startTime = c;
-        } else {
-            startTime = build.getPreviousBuild().getTimestamp();
-        }
+        startTime = build.getPreviousBuild().getTimestamp();
 
         AccurevStream stream = streams == null ? null : streams.get(localStream);
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
-                    startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+                    startDateOfPopulate, startTime.getTime(),
                     localStream, changelogFile, logger, scm);
         }
 
         if (!getChangesFromStreams(startTime, stream, changelogFile)) {
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, startDateOfPopulate,
-                    startTime == null ? null : startTime.getTime(), localStream, changelogFile, logger, scm);
+                    startTime.getTime(), localStream, changelogFile, logger, scm);
         }
         return true;
     }
