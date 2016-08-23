@@ -128,9 +128,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
             msg = "Changed Parent Stream";
         }
     }
-
+    
     protected void setParent(ChangeLogSet parent) {
-        super.setParent(parent);    //To change body of overridden methods use File | Settings | File Templates.
+        super.setParent(parent);    //Needed since parent method is protected
     }
 
     @Exported
