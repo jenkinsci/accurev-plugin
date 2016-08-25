@@ -749,7 +749,8 @@ public class AccurevSCM extends SCM {
                 "/usr/bin/accurev", //
                 "/bin/accurev", //
                 "/local/bin/accurev",
-                "/opt/accurev/bin/accurev");
+                "/opt/accurev/bin/accurev",
+                "/Applications/AccuRev/bin/accurev");
 
         public static final String VTT_DELIM = ",";
         // keep all transaction types in a set for validation
