@@ -1,6 +1,5 @@
 package hudson.plugins.accurev;
 
-import hudson.model.AbstractBuild;
 import hudson.model.Run;
 import hudson.scm.ChangeLogSet;
 

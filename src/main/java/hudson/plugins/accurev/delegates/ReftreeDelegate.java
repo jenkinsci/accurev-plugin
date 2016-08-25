@@ -63,7 +63,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     protected Relocation checkForRelocation() throws IOException, InterruptedException {
-        Map<String, AccurevStream> streams = null;
+//      Map<String, AccurevStream> streams = null;
         final Map<String, AccurevReferenceTree> reftrees = getReftrees();
         String reftree = scm.getReftree();
         if (reftrees == null) {
