@@ -30,7 +30,7 @@ public class Command {
     * @return String
     */
    public static String convertStreamToString(java.io.InputStream is) {
-	      String stream = "";
+	      String stream;
 	      java.util.Scanner s = new java.util.Scanner(is, Charset.defaultCharset().name()).useDelimiter("\\A");
 	      stream = s.hasNext() ? s.next() : "";
 	      s.close();

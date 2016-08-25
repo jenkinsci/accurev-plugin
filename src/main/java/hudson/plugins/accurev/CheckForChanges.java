@@ -198,7 +198,7 @@ public class CheckForChanges {
         latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
 
         //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
-        String[] validTransactionTypes = null;
+        String[] validTransactionTypes;
         if(stream.getType().name().equalsIgnoreCase("workspace")){
         	validTransactionTypes = AccurevServer.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES.split(AccurevServer.VTT_DELIM);
         	listener.getLogger().println(//

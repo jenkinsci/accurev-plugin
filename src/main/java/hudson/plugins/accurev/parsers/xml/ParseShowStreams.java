@@ -29,11 +29,10 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                 break;
             case XmlPullParser.END_DOCUMENT:
                 // build the tree
-                for (AccurevStream stream : streams.values()) {
-                    if (stream.getBasisName() != null) {
-                        stream.setParent(streams.get(stream.getBasisName()));
-                    }
-                }
+                streams.values()
+                        .stream()
+                        .filter(stream -> stream.getBasisName() != null)
+                        .forEachOrdered(stream -> stream.setParent(streams.get(stream.getBasisName())));
                 return streams;
             case XmlPullParser.START_TAG:
                 final String tagName = parser.getName();

@@ -36,8 +36,7 @@ public class PopulateStreams implements Serializable,Comparable<PopulateStreams>
 
     @Override
 	public int compareTo(PopulateStreams o) {
-		// TODO Auto-generated method stub
-		return name.compareTo(o.getName());
+		return name.compareTo(o.name);
 	}
 
     @Override

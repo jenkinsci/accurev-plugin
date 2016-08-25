@@ -3,11 +3,7 @@ package hudson.plugins.accurev;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
-import hudson.model.ModelObject;
-import hudson.model.TaskListener;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.*;
 import hudson.plugins.accurev.cmd.JustAccurev;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.ShowDepots;
@@ -22,7 +18,6 @@ import hudson.scm.SCM;
 import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import hudson.util.ListBoxModel.Option;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +35,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.ServletException;
 
 import net.sf.json.JSONObject;
@@ -337,17 +335,19 @@ public class AccurevSCM extends SCM {
      *
      * @param build            build
      * @param launcher         launcher
-     * @param jenkinsWorkspace jenkins workspace
+     * @param workspace        jenkins workspace
      * @param listener         listener
      * @param changelogFile    change log file
-     * @return boolean
+     * @param baseline SCMRevisionState
      * @throws java.io.IOException            on failing IO
      * @throws java.lang.InterruptedException on failing interrupt
      */
-    public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, BuildListener listener,
-            File changelogFile) throws IOException, InterruptedException {
-        AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.checkout(build, launcher, jenkinsWorkspace, listener, changelogFile);
+
+    public void checkout(@Nonnull Run<?,?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
+                         @Nonnull TaskListener listener, @CheckForNull File changelogFile,
+                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
+        AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
     }
 
     /**
@@ -393,14 +393,19 @@ public class AccurevSCM extends SCM {
     }
 
     @Override
-    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> ab, Launcher lnchr, TaskListener tl) throws IOException, InterruptedException {
+    public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?,?> build, @Nullable FilePath workspace,
+                                                   @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
         return SCMRevisionState.NONE;
     }
 
     @Override
-    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+    public PollingResult compareRemoteRevisionWith(@Nonnull Job<?,?> project, @Nullable Launcher launcher,
+                                                   @Nullable FilePath workspace, @Nonnull TaskListener listener,
+                                                   @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, scmrs);
+        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
     }
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------
@@ -570,7 +575,6 @@ public class AccurevSCM extends SCM {
 
         private AccurevServer getServerAndPath(String serverName) {
             final AccurevServer server = getServer(serverName);
-            boolean envAccurevBin;
             String accurevBinName = "accurev";
 
             if (server == null) {
@@ -657,8 +661,7 @@ public class AccurevSCM extends SCM {
                 return new ListBoxModel();
             }
 
-            ListBoxModel d = null;
-            Option temp = null;
+            ListBoxModel d;
             List<String> depots = new ArrayList<>();
 
             // Execute the login command first & upon success of that run show depots

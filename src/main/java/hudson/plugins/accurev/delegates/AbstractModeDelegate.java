@@ -76,7 +76,7 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    public PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
         final Jenkins jenkins = Jenkins.getInstance();
         if (jenkins == null) {
             throw new IOException("Jenkins instance is not ready");
@@ -104,13 +104,13 @@ public abstract class AbstractModeDelegate {
         return checkForChanges(project);
     }
 
-    protected abstract PollingResult checkForChanges(AbstractProject<?, ?> project) throws IOException, InterruptedException;
+    protected abstract PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException;
 
     private boolean hasStringVariableReference(final String str) {
         return str != null && str.contains("${");
     }
 
-    protected String getPollingStream(AbstractProject<?, ?> project) {
+    protected String getPollingStream(Job<?, ?> project) {
         String parsedLocalStream;
         if (hasStringVariableReference(scm.getStream())) {
             ParametersDefinitionProperty paramDefProp = project
@@ -148,7 +148,7 @@ public abstract class AbstractModeDelegate {
         return parsedLocalStream;
     }
 
-    public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, BuildListener listener,
+    public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
             File changelogFile) throws IOException, InterruptedException {
 
         try {
@@ -199,7 +199,7 @@ public abstract class AbstractModeDelegate {
         return captureChangeLog(build, changelogFile, streams, environment);
     }
 
-    private boolean captureChangeLog(AbstractBuild<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
+    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
         try {
             String changeLogStream = getChangeLogStream();
 
@@ -230,7 +230,7 @@ public abstract class AbstractModeDelegate {
                 "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
-        AbstractBuild<?, ?> prevbuild = null;
+        Run<?, ?> prevbuild = null;
         if (build != null) prevbuild = build.getPreviousBuild();
         if (prevbuild != null) startTime = prevbuild.getTimestamp();
         else {
@@ -261,7 +261,7 @@ public abstract class AbstractModeDelegate {
     private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile) throws IOException, InterruptedException {
         List<String> changedStreams = new ArrayList<>();
         // Capture changes in all streams and parents
-        boolean capturedChangelog = false;
+        boolean capturedChangelog;
         do {
             File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
             capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
@@ -280,7 +280,7 @@ public abstract class AbstractModeDelegate {
         return null;
     }
 
-    protected abstract boolean checkout(AbstractBuild<?, ?> build, File changeLogFile) throws IOException, InterruptedException;
+    protected abstract boolean checkout(Run<?, ?> build, File changeLogFile) throws IOException, InterruptedException;
 
     protected abstract String getPopulateFromMessage();
 

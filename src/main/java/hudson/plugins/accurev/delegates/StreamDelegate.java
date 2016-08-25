@@ -1,7 +1,6 @@
 package hudson.plugins.accurev.delegates;
 
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
@@ -26,7 +25,7 @@ public class StreamDelegate extends AbstractModeDelegate {
     }
 
     @Override
-    protected boolean checkout(AbstractBuild<?, ?> build, File changeLogFile) throws IOException, InterruptedException {
+    protected boolean checkout(Run<?, ?> build, File changeLogFile) throws IOException, InterruptedException {
         return true;
     }
 
@@ -56,7 +55,7 @@ public class StreamDelegate extends AbstractModeDelegate {
     }
 
     @Override
-    protected PollingResult checkForChanges(AbstractProject<?, ?> project) throws IOException, InterruptedException {
+    protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
         final Run<?, ?> lastBuild = project.getLastBuild();
         if (lastBuild == null) {
             listener.getLogger().println("Project has never been built");

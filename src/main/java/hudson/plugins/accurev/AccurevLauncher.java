@@ -185,32 +185,29 @@ public final class AccurevLauncher {
             final TContext commandOutputParserContext) {
         return runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
                 synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
-                listenerToLogFailuresTo, loggerToLogFailuresTo, new ICmdOutputParser<TResult, TContext>() {
-                    public TResult parse(InputStream cmdOutput, TContext context) throws UnhandledAccurevCommandOutput,
-                            IOException {
-                        XmlPullParser parser = null;
-                        try {
-                            parser = xmlParserFactory.newPullParser();
-                            parser.setInput(cmdOutput, null);
-                            final TResult result = commandOutputParser.parse(parser, context);
-                            parser.setInput(null);
-                            parser = null;
-                            return result;
-                        } catch (XmlPullParserException ex) {
-                            logCommandException(machineReadableCommand, directoryToRunCommandFrom,
-                                    humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
-                            return null;
-                        } finally {
-                            if (parser != null) {
-                                try {
-                                    parser.setInput(null);
-                                } catch (XmlPullParserException ex) {
-                                    logCommandException(machineReadableCommand, directoryToRunCommandFrom,
-                                            humanReadableCommandName, ex, loggerToLogFailuresTo,
-                                            listenerToLogFailuresTo);
-                                }
-                                cmdOutput.close();
+                listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
+                    XmlPullParser parser = null;
+                    try {
+                        parser = xmlParserFactory.newPullParser();
+                        parser.setInput(cmdOutput, null);
+                        final TResult result = commandOutputParser.parse(parser, context);
+                        parser.setInput(null);
+                        parser = null;
+                        return result;
+                    } catch (XmlPullParserException ex) {
+                        logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                        return null;
+                    } finally {
+                        if (parser != null) {
+                            try {
+                                parser.setInput(null);
+                            } catch (XmlPullParserException ex) {
+                                logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                        humanReadableCommandName, ex, loggerToLogFailuresTo,
+                                        listenerToLogFailuresTo);
                             }
+                            cmdOutput.close();
                         }
                     }
                 }, commandOutputParserContext);

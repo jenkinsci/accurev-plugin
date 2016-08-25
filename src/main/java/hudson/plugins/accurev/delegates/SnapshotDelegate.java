@@ -1,7 +1,7 @@
 package hudson.plugins.accurev.delegates;
 
 import hudson.EnvVars;
-import hudson.model.AbstractBuild;
+import hudson.model.Run;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.cmd.Command;
@@ -24,7 +24,7 @@ public class SnapshotDelegate extends StreamDelegate {
         super(scm);
     }
 
-    private String calculateSnapshotName(final AbstractBuild<?, ?> build) throws IOException, InterruptedException {
+    private String calculateSnapshotName(final Run<?, ?> build) throws IOException, InterruptedException {
         String snapshotNameFormat = scm.getSnapshotNameFormat();
         final String actualFormat = (snapshotNameFormat == null || snapshotNameFormat
                 .trim().isEmpty()) ? DEFAULT_SNAPSHOT_NAME_FORMAT : snapshotNameFormat.trim();
@@ -33,7 +33,7 @@ public class SnapshotDelegate extends StreamDelegate {
     }
 
     @Override
-    protected boolean checkout(AbstractBuild<?, ?> build, File changeLogFile) throws IOException, InterruptedException {
+    protected boolean checkout(Run<?, ?> build, File changeLogFile) throws IOException, InterruptedException {
         snapshotName = calculateSnapshotName(build);
         listener.getLogger().println("Creating snapshot: " + snapshotName + "...");
         build.getEnvironment(listener).put("ACCUREV_SNAPSHOT", snapshotName);

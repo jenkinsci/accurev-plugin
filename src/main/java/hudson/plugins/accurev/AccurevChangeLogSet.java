@@ -1,6 +1,7 @@
 package hudson.plugins.accurev;
 
 import hudson.model.AbstractBuild;
+import hudson.model.Run;
 import hudson.scm.ChangeLogSet;
 
 import java.util.Collection;
@@ -8,7 +9,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import hudson.scm.RepositoryBrowser;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -22,14 +22,14 @@ import org.kohsuke.stapler.export.ExportedBean;
 public final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> {
     private final List<AccurevTransaction> transactions;
 
-    AccurevChangeLogSet(AbstractBuild build, List<AccurevTransaction> transactions) {
+    AccurevChangeLogSet(Run build, List<AccurevTransaction> transactions) {
+        // TODO: Implement RepositoryBrowser?
         super(build, null);
-        RepositoryBrowser<?> browser;
         if (transactions == null) {
             throw new NullPointerException("Cannot have a null transaction list");
         }
         this.transactions = Collections.unmodifiableList(transactions);
-        for (AccurevTransaction transaction : transactions) {
+        for (AccurevTransaction transaction: transactions) {
             transaction.setParent(this);
         }
     }

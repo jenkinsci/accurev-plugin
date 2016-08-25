@@ -1,7 +1,8 @@
 package hudson.plugins.accurev.delegates;
 
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.Job;
+import hudson.model.Run;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
@@ -40,7 +41,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     }
 
     @Override
-    protected PollingResult checkForChanges(AbstractProject<?, ?> project) throws IOException, InterruptedException {
+    protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
         localStream = getPollingStream(project);
         return super.checkForChanges(project);
     }
@@ -118,7 +119,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     }
 
     @Override
-    protected boolean validateCheckout(AbstractBuild<?, ?> build) {
+    protected boolean validateCheckout(Run<?, ?> build) {
         String workspace = scm.getWorkspace();
         if (workspace == null || workspace.isEmpty()) {
             listener.fatalError("Must specify a workspace");

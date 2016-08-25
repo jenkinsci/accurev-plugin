@@ -1,7 +1,7 @@
 package hudson.plugins.accurev;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.model.AbstractBuild;
+import hudson.model.Run;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.scm.ChangeLogParser;
@@ -9,16 +9,15 @@ import hudson.scm.ChangeLogSet;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+import hudson.scm.RepositoryBrowser;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -35,18 +34,19 @@ public class ParseChangeLog extends ChangeLogParser {
      * {@inheritDoc}
      *
      * @param build build
+     * @param browser  Repository browser
      * @param changelogFile change log file
      * @return ChangeLogSet with AccurevTransactions
      * @throws IOException  failing IO
      * @throws SAXException failing XML SAX exception
      */
-    public ChangeLogSet<AccurevTransaction> parse(AbstractBuild build, File changelogFile)//
-            throws IOException, SAXException {
+    public ChangeLogSet<AccurevTransaction> parse(Run build, RepositoryBrowser<?> browser, File changelogFile) throws IOException, SAXException {
         UpdateLog updateLog = new UpdateLog();
         List<AccurevTransaction> transactions = parse(changelogFile, updateLog);
         transactions = filterTransactions(transactions, updateLog);
         return new AccurevChangeLogSet(build, transactions);
     }
+
     
     private List<AccurevTransaction> filterTransactions(List<AccurevTransaction> transactions, UpdateLog updateLog){
         List<AccurevTransaction> retVal;
@@ -66,9 +66,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     }
                     if (includeTransaction){
                         retVal.add(transaction);
-                        for (String rawPath : rawPaths) {
-                            filteredFiles.remove(rawPath);
-                        }
+                        rawPaths.forEach(filteredFiles::remove);
                     }
                 }
                 if (!filteredFiles.isEmpty()){
@@ -78,9 +76,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     extraFiles.setId("upstream");
                     extraFiles.setMsg("Upstream changes");
                     extraFiles.setUser("upstream");
-                    for (String filteredFile : filteredFiles) {
-                        extraFiles.addAffectedPath(filteredFile);
-                    }
+                    filteredFiles.forEach(extraFiles::addAffectedPath);
                     retVal.add(extraFiles);
                 }
             }
@@ -117,8 +113,8 @@ public class ParseChangeLog extends ChangeLogParser {
         boolean inVersion = false;
         String path = "";
         String realVersion = "";
-        String issueNum = "";
-        String affectedPathInfo = "";
+        String issueNum;
+        String affectedPathInfo;
         boolean inConsolidatedChangeLog = false;
         boolean inUpdateLog = false;
         boolean inDepot = false;

@@ -118,7 +118,7 @@ public class ChangeLogCmd {
       getConfigcmd.add("-s");        
       getConfigcmd.add("-r");
       getConfigcmd.add("settings.xml");
-      GetConfigWebURL webuiURL = null;
+      GetConfigWebURL webuiURL;
       Map<String, GetConfigWebURL> webURL = null;
       
       try {
@@ -136,7 +136,7 @@ public class ChangeLogCmd {
       
       webuiURL = webURL.get("webuiURL");
       DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder documentBuilder = null;
+      DocumentBuilder documentBuilder;
       try {
          documentBuilder = documentBuilderFactory.newDocumentBuilder();
          Document document = documentBuilder.parse(changelogFile);
