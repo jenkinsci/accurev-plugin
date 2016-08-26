@@ -6,7 +6,6 @@ import hudson.model.Run;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevReferenceTree;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.DetermineRemoteHostname;
 import hudson.plugins.accurev.RemoteWorkspaceDetails;
 import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
