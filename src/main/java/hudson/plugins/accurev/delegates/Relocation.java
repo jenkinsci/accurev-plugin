@@ -55,8 +55,8 @@ public class Relocation {
     }
     public interface RelocationOption {
 
-        public boolean isPopRequired();
+        boolean isPopRequired();
 
-        public void appendCommand(ArgumentListBuilder cmd, Relocation relocation);
+        void appendCommand(ArgumentListBuilder cmd, Relocation relocation);
     }
 }

@@ -2,7 +2,6 @@ package hudson.plugins.accurev.cmd;
 
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
@@ -15,6 +14,7 @@ import hudson.util.ArgumentListBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -23,7 +23,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -47,7 +46,7 @@ public class ChangeLogCmd {
 			String stream,
 			File changelogFile,
 			Logger logger,
-			AccurevSCM scm) throws IOException, InterruptedException {   
+			AccurevSCM scm) throws IOException, InterruptedException {
 
 		final String accurevACSYNCEnvVar = "AC_SYNC";
 		if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
@@ -64,9 +63,10 @@ public class ChangeLogCmd {
 		cmd.add("-s");
 		cmd.add(stream);
 		cmd.add("-t");
-		String dateRange = AccurevSCM.ACCUREV_DATETIME_FORMATTER.format(buildDate);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		String dateRange = formatter.format(buildDate);
 		if (startDate != null) {
-			dateRange += "-" + AccurevSCM.ACCUREV_DATETIME_FORMATTER.format(startDate);
+			dateRange += "-" + formatter.format(startDate);
 		} else {
 			dateRange += ".100";
 		}
@@ -74,7 +74,7 @@ public class ChangeLogCmd {
 		final String commandDescription = "Changelog command";
 		final Boolean success = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, scm.getOptionalLock(),
 				accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
-		if (success != Boolean.TRUE) {
+		if (!success) {
 			return false;
 		}
 		//==============================================================================================
@@ -91,15 +91,15 @@ public class ChangeLogCmd {
 	/**
 	 * Parse the settings.xml file to get the webui url and apply it to the changelog.
 	 * 
-	 * @param server
-	 * @param accurevEnv
-	 * @param workspace
-	 * @param listener
-	 * @param accurevPath
-	 * @param launcher
-	 * @param changelogFile
-	 * @param logger
-	 * @param scm
+     * @param server        Server
+     * @param accurevEnv    Accurev Enviroment
+     * @param workspace     Workspace
+     * @param listener      listener
+     * @param accurevPath   AccurevPath
+     * @param launcher      Launcher
+     * @param changelogFile Change log file
+     * @param logger        logger
+     * @param scm           Accurev SCM
 	 */
 	private static void applyWebURL(AccurevServer server, 
 	      Map<String, String> accurevEnv, 
@@ -118,7 +118,7 @@ public class ChangeLogCmd {
       getConfigcmd.add("-s");        
       getConfigcmd.add("-r");
       getConfigcmd.add("settings.xml");
-      GetConfigWebURL webuiURL = null;
+      GetConfigWebURL webuiURL;
       Map<String, GetConfigWebURL> webURL = null;
       
       try {
@@ -126,6 +126,7 @@ public class ChangeLogCmd {
                launcher, getConfigcmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
                XmlParserFactory.getFactory(), new ParseGetConfig(), null);
       } catch (Exception e) {
+          logger.warning("Error loading settings.xml");
          // Error getting settings.xml file.
       }
       
@@ -135,7 +136,7 @@ public class ChangeLogCmd {
       
       webuiURL = webURL.get("webuiURL");
       DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder documentBuilder = null;
+      DocumentBuilder documentBuilder;
       try {
          documentBuilder = documentBuilderFactory.newDocumentBuilder();
          Document document = documentBuilder.parse(changelogFile);
@@ -163,16 +164,8 @@ public class ChangeLogCmd {
          Transformer transformer = transformerFactory.newTransformer();
          StreamResult result = new StreamResult(changelogFile);
          transformer.transform(source, result);
-      } catch (ParserConfigurationException e) {               
+      } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
          
-      } catch (SAXException e) {             
-         
-      } catch (TransformerConfigurationException e) {             
-         
-      } catch (TransformerException e) {              
-         
-      } catch (IOException e) {
-
       }
-	}
+    }
 }

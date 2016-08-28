@@ -60,7 +60,7 @@ public class Update extends Command {
             Launcher launcher, //
             String reftree) throws IOException, InterruptedException {
 
-        List<String> files = new ArrayList<String>();
+        List<String> files = new ArrayList<>();
         final ArgumentListBuilder cmd = createCommand(server, accurevPath, true, reftree, false);
         boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, XmlParserFactory.getFactory(), new ParseUpdate(), files);
@@ -77,7 +77,7 @@ public class Update extends Command {
 
             if (filterList != null && !filterList.isEmpty()) {
                 filterList = filterList.replace(", ", ",");
-                filterPaths = new ArrayList<String>(Arrays.asList(filterList.split(FFPSCM_DELIM)));
+                filterPaths = new ArrayList<>(Arrays.asList(filterList.split(FFPSCM_DELIM)));
             }
 
             if (filterPaths != null) {

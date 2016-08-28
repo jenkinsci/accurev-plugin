@@ -22,18 +22,17 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
     	
-        final Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+        final Map<String, AccurevStream> streams = new HashMap<>();
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:
                 break;
             case XmlPullParser.END_DOCUMENT:
                 // build the tree
-                for (AccurevStream stream : streams.values()) {
-                    if (stream.getBasisName() != null) {
-                        stream.setParent(streams.get(stream.getBasisName()));
-                    }
-                }
+                streams.values()
+                        .stream()
+                        .filter(stream -> stream.getBasisName() != null)
+                        .forEachOrdered(stream -> stream.setParent(streams.get(stream.getBasisName())));
                 return streams;
             case XmlPullParser.START_TAG:
                 final String tagName = parser.getName();
@@ -47,9 +46,9 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                     final String streamTypeStr = parser.getAttributeValue("", "type");
                     final String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
                     final String streamTimeString = parser.getAttributeValue("", "time");
-                    final Date streamTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamTimeString);
+                    final Date streamTime = streamTimeString == null ? new Date(0) : ParseChangeLog.convertAccurevTimestamp(streamTimeString);
                     final String streamStartTimeString = parser.getAttributeValue("", "startTime");
-                    final Date streamStartTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
+                    final Date streamStartTime = streamTimeString == null ? new Date(0) : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
                     try {
                         final Long streamNumber = streamNumberStr == null ? null : Long.valueOf(streamNumberStr);
                         final Long basisStreamNumber = basisStreamNumberStr == null ? null : Long.valueOf(basisStreamNumberStr);

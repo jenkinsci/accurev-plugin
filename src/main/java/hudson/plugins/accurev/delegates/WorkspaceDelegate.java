@@ -1,7 +1,8 @@
 package hudson.plugins.accurev.delegates;
 
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.Job;
+import hudson.model.Run;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
@@ -14,6 +15,8 @@ import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
 import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +41,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     }
 
     @Override
-    protected PollingResult checkForChanges(AbstractProject<?, ?> project) throws IOException, InterruptedException {
+    protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
         localStream = getPollingStream(project);
         return super.checkForChanges(project);
     }
@@ -90,7 +93,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
         final RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
 
-        List<RelocationOption> relocationOptions = new ArrayList<RelocationOption>();
+        List<RelocationOption> relocationOptions = new ArrayList<>();
         for (WorkspaceRelocation workspaceRelocationvalue : WorkspaceRelocation.values()) {
             if (workspaceRelocationvalue.isRequired(accurevWorkspace, remoteDetails, localStream)) {
                 relocationOptions.add(workspaceRelocationvalue);
@@ -116,7 +119,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     }
 
     @Override
-    protected boolean validateCheckout(AbstractBuild<?, ?> build) {
+    protected boolean validateCheckout(Run<?, ?> build) {
         String workspace = scm.getWorkspace();
         if (workspace == null || workspace.isEmpty()) {
             listener.fatalError("Must specify a workspace");
@@ -172,7 +175,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
                     @Override
                     protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
-                        return !accurevWorkspace.getHost().equals(remoteDetails.getHostName());
+                        return !accurevWorkspace.getHost().equalsIgnoreCase(remoteDetails.getHostName());
                     }
 
                     public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
@@ -188,7 +191,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
                         String oldStorage = accurevWorkspace.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
-                        return !oldStorage.equals(remoteDetails.getPath());
+                        return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
                     }
 
                     public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {

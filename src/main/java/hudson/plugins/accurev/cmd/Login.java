@@ -10,8 +10,6 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -115,16 +113,20 @@ public class Login extends Command {
    
    
    /**
-    * This method is called from dofillstreams and dofilldepots while configuring the job
-    *         
-    */
+     * @param server           Accurev Server
+     * @param accurevPath      Accurev Path
+     * @param descriptorlogger logger
+     * @return boolean whether am successful
+     * @throws IOException          failing IO
+     * @throws InterruptedException failing interrupt
+     *                              This method is called from dofillstreams and dofilldepots while configuring the job
+     */
    public static boolean accurevLoginfromGlobalConfig(//
 	         final AccurevServer server,
 	         final String accurevPath,
 	         final Logger descriptorlogger) throws IOException, InterruptedException {
 	   
 	   	  final ArgumentListBuilder cmd = new ArgumentListBuilder();
-	   	  List<String> logincommand = new ArrayList<String>();
 	   	  cmd.add(accurevPath);
 	   	  cmd.add("login");
 	      addServer(cmd, server);
@@ -135,8 +137,7 @@ public class Login extends Command {
 	      cmd.add(server.getUsername());
 	      // If the password is blank, "" should be passed
 	      cmd.add(server.getPassword().length() == 0 ? "\"\"" : server.getPassword());
-	      logincommand = cmd.toList();
-	      ProcessBuilder processBuilder = new ProcessBuilder(logincommand);
+	      ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
 	      processBuilder.redirectErrorStream(true);
 
 	      Process loginprocess;
@@ -161,6 +162,7 @@ public class Login extends Command {
 	         		 stdout.close();
 	         	 }
 	          } catch (IOException e) {
+                  logger.warning("Failed to close std out");
 	          }
 	       }
    }

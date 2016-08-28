@@ -1,22 +1,23 @@
 package hudson.plugins.accurev;
 
-import hudson.model.AbstractBuild;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.model.Run;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
-import hudson.util.IOException2;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import hudson.scm.RepositoryBrowser;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -32,27 +33,28 @@ public class ParseChangeLog extends ChangeLogParser {
     /**
      * {@inheritDoc}
      *
-     * @param build
-     * @param changelogFile
-     * @return
-     * @throws java.io.IOException
-     * @throws org.xml.sax.SAXException
+     * @param build build
+     * @param browser  Repository browser
+     * @param changelogFile change log file
+     * @return ChangeLogSet with AccurevTransactions
+     * @throws IOException  failing IO
+     * @throws SAXException failing XML SAX exception
      */
-    public ChangeLogSet<AccurevTransaction> parse(AbstractBuild build, File changelogFile)//
-            throws IOException, SAXException {
+    public ChangeLogSet<AccurevTransaction> parse(Run build, RepositoryBrowser<?> browser, File changelogFile) throws IOException, SAXException {
         UpdateLog updateLog = new UpdateLog();
         List<AccurevTransaction> transactions = parse(changelogFile, updateLog);
         transactions = filterTransactions(transactions, updateLog);
         return new AccurevChangeLogSet(build, transactions);
     }
+
     
     private List<AccurevTransaction> filterTransactions(List<AccurevTransaction> transactions, UpdateLog updateLog){
         List<AccurevTransaction> retVal;
         if (updateLog.hasUpdate()){
-            retVal = new ArrayList<AccurevTransaction>();
+            retVal = new ArrayList<>();
             if (updateLog.hasChanges()){
                 List<String> changesFiles = updateLog.changedFiles;
-                List<String> filteredFiles = new ArrayList<String>(changesFiles);
+                List<String> filteredFiles = new ArrayList<>(changesFiles);
                 for (AccurevTransaction transaction : transactions) {
                     List<String> rawPaths = transaction.getAffectedRawPaths();
                     boolean includeTransaction = true;
@@ -64,9 +66,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     }
                     if (includeTransaction){
                         retVal.add(transaction);
-                        for (String rawPath : rawPaths) {
-                            filteredFiles.remove(rawPath);
-                        }
+                        rawPaths.forEach(filteredFiles::remove);
                     }
                 }
                 if (!filteredFiles.isEmpty()){
@@ -76,9 +76,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     extraFiles.setId("upstream");
                     extraFiles.setMsg("Upstream changes");
                     extraFiles.setUser("upstream");
-                    for (String filteredFile : filteredFiles) {
-                        extraFiles.addAffectedPath(filteredFile);
-                    }
+                    filteredFiles.forEach(extraFiles::addAffectedPath);
                     retVal.add(extraFiles);
                 }
             }
@@ -93,42 +91,30 @@ public class ParseChangeLog extends ChangeLogParser {
         List<AccurevTransaction> transactions = null;
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
-            FileReader fis = null;
-            BufferedReader bis = null;
-            try {
-                fis = new FileReader(changelogFile);
-                bis = new BufferedReader(fis);
-                parser.setInput(bis);
+            try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath(), Charset.defaultCharset())) {
+                parser.setInput(br);
                 transactions = parseTransactions(parser, changelogFile, updateLog);
             } finally {
-                if (bis != null) {
-                    bis.close();
-                }
-                if (fis != null) {
-                    fis.close();
-                }
-                if (parser != null) {
-                    parser.setInput(null);
-                }
+                parser.setInput(null);
             }
-        } catch (XmlPullParserException e) {
-            throw new IOException2(e);
-        }
 
-        logger.log(Level.INFO, "transactions size = {0}", transactions.size());
+        } catch (XmlPullParserException e) {
+            throw new IOException(e);
+        }
         return transactions;
     }
 
+    @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT")
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile, UpdateLog updateLog) throws IOException, XmlPullParserException {
-        List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
+        List<AccurevTransaction> transactions = new ArrayList<>();
         AccurevTransaction currentTransaction = null;
         boolean inComment = false;
         boolean inIssueNum = false;
         boolean inVersion = false;
         String path = "";
         String realVersion = "";
-        String issueNum = "";
-        String affectedPathInfo = "";
+        String issueNum;
+        String affectedPathInfo;
         boolean inConsolidatedChangeLog = false;
         boolean inUpdateLog = false;
         boolean inDepot = false;
@@ -235,31 +221,19 @@ public class ParseChangeLog extends ChangeLogParser {
 
     private void parseUpdate(File updateLogFile, UpdateLog updateLog) throws XmlPullParserException, IOException {
         ParseUpdate parseUpdate = new ParseUpdate();
-        List<String> updatedFiles = new ArrayList<String>();
+        List<String> updatedFiles = new ArrayList<>();
         updateLog.changedFiles = updatedFiles;
         try {
             try {
                 XmlPullParser parser = XmlParserFactory.newParser();
-                FileReader fis = null;
-                BufferedReader bis = null;
-                try {
-                    fis = new FileReader(updateLogFile);
-                    bis = new BufferedReader(fis);
-                    parser.setInput(bis);
+                try (BufferedReader br = Files.newBufferedReader(updateLogFile.toPath(), Charset.defaultCharset())) {
+                    parser.setInput(br);
                     parseUpdate.parse(parser, updatedFiles);
                 } finally {
-                    if (bis != null) {
-                        bis.close();
-                    }
-                    if (fis != null) {
-                        fis.close();
-                    }
-                    if (parser != null) {
-                        parser.setInput(null);
-                    }
+                    parser.setInput(null);
                 }
             } catch (XmlPullParserException e) {
-                throw new IOException2(e);
+                throw new IOException(e);
             }
         } catch (AccurevLauncher.UnhandledAccurevCommandOutput ex) {
             throw new IOException(ex);

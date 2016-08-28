@@ -36,23 +36,19 @@ public final class AccurevLauncher {
      * Intended to separate out the running of commands from the actual parsing
      * of their results in an attempt to reduce code duplication.
      *
-     * @param <TResult>
-     *            The output of the parsing process.
-     * @param <TContext>
-     *            Context object that will be passed to the parser each time it
-     *            is called.
+     * @param <TResult>  The output of the parsing process.
+     * @param <TContext> Context object that will be passed to the parser each time it
+     *                   is called.
      */
     public interface ICmdOutputParser<TResult, TContext> {
         /**
          * Parses the command's output.
          *
-         * @param cmdOutput
-         *            The stream that contains the output of the command.
-         * @param context
-         *            Context passed in when the command was run.
+         * @param cmdOutput The stream that contains the output of the command.
+         * @param context   Context passed in when the command was run.
          * @return The result of the parsing.
-         * @throws UnhandledAccurevCommandOutput
-         *             if the command output was invalid.
+         * @throws UnhandledAccurevCommandOutput if the command output was invalid.
+         * @throws IOException                   on failing IO
          */
         TResult parse(InputStream cmdOutput, TContext context) throws UnhandledAccurevCommandOutput, IOException;
     }
@@ -64,27 +60,23 @@ public final class AccurevLauncher {
      * Intended to separate out the running of commands from the actual parsing
      * of their results in an attempt to reduce code duplication.
      *
-     * @param <TResult>
-     *            The output of the parsing process.
-     * @param <TContext>
-     *            Context object that will be passed to the parser each time it
-     *            is called.
+     * @param <TResult>  The output of the parsing process.
+     * @param <TContext> Context object that will be passed to the parser each time it
+     *                   is called.
      */
     public interface ICmdOutputXmlParser<TResult, TContext> {
         /**
          * Parses the command's output.
          *
-         * @param parser
-         *            The {@link XmlPullParser} that contains the output of the
-         *            command.
-         * @param context
-         *            Context passed in when the command was run.
+         * @param parser  The {@link XmlPullParser} that contains the output of the
+         *                command.
+         * @param context Context passed in when the command was run.
          * @return The result of the parsing.
-         * @throws UnhandledAccurevCommandOutput
-         *             if the command output was invalid.
+         * @throws UnhandledAccurevCommandOutput if the command output was invalid.
+         * @throws IOException                   on failing IO
+         * @throws XmlPullParserException        if failed to Parse
          */
-        TResult parse(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException,
-                XmlPullParserException;
+        TResult parse(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException;
     }
 
     /**
@@ -109,32 +101,22 @@ public final class AccurevLauncher {
      * Runs a command and returns <code>true</code> if it passed,
      * <code>false</code> if it failed, and logs the errors.
      *
-     * @param humanReadableCommandName
-     *            Human-readable text saying what this command is. This appears
-     *            in the logs if there is a failure.
-     * @param launcher
-     *            Means of executing the command.
-     * @param machineReadableCommand
-     *            The command to be executed.
-     * @param masksOrNull
-     *            Argument for {@link ProcStarter#masks(boolean...)}, or
-     *            <code>null</code> if not required.
-     * @param synchronizationLockObjectOrNull
-     *            The {@link Lock} object to be used to prevent concurrent
-     *            execution on the same machine, or <code>null</code> if no
-     *            synchronization is required.
-     * @param environmentVariables
-     *            The environment variables to be passed to the command.
-     * @param directoryToRunCommandFrom
-     *            The direction that the command should be run in.
-     * @param listenerToLogFailuresTo
-     *            One possible place to log failures, or <code>null</code>.
-     * @param loggerToLogFailuresTo
-     *            Another place to log failures, or <code>null</code>.
-     * @param optionalFlagToCopyAllOutputToTaskListener
-     *            Optional: If present and <code>true</code>, all command output
-     *            will also be copied to the listener if the command is
-     *            successful.
+     * @param humanReadableCommandName                  Human-readable text saying what this command is. This appears
+     *                                                  in the logs if there is a failure.
+     * @param launcher                                  Means of executing the command.
+     * @param machineReadableCommand                    The command to be executed.
+     * @param masksOrNull                               Argument for {@link ProcStarter#masks(boolean...)}, or
+     *                                                  <code>null</code> if not required.
+     * @param synchronizationLockObjectOrNull           The {@link Lock} object to be used to prevent concurrent
+     *                                                  execution on the same machine, or <code>null</code> if no
+     *                                                  synchronization is required.
+     * @param environmentVariables                      The environment variables to be passed to the command.
+     * @param directoryToRunCommandFrom                 The direction that the command should be run in.
+     * @param listenerToLogFailuresTo                   One possible place to log failures, or <code>null</code>.
+     * @param loggerToLogFailuresTo                     Another place to log failures, or <code>null</code>.
+     * @param optionalFlagToCopyAllOutputToTaskListener Optional: If present and <code>true</code>, all command output
+     *                                                  will also be copied to the listener if the command is
+     *                                                  successful.
      * @return <code>true</code> if the command succeeded.
      */
     public static boolean runCommand(//
@@ -161,7 +143,7 @@ public final class AccurevLauncher {
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
-        return result == Boolean.TRUE;
+        return result;
     }
 
     /**
@@ -169,11 +151,23 @@ public final class AccurevLauncher {
      * {@link #runCommand(String, Launcher, ArgumentListBuilder, boolean[], Lock, Map, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
      * but uses an {@link ICmdOutputXmlParser} instead.
      *
-     * @param xmlParserFactory
-     *            The {@link XmlPullParserFactory} to be used to create the
-     *            parser. If this is <code>null</code> then no command will be
-     *            executed and the function will return <code>null</code>
-     *            immediately.
+     * @param <TResult>                       The type of the result returned by the parser.
+     * @param <TContext>                      The type of data to be passed to the parser. Can be
+     * @param humanReadableCommandName        Human readable command
+     * @param launcher                        launcher
+     * @param machineReadableCommand          Machine readable command
+     * @param masksOrNull                     masks or null
+     * @param synchronizationLockObjectOrNull Synchronization lock
+     * @param environmentVariables            Environment Variables
+     * @param directoryToRunCommandFrom       Where to run commands from
+     * @param listenerToLogFailuresTo         logging failures to listener
+     * @param loggerToLogFailuresTo           logging failures to logger
+     * @param xmlParserFactory                The {@link XmlPullParserFactory} to be used to create the
+     *                                        parser. If this is <code>null</code> then no command will be
+     *                                        executed and the function will return <code>null</code>
+     *                                        immediately.
+     * @param commandOutputParser             Command output parser
+     * @param commandOutputParserContext      Context of Command output parser
      * @return See above.
      */
     public static <TResult, TContext> TResult runCommand(//
@@ -191,32 +185,29 @@ public final class AccurevLauncher {
             final TContext commandOutputParserContext) {
         return runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
                 synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
-                listenerToLogFailuresTo, loggerToLogFailuresTo, new ICmdOutputParser<TResult, TContext>() {
-                    public TResult parse(InputStream cmdOutput, TContext context) throws UnhandledAccurevCommandOutput,
-                            IOException {
-                        XmlPullParser parser = null;
-                        try {
-                            parser = xmlParserFactory.newPullParser();
-                            parser.setInput(cmdOutput, null);
-                            final TResult result = commandOutputParser.parse(parser, context);
-                            parser.setInput(null);
-                            parser = null;
-                            return result;
-                        } catch (XmlPullParserException ex) {
-                            logCommandException(machineReadableCommand, directoryToRunCommandFrom,
-                                    humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
-                            return null;
-                        } finally {
-                            if (parser != null) {
-                                try {
-                                    parser.setInput(null);
-                                } catch (XmlPullParserException ex) {
-                                    logCommandException(machineReadableCommand, directoryToRunCommandFrom,
-                                            humanReadableCommandName, ex, loggerToLogFailuresTo,
-                                            listenerToLogFailuresTo);
-                                }
-                                cmdOutput.close();
+                listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
+                    XmlPullParser parser = null;
+                    try {
+                        parser = xmlParserFactory.newPullParser();
+                        parser.setInput(cmdOutput, null);
+                        final TResult result = commandOutputParser.parse(parser, context);
+                        parser.setInput(null);
+                        parser = null;
+                        return result;
+                    } catch (XmlPullParserException ex) {
+                        logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                        return null;
+                    } finally {
+                        if (parser != null) {
+                            try {
+                                parser.setInput(null);
+                            } catch (XmlPullParserException ex) {
+                                logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                        humanReadableCommandName, ex, loggerToLogFailuresTo,
+                                        listenerToLogFailuresTo);
                             }
+                            cmdOutput.close();
                         }
                     }
                 }, commandOutputParserContext);
@@ -227,40 +218,27 @@ public final class AccurevLauncher {
      * output. Returns <code>null</code> if the command failed or if parsing
      * failed. Failures are logged.
      *
-     * @param <TResult>
-     *            The type of the result returned by the parser.
-     * @param <TContext>
-     *            The type of data to be passed to the parser. Can be
-     *            {@link Void} if no result is needed.
-     * @param humanReadableCommandName
-     *            Human-readable text saying what this command is. This appears
-     *            in the logs if there is a failure.
-     * @param launcher
-     *            Means of executing the command.
-     * @param machineReadableCommand
-     *            The command to be executed.
-     * @param masksOrNull
-     *            Argument for {@link ProcStarter#masks(boolean...)}, or
-     *            <code>null</code> if not required.
-     * @param synchronizationLockObjectOrNull
-     *            The {@link Lock} object to be used to prevent concurrent
-     *            execution on the same machine, or <code>null</code> if no
-     *            synchronization is required.
-     * @param environmentVariables
-     *            The environment variables to be passed to the command.
-     * @param directoryToRunCommandFrom
-     *            The direction that the command should be run in.
-     * @param listenerToLogFailuresTo
-     *            One possible place to log failures, or <code>null</code>.
-     * @param loggerToLogFailuresTo
-     *            Another place to log failures, or <code>null</code>.
-     * @param commandOutputParser
-     *            The code that will parse the command's output (if the command
-     *            succeeds).
-     * @param commandOutputParserContext
-     *            Data to be passed to the parser.
+     * @param <TResult>                       The type of the result returned by the parser.
+     * @param <TContext>                      The type of data to be passed to the parser. Can be
+     *                                        {@link Void} if no result is needed.
+     * @param humanReadableCommandName        Human-readable text saying what this command is. This appears
+     *                                        in the logs if there is a failure.
+     * @param launcher                        Means of executing the command.
+     * @param machineReadableCommand          The command to be executed.
+     * @param masksOrNull                     Argument for {@link ProcStarter#masks(boolean...)}, or
+     *                                        <code>null</code> if not required.
+     * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
+     *                                        execution on the same machine, or <code>null</code> if no
+     *                                        synchronization is required.
+     * @param environmentVariables            The environment variables to be passed to the command.
+     * @param directoryToRunCommandFrom       The direction that the command should be run in.
+     * @param listenerToLogFailuresTo         One possible place to log failures, or <code>null</code>.
+     * @param loggerToLogFailuresTo           Another place to log failures, or <code>null</code>.
+     * @param commandOutputParser             The code that will parse the command's output (if the command
+     *                                        succeeds).
+     * @param commandOutputParserContext      Data to be passed to the parser.
      * @return The data returned by the {@link ICmdOutputParser}, or
-     *         <code>null</code> if an error occurred.
+     * <code>null</code> if an error occurred.
      */
     public static <TResult, TContext> TResult runCommand(//
             final String humanReadableCommandName, //
@@ -318,7 +296,7 @@ public final class AccurevLauncher {
                 synchronizationLockObjectOrNull.lock();
             }
             final int commandExitCode = starter.join();
-            return Integer.valueOf(commandExitCode);
+            return commandExitCode;
         } finally {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.unlock();
@@ -380,9 +358,9 @@ public final class AccurevLauncher {
 
     private static String getCommandErrorOutput(final InputStream commandStdoutOrNull,
             final InputStream commandStderrOrNull) throws IOException {
-        final Integer maxNumberOfStderrLines = Integer.valueOf(10);
-        final Integer maxNumberOfStdoutLines = Integer.valueOf(5);
-        final String newLine = (String) System.getProperty("line.separator");
+        final Integer maxNumberOfStderrLines = 10;
+        final Integer maxNumberOfStdoutLines = 5;
+        final String newLine = System.getProperty("line.separator");
         final ParseLastFewLines tailParser = new ParseLastFewLines();
         final StringBuilder outputText = new StringBuilder();
         if (commandStdoutOrNull != null) {

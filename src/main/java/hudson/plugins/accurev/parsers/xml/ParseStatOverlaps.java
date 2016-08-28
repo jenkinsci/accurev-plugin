@@ -13,7 +13,7 @@ import org.xmlpull.v1.XmlPullParserException;
 final class ParseStatOverlaps implements ICmdOutputXmlParser<List<String>, Void> {
     public List<String> parse(XmlPullParser parser, Void context) throws UnhandledAccurevCommandOutput, IOException,
             XmlPullParserException {
-        final List<String> overlaps = new ArrayList<String>();
+        final List<String> overlaps = new ArrayList<>();
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:

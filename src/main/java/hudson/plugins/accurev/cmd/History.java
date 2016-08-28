@@ -21,20 +21,19 @@ public class History extends Command {
    private static final Logger logger = Logger.getLogger(History.class.getName());
    
    /**
-    * 
-    * 
-    * @param server
-    * @param accurevEnv
-    * @param workspace
-    * @param listener
-    * @param accurevPath
-    * @param launcher
-    * @param stream
-    * @param transactionType
-    *           Specify what type of transaction to search for (can be null)
-    * @return the latest transaction of the specified type from the selected
-    *         stream
-    * @throws Exception
+     * @param server          server
+     * @param accurevEnv      Accurev Enviroment
+     * @param workspace       workspace
+     * @param listener        listener
+     * @param accurevPath     accurevPath
+     * @param launcher        launcher
+     * @param stream          stream
+     * @param transactionType Transaction type
+     *                        Specify what type of transaction to search for (can be null)
+     * @param scm             Accurev SCM
+     * @return the latest transaction of the specified type from the selected
+     * stream
+     * @throws Exception if no transaction was found
     */
    public static AccurevTransaction getLatestTransaction(//
          final AccurevSCM scm, //
@@ -65,14 +64,14 @@ public class History extends Command {
       }
 
       // execute code that extracts the latest transaction
-      final List<AccurevTransaction> transaction = new ArrayList<AccurevTransaction>(1);
+      final List<AccurevTransaction> transaction = new ArrayList<>(1);
       final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
             logger, XmlParserFactory.getFactory(), new ParseHistory(), transaction);
       if (transactionFound == null) {
          final String msg = "History command failed when trying to get the latest transaction of type " + transactionType;
          throw new Exception(msg);
       }
-      if (transactionFound.booleanValue()) {
+      if (transactionFound) {
          return transaction.get(0);
       } else {
          return null;

@@ -24,24 +24,25 @@ public class PopulateCmd extends Command  {
 	   
 	   /**
 	    * 
-	    * @return
+	    * @return Date
 	    */
 	   public Date get_startDateOfPopulate() {
-	      return _startDateOfPopulate;
+	      return (Date) _startDateOfPopulate.clone();
 	   }
 	     
 	   /**
-	    * 
-	    * @param launcher
-	    * @param listener
-	    * @param server
-	    * @param accurevClientExePath
-	    * @param streamName
-	    * @param fromMessage
-	    * @param accurevWorkingSpace
-	    * @param accurevEnv
-	    * @return
-	    */
+     * @param launcher             launcher
+     * @param listener             listener
+     * @param server               server
+     * @param accurevClientExePath Accurev Client Executable Path
+     * @param streamName           stream Name
+     * @param fromMessage          from Messge
+     * @param accurevWorkingSpace  Accurev Workspace
+     * @param accurevEnv           Accurev Environment
+     * @param scm                  Accurev SCm
+     * @param overwrite            overwrite
+     * @return boolean
+     */
 	  public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener, 
 	        AccurevServer server, String accurevClientExePath, 
 	        String streamName, 
@@ -74,7 +75,7 @@ public class PopulateCmd extends Command  {
 	        }
 	     }
 	     _startDateOfPopulate = new Date();
-	     if (Boolean.TRUE != AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
+	     if (!AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
 	           accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger())) {
 	        return false;
 	     }

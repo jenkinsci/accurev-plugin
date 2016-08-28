@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <div>
   This plugin integrates <a href="http://www.accurev.com/">AccuRev SCM</a> to Jenkins.
 </div>

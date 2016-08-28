@@ -3,51 +3,35 @@ package hudson.plugins.accurev;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
-import hudson.model.ModelObject;
-import hudson.model.TaskListener;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.*;
 import hudson.plugins.accurev.cmd.JustAccurev;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.ShowDepots;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.plugins.jetty.security.Password;
-import hudson.scm.ChangeLogParser;
-import hudson.scm.PollingResult;
-import hudson.scm.SCMDescriptor;
-import hudson.scm.SCMRevisionState;
-import hudson.scm.SCM;
+import hudson.scm.*;
 import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import hudson.util.ListBoxModel.Option;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.servlet.ServletException;
 
 /**
  * @author connollys
@@ -56,7 +40,6 @@ import javax.servlet.ServletException;
 public class AccurevSCM extends SCM {
 
 // ------------------------------ FIELDS ------------------------------
-    public static final SimpleDateFormat ACCUREV_DATETIME_FORMATTER = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     @Extension
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
@@ -80,11 +63,27 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
-    private AbstractProject<?, ?> activeProject;
+    private Job<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
     /**
      * Our constructor.
+     *
+     * @param serverName name for the server
+     * @param depot depot
+     * @param stream stream
+     * @param wspaceORreftree workspace or reftree
+     * @param workspace workspace
+     * @param reftree reftree
+     * @param subPath subPath
+     * @param filterForPollSCM filterForPollSCM
+     * @param synctime synctime
+     * @param cleanreftree cleanreftree
+     * @param useSnapshot useSnapshot
+     * @param dontPopContent Do not populate content
+     * @param snapshotNameFormat snapshot name format
+     * @param directoryOffset directory offset
+     * @param ignoreStreamParent ignore Parent Stream
      */
     @DataBoundConstructor
     public AccurevSCM(String serverName,
@@ -287,7 +286,7 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      *
-     * @return
+     * @return SCMDescriptor
      */
     @Override
     public SCMDescriptor<?> getDescriptor() {
@@ -307,8 +306,8 @@ public class AccurevSCM extends SCM {
      *
      * </ul>
      *
-     * @param build
-     * @param env
+     * @param build build
+     * @param env enviroments
      * @since 0.6.9
      */
     @Override
@@ -322,25 +321,27 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      *
-     * @param build
-     * @param launcher
-     * @param jenkinsWorkspace
-     * @param listener
-     * @param changelogFile
-     * @return
-     * @throws java.io.IOException
-     * @throws java.lang.InterruptedException
+     * @param build            build
+     * @param launcher         launcher
+     * @param workspace        jenkins workspace
+     * @param listener         listener
+     * @param changelogFile    change log file
+     * @param baseline SCMRevisionState
+     * @throws java.io.IOException            on failing IO
+     * @throws java.lang.InterruptedException on failing interrupt
      */
-    public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, BuildListener listener,
-            File changelogFile) throws IOException, InterruptedException {
-        AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.checkout(build, launcher, jenkinsWorkspace, listener, changelogFile);
+
+    public void checkout(@Nonnull Run<?,?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
+                         @Nonnull TaskListener listener, @CheckForNull File changelogFile,
+                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
+        AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
     }
 
     /**
      * {@inheritDoc}
      *
-     * @return
+     * @return ChangeLogParser
      */
     public ChangeLogParser createChangeLogParser() {
         return new AccurevChangeLogParser();
@@ -390,14 +391,18 @@ public class AccurevSCM extends SCM {
     }
 
     @Override
-    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> ab, Launcher lnchr, TaskListener tl) throws IOException, InterruptedException {
+    public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?,?> build, @Nullable FilePath workspace,
+                                                   @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
         return SCMRevisionState.NONE;
     }
 
     @Override
-    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
-        if (activeProject == null) {
-            // Store current project as active project
+    public PollingResult compareRemoteRevisionWith(@Nonnull Job<?,?> project, @Nullable Launcher launcher,
+                                                   @Nullable FilePath workspace, @Nonnull TaskListener listener,
+                                                   @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
+		if (activeProject == null) {												   
             activeProject = project;
         } else {
             // Skip polling while there is an active project.
@@ -405,7 +410,7 @@ public class AccurevSCM extends SCM {
             return PollingResult.NO_CHANGES;
         }
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, scmrs);
+        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
     }
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------
@@ -439,7 +444,7 @@ public class AccurevSCM extends SCM {
         /**
          * {@inheritDoc}
          *
-         * @return
+         * @return String
          */
         @Override
         public String getDisplayName() {
@@ -451,10 +456,10 @@ public class AccurevSCM extends SCM {
         /**
          * {@inheritDoc}
          *
-         * @param req
-         * @param formData
-         * @return
-         * @throws hudson.model.Descriptor.FormException
+         * @param req      request
+         * @param formData json object
+         * @return boolean
+         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
@@ -467,10 +472,10 @@ public class AccurevSCM extends SCM {
         /**
          * {@inheritDoc}
          *
-         * @param req
-         * @param formData
-         * @return
-         * @throws hudson.model.Descriptor.FormException
+         * @param req      request
+         * @param formData json object
+         * @return SCM
+         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
@@ -500,7 +505,7 @@ public class AccurevSCM extends SCM {
          */
         public List<AccurevServer> getServers() {
             if (this._servers == null) {
-                this._servers = new ArrayList<AccurevServer>();
+                this._servers = new ArrayList<>();
             }
             // We put this here to maintain backwards compatibility
             // because we changed the name of the 'servers' field to '_servers'
@@ -532,7 +537,7 @@ public class AccurevSCM extends SCM {
         /**
          * Setter for property 'pollOnMaster'.
          *
-         * @param pollOnMaster
+         * @param pollOnMaster poll on aster
          */
         public void setPollOnMaster(boolean pollOnMaster) {
             this.pollOnMaster = pollOnMaster;
@@ -575,7 +580,6 @@ public class AccurevSCM extends SCM {
 
         private AccurevServer getServerAndPath(String serverName) {
             final AccurevServer server = getServer(serverName);
-            boolean envAccurevBin;
             String accurevBinName = "accurev";
 
             if (server == null) {
@@ -662,9 +666,8 @@ public class AccurevSCM extends SCM {
                 return new ListBoxModel();
             }
 
-            ListBoxModel d = null;
-            Option temp = null;
-            List<String> depots = new ArrayList<String>();
+            ListBoxModel d;
+            List<String> depots = new ArrayList<>();
 
             // Execute the login command first & upon success of that run show depots
             // command. If any of the command's exitvalue is 1 proper error message is
@@ -673,10 +676,8 @@ public class AccurevSCM extends SCM {
                 if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
                     depots = ShowDepots.getDepots(server, accurevPath, descriptorlogger);
                 }
-            } catch (IOException e) {
-
-            } catch (InterruptedException e) {
-
+            } catch (IOException | InterruptedException e) {
+                logger.warning(e.getMessage());
             }
 
             d = new ListBoxModel();
@@ -685,13 +686,7 @@ public class AccurevSCM extends SCM {
             }
             // Below while loop is for to retain the selected item when you open the
             // Job to reconfigure
-            Iterator<Option> depotsIter = d.iterator();
-            while (depotsIter.hasNext()) {
-                temp = depotsIter.next();
-                if (depot.equals(temp.name)) {
-                    temp.selected = true;
-                }
-            }
+            d.stream().filter(o -> depot.equals(o.name)).forEachOrdered(o -> o.selected = true);
             return d;
         }
 
@@ -711,10 +706,8 @@ public class AccurevSCM extends SCM {
                     cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm, descriptorlogger);
                 }
 
-            } catch (IOException e) {
-
-            } catch (InterruptedException e) {
-
+            } catch (IOException | InterruptedException e) {
+                logger.warning(e.getMessage());
             }
             return cbm;
         }
@@ -729,7 +722,6 @@ public class AccurevSCM extends SCM {
     }
 
     // --------------------------- Inner Class ---------------------------------------------------
-    @SuppressWarnings("serial")
     public static final class AccurevServer implements Serializable {
 
         private String name;
@@ -744,6 +736,7 @@ public class AccurevSCM extends SCM {
         private boolean minimiseLogins;
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
+        private static final long serialVersionUID = 3270850408409304611L;
 
         /**
          * The default search paths for Windows clients.
@@ -761,12 +754,13 @@ public class AccurevSCM extends SCM {
                 "/usr/bin/accurev", //
                 "/bin/accurev", //
                 "/local/bin/accurev",
-                "/opt/accurev/bin/accurev");
+                "/opt/accurev/bin/accurev",
+                "/Applications/AccuRev/bin/accurev");
 
         public static final String VTT_DELIM = ",";
         // keep all transaction types in a set for validation
         private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<String>(Arrays.asList(VTT_LIST
+        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
                 .split(VTT_DELIM)));
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
@@ -776,8 +770,8 @@ public class AccurevSCM extends SCM {
          * Constructs a new AccurevServer.
          */
         public AccurevServer() {
-            this.winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
-            this.nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+            this.winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
+            this.nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
         }
 
         @DataBoundConstructor
@@ -811,14 +805,13 @@ public class AccurevSCM extends SCM {
          * then this hack!
          *
          * @return This.
-         * @throws ObjectStreamException
          */
-        private Object readResolve() throws ObjectStreamException {
+        private Object readResolve() {
             if (winCmdLocations == null) {
-                winCmdLocations = new ArrayList<String>(DEFAULT_WIN_CMD_LOCATIONS);
+                winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
             }
             if (nixCmdLocations == null) {
-                nixCmdLocations = new ArrayList<String>(DEFAULT_NIX_CMD_LOCATIONS);
+                nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
             }
             return this;
         }

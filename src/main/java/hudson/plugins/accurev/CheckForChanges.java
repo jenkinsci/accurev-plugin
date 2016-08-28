@@ -19,20 +19,21 @@ import java.util.logging.Logger;
 public class CheckForChanges {
 	
 	//checkStreamForChanges is overloaded method
-	/**
-    *
-    * @param server
-    * @param accurevEnv
-    * @param workspace
-    * @param listener
-    * @param accurevPath
-    * @param launcher
-    * @param stream
-    * @param buildDate
-    * @return if there are any new transactions in the stream since the last build was done
-    * @throws IOException
-    * @throws InterruptedException
-    */
+    /**
+     * @param server      Server
+     * @param accurevEnv  Accurev Environment
+     * @param workspace   workspace
+     * @param listener    listener
+     * @param accurevPath accurev path
+     * @param launcher    launcher
+     * @param stream      stream
+     * @param buildDate   build date
+     * @param logger      Logger
+     * @param scm         Accurev SCM
+     * @return if there are any new transactions in the stream since the last build was done
+     * @throws IOException          if there is issues with files
+     * @throws InterruptedException if failed to interrupt properly
+     */
   //stream param is of type String
    public static boolean checkStreamForChanges(AccurevServer server,
                                          Map<String, String> accurevEnv,
@@ -69,12 +70,12 @@ public class CheckForChanges {
        if(filterForPollSCM != null && !(filterForPollSCM.isEmpty())){
 	        String FFPSCM_LIST = filterForPollSCM;
 	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
        }else{
        	if(subPath != null && !(subPath.isEmpty())){
        		String FFPSCM_LIST = subPath;
    	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-   	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+   	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
        	}
        }
        for (final String transactionType : validTransactionTypes) {
@@ -165,18 +166,19 @@ public class CheckForChanges {
    }
    
     /**
-     *
-     * @param server
-     * @param accurevEnv
-     * @param workspace
-     * @param listener
-     * @param accurevPath
-     * @param launcher
-     * @param stream
-     * @param buildDate
+     * @param server      server
+     * @param accurevEnv  accurev environment
+     * @param workspace   workspace
+     * @param listener    listener
+     * @param accurevPath accurev path
+     * @param launcher    launcher
+     * @param stream      stream
+     * @param buildDate   build Date
+     * @param logger      logger
+     * @param scm         Accurev SCm
      * @return if there are any new transactions in the stream since the last build was done
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException          if there is issues with files
+     * @throws InterruptedException if failed to interrupt properly
      */
    //stream param is of type AccurevStream
    public static boolean checkStreamForChanges(AccurevServer server,
@@ -196,7 +198,7 @@ public class CheckForChanges {
         latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
 
         //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
-        String[] validTransactionTypes = null;
+        String[] validTransactionTypes;
         if(stream.getType().name().equalsIgnoreCase("workspace")){
         	validTransactionTypes = AccurevServer.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES.split(AccurevServer.VTT_DELIM);
         	listener.getLogger().println(//
@@ -223,12 +225,12 @@ public class CheckForChanges {
         if(filterForPollSCM != null && !(filterForPollSCM.isEmpty())){
 	        String FFPSCM_LIST = filterForPollSCM;
 	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
         }else{
         	if(subPath != null && !(subPath.isEmpty())){
         		String FFPSCM_LIST = subPath;
     	        FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-    	        Filter_For_Poll_SCM = new ArrayList<String>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
+    	        Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
         	}
         }
         for (final String transactionType : validTransactionTypes) {
@@ -306,9 +308,6 @@ public class CheckForChanges {
                 logger.log(Level.WARNING, msg, e);
             }
         }
-        if(isTransLatestThanBuild)
-        	return true;
-        else        
-        	return false;
+       return isTransLatestThanBuild;
     }
 }

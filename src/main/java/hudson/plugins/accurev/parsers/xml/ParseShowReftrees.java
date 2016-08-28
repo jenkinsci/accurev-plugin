@@ -14,7 +14,7 @@ import org.xmlpull.v1.XmlPullParserException;
 public class ParseShowReftrees implements ICmdOutputXmlParser<Map<String, AccurevReferenceTree>, Void> {
     public Map<String, AccurevReferenceTree> parse(XmlPullParser parser, Void context)
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
-        final Map<String, AccurevReferenceTree> reftrees = new HashMap<String, AccurevReferenceTree>();
+        final Map<String, AccurevReferenceTree> reftrees = new HashMap<>();
         while (true) {
             switch (parser.next()) {
             case XmlPullParser.START_DOCUMENT:

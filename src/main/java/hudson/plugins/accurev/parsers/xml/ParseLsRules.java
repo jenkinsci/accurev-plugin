@@ -14,7 +14,7 @@ final class ParseLsRules implements ICmdOutputXmlParser<HashMap<String, String>,
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         // Parse the 'accurev lsrules' command, and build up the
         // include/exclude rules map
-        final HashMap<String, String> locationToKindMap = new HashMap<String, String>();
+        final HashMap<String, String> locationToKindMap = new HashMap<>();
         // key: String location, val: String kind (incl / excl / incldo)
         while (true) {
             switch (parser.next()) {

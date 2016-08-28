@@ -1,11 +1,11 @@
 package hudson.plugins.accurev.delegates;
 
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.Job;
+import hudson.model.Run;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevReferenceTree;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.DetermineRemoteHostname;
 import hudson.plugins.accurev.RemoteWorkspaceDetails;
 import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
@@ -42,7 +42,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     @Override
-    protected PollingResult checkForChanges(AbstractProject<?, ?> project) throws IOException, InterruptedException {
+    protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
         try {
             Relocation relocation = checkForRelocation();
             if (relocation.isRelocationRequired()) {
@@ -62,7 +62,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     protected Relocation checkForRelocation() throws IOException, InterruptedException {
-        Map<String, AccurevStream> streams = null;
+//      Map<String, AccurevStream> streams = null;
         final Map<String, AccurevReferenceTree> reftrees = getReftrees();
         String reftree = scm.getReftree();
         if (reftrees == null) {
@@ -76,19 +76,20 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             throw new IllegalArgumentException("The specified reference tree, " + reftree + ", is based in the depot " + accurevReftree.getDepot() + " not " + scm.getDepot());
         }
 
-        if (streams != null) {
-            // Dont think we really use this can avoid the call
-            for (AccurevStream accurevStream : streams.values()) {
-                if (accurevReftree.getStreamNumber().equals(accurevStream.getNumber())) {
-                    accurevReftree.setStream(accurevStream);
-                    break;
-                }
-            }
-        }
+//        Redundant null check of value known to be null, remove? Since comment below suggests we are not using this.
+//        if (streams != null) {
+//            // Dont think we really use this can avoid the call
+//            for (AccurevStream accurevStream : streams.values()) {
+//                if (accurevReftree.getStreamNumber().equals(accurevStream.getNumber())) {
+//                    accurevReftree.setStream(accurevStream);
+//                    break;
+//                }
+//            }
+//        }
 
         RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
 
-        List<RelocationOption> relocationOptions = new ArrayList<RelocationOption>();
+        List<RelocationOption> relocationOptions = new ArrayList<>();
 
         for (RefTreeRelocation refTreeRelocation : RefTreeRelocation.values()) {
             if (refTreeRelocation.isRequired(accurevReftree, remoteDetails)) {
@@ -124,7 +125,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     @Override
-    protected boolean checkout(AbstractBuild<?, ?> build, File changeLogFile) throws IOException, InterruptedException {
+    protected boolean checkout(Run<?, ?> build, File changeLogFile) throws IOException, InterruptedException {
         if (!validateCheckout(build)) {
             return false;
         }
@@ -184,7 +185,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         return chrefcmd;
     }
 
-    protected boolean validateCheckout(AbstractBuild<?, ?> build) {
+    protected boolean validateCheckout(Run<?, ?> build) {
         String reftree = getRefTree();
         if (reftree == null || reftree.isEmpty()) {
             listener.fatalError("Must specify a reference tree");
@@ -220,7 +221,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
                         String oldStorage = accurevReftree.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
-                        return !oldStorage.equals(remoteDetails.getPath());
+                        return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
                     }
 
                     public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {

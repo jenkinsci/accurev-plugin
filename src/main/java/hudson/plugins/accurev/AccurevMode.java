@@ -89,7 +89,7 @@ public enum AccurevMode {
 
     private final boolean requiresWorkspace;
 
-    private AccurevMode(boolean requiresWorkspace) {
+    AccurevMode(boolean requiresWorkspace) {
         this.requiresWorkspace = requiresWorkspace;
     }
 

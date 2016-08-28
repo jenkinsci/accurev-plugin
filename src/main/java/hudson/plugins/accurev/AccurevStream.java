@@ -1,5 +1,7 @@
 package hudson.plugins.accurev;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -22,7 +24,8 @@ public class AccurevStream implements Serializable {
     private final Date time;
     private final Date startTime;
     private transient AccurevStream parent;
-    private final transient Set<AccurevStream> children = new HashSet<AccurevStream>();
+    private transient Set<AccurevStream> children = new HashSet<>();
+    private static final long serialVersionUID = 8004696899509026973L;
 
     public AccurevStream(String name, Long number, String depot, String basisName, Long basisNumber, boolean dynamic, StreamType type, Date time, Date startTime) {
         this.name = name;
@@ -32,8 +35,14 @@ public class AccurevStream implements Serializable {
         this.basisNumber = basisNumber;
         this.dynamic = dynamic;
         this.type = type;
-        this.time = time;
-        this.startTime = startTime;
+        this.time = (Date) time.clone();
+        this.startTime = (Date) startTime.clone();
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+
+        children = new HashSet<>();
     }
 
     /**
@@ -122,7 +131,7 @@ public class AccurevStream implements Serializable {
      * @return Value for property 'time'.
      */
     public Date getTime() {
-        return time;
+        return (Date) time.clone();
     }
 
     /**
@@ -131,7 +140,7 @@ public class AccurevStream implements Serializable {
      * @return Value for property 'startTime'.
      */
     public Date getStartTime() {
-        return startTime;
+        return (Date) startTime.clone();
     }
 
     /**
@@ -178,7 +187,7 @@ public class AccurevStream implements Serializable {
         }
     }
 
-    public static enum StreamType {
+    public enum StreamType {
         NORMAL("normal"),
         SNAPSHOT("snapshot"),
         WORKSPACE("workspace"),

@@ -11,9 +11,8 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.nio.charset.Charset;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -90,7 +89,7 @@ public class ShowStreams extends Command {
          final TaskListener listener, //
          final String accurevPath, //
          final Launcher launcher) {
-      final Map<String, AccurevStream> streams = new HashMap<String, AccurevStream>();
+      final Map<String, AccurevStream> streams = new HashMap<>();
       String streamName = nameOfStreamRequired;
       while (streamName != null && !streamName.isEmpty()) {
          final Map<String, AccurevStream> oneStream = getOneStream(scm, streamName, server, accurevEnv, workspace, listener, accurevPath, launcher);
@@ -143,7 +142,6 @@ public class ShowStreams extends Command {
 	         ) {
 		
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-		List<String> showStreamsCmd = new ArrayList<String>();
 		  
 		cmd.add(accurevPath);
         cmd.add("show");
@@ -156,9 +154,8 @@ public class ShowStreams extends Command {
         if(depot==null || depot.equalsIgnoreCase("")){
       	  return cbm;
         }
-        showStreamsCmd = cmd.toList();
         
-        ProcessBuilder processBuilder = new ProcessBuilder(showStreamsCmd);
+        ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
         processBuilder.redirectErrorStream(true);
         InputStream stdout = null;
         
@@ -174,7 +171,7 @@ public class ShowStreams extends Command {
 	           DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	           DocumentBuilder parser;
 	           parser = factory.newDocumentBuilder();
-	           Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes()));
+	           Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes(Charset.defaultCharset())));
 	           doc.getDocumentElement().normalize();
 	           NodeList nList = doc.getElementsByTagName("stream");
 	           for (int i = 0; i < nList.getLength(); i++) {
@@ -191,15 +188,9 @@ public class ShowStreams extends Command {
 	        } else {
 	           descriptorlogger.warning("AccuRev Server: "+server.getName()+". "+ showcmdoutputdata);
 	        }
-		} catch (IOException e) {
+		} catch (IOException | SAXException | ParserConfigurationException | InterruptedException e) {
 	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      } catch (InterruptedException e) {
-	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      } catch (ParserConfigurationException e) {
-	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      } catch (SAXException e) {
-	         descriptorlogger.log(Level.WARNING, "AccuRev Server: "+server.getName()+". "+"Could not populate stream list.", e.getCause());
-	      }finally {
+	      } finally {
 	          try {
 	         	 if(stdout!=null){
 	         		 stdout.close();

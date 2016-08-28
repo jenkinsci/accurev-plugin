@@ -28,7 +28,7 @@ public class XmlParserFactory {
         return getFactory().newPullParser();
     }
 
-    private static final Map<Object, XmlPullParserFactory> PARSER_FACTORY_CACHE = new WeakHashMap<Object, XmlPullParserFactory>(
+    private static final Map<Object, XmlPullParserFactory> PARSER_FACTORY_CACHE = new WeakHashMap<>(
             1);
 
     /**

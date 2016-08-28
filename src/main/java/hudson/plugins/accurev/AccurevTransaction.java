@@ -22,9 +22,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     private Date date;
     private String msg;
     private String action;
-    private List<String> affectedPaths = new ArrayList<String>();
-    private List<String> affectedRawPaths = new ArrayList<String>();
-    private List<String> fileRevisions = new ArrayList<String>();
+    private List<String> affectedPaths = new ArrayList<>();
+    private List<String> affectedRawPaths = new ArrayList<>();
+    private List<String> fileRevisions = new ArrayList<>();
     private String id;
     private String issueNum;
     private String webuiURLforTrans;
@@ -74,8 +74,6 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     /**
      * Returns a set of paths in the workspace that was
      * affected by this change.
-     * <p/>
-     * <p/>
      * Contains string like 'foo/bar/zot'. No leading/trailing '/',
      * and separator must be normalized to '/'.
      *
@@ -106,11 +104,11 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     @Exported
     public Date getDate() {
-        return date;
+        return (Date) date.clone();
     }
 
     public void setDate(Date date) {
-        this.date = date;
+        this.date = (Date) date.clone();
     }
 
     @Exported
@@ -130,7 +128,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     }
 
     protected void setParent(ChangeLogSet parent) {
-        super.setParent(parent);    //To change body of overridden methods use File | Settings | File Templates.
+        super.setParent(parent);    //Needed since parent method is protected
     }
 
     @Exported

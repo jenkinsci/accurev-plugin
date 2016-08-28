@@ -3,45 +3,23 @@ package hudson.plugins.accurev.delegates;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Hudson;
-import hudson.model.ParameterDefinition;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersDefinitionProperty;
-import hudson.model.StringParameterValue;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccuRevHiddenParametersAction;
-import hudson.plugins.accurev.AccurevSCM;
-import static hudson.plugins.accurev.AccurevSCM.ACCUREV_DATETIME_FORMATTER;
-import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.AccurevTransaction;
-import hudson.plugins.accurev.FindAccurevClientExe;
-import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
-import hudson.plugins.accurev.cmd.ChangeLogCmd;
-import hudson.plugins.accurev.cmd.History;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.PopulateCmd;
-import hudson.plugins.accurev.cmd.SetProperty;
-import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.cmd.Synctime;
+import hudson.model.*;
+import hudson.plugins.accurev.*;
+import hudson.plugins.accurev.cmd.*;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
+import jenkins.model.Jenkins;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
 
 /**
  * Performs actual SCM operations
@@ -81,7 +59,7 @@ public abstract class AbstractModeDelegate {
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
         server = DESCRIPTOR.getServer(scm.getServerName());
-        accurevEnv = new HashMap<String, String>();
+        accurevEnv = new HashMap<>();
         if (jenkinsWorkspace != null) {
             accurevPath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
@@ -98,7 +76,11 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    public PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+        final Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IOException("Jenkins instance is not ready");
+        }
         if (project.isInQueue()) {
             listener.getLogger().println("Project build is currently in queue.");
             return PollingResult.NO_CHANGES;
@@ -109,7 +91,7 @@ public abstract class AbstractModeDelegate {
             // from the project folder on the master.
             final File projectDir = project.getRootDir();
             jenkinsWorkspace = new FilePath(projectDir);
-            launcher = Hudson.getInstance().createLauncher(listener);
+            launcher = jenkins.createLauncher(listener);
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
         try {
@@ -122,16 +104,16 @@ public abstract class AbstractModeDelegate {
         return checkForChanges(project);
     }
 
-    protected abstract PollingResult checkForChanges(AbstractProject<?, ?> project) throws IOException, InterruptedException;
+    protected abstract PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException;
 
     private boolean hasStringVariableReference(final String str) {
         return str != null && str.contains("${");
     }
 
-    protected String getPollingStream(AbstractProject<?, ?> project) {
+    protected String getPollingStream(Job<?, ?> project) {
         String parsedLocalStream;
         if (hasStringVariableReference(scm.getStream())) {
-            ParametersDefinitionProperty paramDefProp = (ParametersDefinitionProperty) project
+            ParametersDefinitionProperty paramDefProp = project
                     .getProperty(ParametersDefinitionProperty.class);
 
             if (paramDefProp == null) {
@@ -139,7 +121,7 @@ public abstract class AbstractModeDelegate {
                         "Polling is not supported when stream name has a variable reference '" + scm.getStream() + "'.");
             }
 
-            Map<String, String> keyValues = new TreeMap<String, String>();
+            Map<String, String> keyValues = new TreeMap<>();
 
             /* Scan for all parameter with an associated default values */
             for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
@@ -166,7 +148,7 @@ public abstract class AbstractModeDelegate {
         return parsedLocalStream;
     }
 
-    public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, BuildListener listener,
+    public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
             File changelogFile) throws IOException, InterruptedException {
 
         try {
@@ -217,7 +199,7 @@ public abstract class AbstractModeDelegate {
         return captureChangeLog(build, changelogFile, streams, environment);
     }
 
-    private boolean captureChangeLog(AbstractBuild<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
+    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
         try {
             String changeLogStream = getChangeLogStream();
 
@@ -227,8 +209,8 @@ public abstract class AbstractModeDelegate {
                 throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
             }
             String latestTransactionID = latestTransaction.getId();
-            String latestTransactionDate = ACCUREV_DATETIME_FORMATTER.format(latestTransaction.getDate());
-            latestTransactionDate = latestTransactionDate == null ? "1970/01/01 00:00:00" : latestTransactionDate;
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            String latestTransactionDate = formatter.format(latestTransaction.getDate());
             listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
             listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
 
@@ -248,24 +230,26 @@ public abstract class AbstractModeDelegate {
                 "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
-        if (null == build.getPreviousBuild()) {
-            listener.getLogger().println("Cannot find a previous build to compare against. Computing all changes.");
-            startTime = null;
-        } else {
-            startTime = build.getPreviousBuild().getTimestamp();
+        Run<?, ?> prevbuild = null;
+        if (build != null) prevbuild = build.getPreviousBuild();
+        if (prevbuild != null) startTime = prevbuild.getTimestamp();
+        else {
+            GregorianCalendar c = new GregorianCalendar();
+            c.setTimeInMillis(0);
+            startTime = c;
         }
 
         AccurevStream stream = streams == null ? null : streams.get(localStream);
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
-                    startDateOfPopulate, startTime == null ? null : startTime.getTime(),
+                    startDateOfPopulate, startTime.getTime(),
                     localStream, changelogFile, logger, scm);
         }
 
         if (!getChangesFromStreams(startTime, stream, changelogFile)) {
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, startDateOfPopulate,
-                    startTime == null ? null : startTime.getTime(), localStream, changelogFile, logger, scm);
+                    startTime.getTime(), localStream, changelogFile, logger, scm);
         }
         return true;
     }
@@ -275,9 +259,9 @@ public abstract class AbstractModeDelegate {
     }
 
     private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile) throws IOException, InterruptedException {
-        List<String> changedStreams = new ArrayList<String>();
+        List<String> changedStreams = new ArrayList<>();
         // Capture changes in all streams and parents
-        boolean capturedChangelog = false;
+        boolean capturedChangelog;
         do {
             File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
             capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
@@ -296,7 +280,7 @@ public abstract class AbstractModeDelegate {
         return null;
     }
 
-    protected abstract boolean checkout(AbstractBuild<?, ?> build, File changeLogFile) throws IOException, InterruptedException;
+    protected abstract boolean checkout(Run<?, ?> build, File changeLogFile) throws IOException, InterruptedException;
 
     protected abstract String getPopulateFromMessage();
 
@@ -349,9 +333,7 @@ public abstract class AbstractModeDelegate {
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
         try {
             setup(null, null, null);
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, "buildEnvVars", ex);
-        } catch (InterruptedException ex) {
+        } catch (IOException | InterruptedException ex) {
             logger.log(Level.SEVERE, "buildEnvVars", ex);
         }
 
@@ -397,14 +379,16 @@ public abstract class AbstractModeDelegate {
         // grab the last promote transaction from the changelog file
         String lastTransaction = null;
         // Abstract should have this since checkout should have already run
-        ChangeLogSet<AccurevTransaction> changeSet = (ChangeLogSet<AccurevTransaction>) build.getChangeSet();
+        ChangeLogSet<?> changeSet = build.getChangeSet();
         if (!changeSet.isEmptySet()) {
             // first EDIT entry should be the last transaction we want
             for (Object o : changeSet.getItems()) {
-                AccurevTransaction t = (AccurevTransaction) o;
-                if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                    lastTransaction = t.getId();
-                    break;
+                if (o instanceof AccurevTransaction) {
+                    AccurevTransaction t = (AccurevTransaction) o;
+                    if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
+                        lastTransaction = t.getId();
+                        break;
+                    }
                 }
             }
             /*

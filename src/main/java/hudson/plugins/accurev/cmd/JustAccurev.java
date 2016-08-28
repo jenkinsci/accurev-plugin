@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class JustAccurev {
 
-	
+	private static final Logger logger = Logger.getLogger(JustAccurev.class.getName());
 	public static boolean justAccuRev(String osSpecificValue){
-		List<String> accurevCommand = new ArrayList<String>();
+		List<String> accurevCommand = new ArrayList<>();
 	      accurevCommand.add(osSpecificValue);
 	     
 	      ProcessBuilder processBuilder = new ProcessBuilder(accurevCommand);
@@ -21,11 +22,7 @@ public class JustAccurev {
 	    	  accurevprocess = processBuilder.start();
 	    	  stdout = accurevprocess.getInputStream();        
 	          accurevprocess.waitFor();
-	          if (accurevprocess.exitValue() == 0) {
-	        	  return true;
-	          }else{	        	  
-	        	  return false;
-	          }
+			  return accurevprocess.exitValue() == 0;
 	      } catch (InterruptedException e) {	    	 
 	    	  return false;
 		} catch (IOException e) {			
@@ -37,6 +34,7 @@ public class JustAccurev {
 	       	 }
 	       	
 	        } catch (IOException e) {
+				logger.warning("Failed to close std out");
 	        }
 	     }
 		

@@ -4,6 +4,7 @@ import hudson.FilePath;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.JustAccurev;
 import hudson.remoting.VirtualChannel;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -84,5 +85,10 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
         
         logger.info("Path to the AccuRev client: " + accurevPath);
         return accurevPath;
+    }
+
+    @Override
+    public void checkRoles(RoleChecker roleChecker) throws SecurityException {
+        //TODO: Implement Role check
     }
 }
