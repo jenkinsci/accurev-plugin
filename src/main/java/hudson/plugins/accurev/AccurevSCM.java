@@ -23,6 +23,10 @@ import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.ListBoxModel.Option;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,12 +48,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
-
-import net.sf.json.JSONObject;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * @author connollys
@@ -82,26 +80,11 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
+    private AbstractProject<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
     /**
      * Our constructor.
-     *
-     * @param serverName
-     * @param depot
-     * @param stream
-     * @param wspaceORreftree
-     * @param workspace
-     * @param reftree
-     * @param subPath
-     * @param filterForPollSCM
-     * @param synctime
-     * @param cleanreftree
-     * @param useSnapshot
-     * @param dontPopContent
-     * @param snapshotNameFormat
-     * @param directoryOffset
-     * @param ignoreStreamParent
      */
     @DataBoundConstructor
     public AccurevSCM(String serverName,
@@ -365,9 +348,19 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
-        final boolean needSlaveForPolling = !DESCRIPTOR.isPollOnMaster();
-        AccurevMode accurevMode  = AccurevMode.findMode(this);
-        return accurevMode.isRequiresWorkspace() || needSlaveForPolling;
+        if (!DESCRIPTOR.isPollOnMaster()
+                || (AccurevMode.findMode(this).isRequiresWorkspace())
+                || (activeProject != null && activeProject.isBuilding())) {
+            // Workspace is not required or project is already being build.
+            // If the workspace is in use, it will cause a long wait otherwise, thus skip the poll.
+            return false;
+        }
+
+        // No longer have an active project that requires a workspace.
+        activeProject = null;
+
+        // No workspace needed.
+        return true;
     }
 
     /**
@@ -403,6 +396,14 @@ public class AccurevSCM extends SCM {
 
     @Override
     protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+        if (activeProject == null) {
+            // Store current project as active project
+            activeProject = project;
+        } else {
+            // Skip polling while there is an active project.
+            // This will prevent waiting for the workspace to become available.
+            return PollingResult.NO_CHANGES;
+        }
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, scmrs);
     }
