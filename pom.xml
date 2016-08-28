@@ -11,7 +11,7 @@
 
     <artifactId>accurev</artifactId>
     <packaging>hpi</packaging>
-    <version>0.6.36-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <name>Jenkins Accurev plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin</url>
 
