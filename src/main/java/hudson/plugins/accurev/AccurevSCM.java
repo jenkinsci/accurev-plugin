@@ -10,41 +10,28 @@ import hudson.plugins.accurev.cmd.ShowDepots;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.plugins.jetty.security.Password;
-import hudson.scm.ChangeLogParser;
-import hudson.scm.PollingResult;
-import hudson.scm.SCMDescriptor;
-import hudson.scm.SCMRevisionState;
-import hudson.scm.SCM;
+import hudson.scm.*;
 import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.servlet.ServletException;
-
-import net.sf.json.JSONObject;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author connollys
@@ -76,6 +63,7 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
+    private Job<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
     /**
@@ -361,9 +349,19 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
-        final boolean needSlaveForPolling = !DESCRIPTOR.isPollOnMaster();
-        AccurevMode accurevMode  = AccurevMode.findMode(this);
-        return accurevMode.isRequiresWorkspace() || needSlaveForPolling;
+        if (!DESCRIPTOR.isPollOnMaster()
+                || (AccurevMode.findMode(this).isRequiresWorkspace())
+                || (activeProject != null && activeProject.isBuilding())) {
+            // Workspace is not required or project is already being build.
+            // If the workspace is in use, it will cause a long wait otherwise, thus skip the poll.
+            return false;
+        }
+
+        // No longer have an active project that requires a workspace.
+        activeProject = null;
+
+        // No workspace needed.
+        return true;
     }
 
     /**
@@ -404,6 +402,13 @@ public class AccurevSCM extends SCM {
                                                    @Nullable FilePath workspace, @Nonnull TaskListener listener,
                                                    @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
+		if (activeProject == null) {												   
+            activeProject = project;
+        } else {
+            // Skip polling while there is an active project.
+            // This will prevent waiting for the workspace to become available.
+            return PollingResult.NO_CHANGES;
+        }
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
     }
