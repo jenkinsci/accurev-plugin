@@ -349,9 +349,14 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
+        if (activeProject != null && !activeProject.isBuilding()) {
+            // Check if project is no longer active.
+            activeProject = null;
+        }
+
         if (!DESCRIPTOR.isPollOnMaster()
                 || (AccurevMode.findMode(this).isRequiresWorkspace())
-                || (activeProject != null && activeProject.isBuilding())) {
+                || (activeProject != null)) {
             // Workspace is not required or project is already being build.
             // If the workspace is in use, it will cause a long wait otherwise, thus skip the poll.
             return false;
