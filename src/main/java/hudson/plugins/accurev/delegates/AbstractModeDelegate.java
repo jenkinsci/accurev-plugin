@@ -236,8 +236,8 @@ public abstract class AbstractModeDelegate {
         if (build != null) prevbuild = build.getPreviousBuild();
         if (prevbuild != null) startTime = prevbuild.getTimestamp();
         else {
-            GregorianCalendar c = new GregorianCalendar();
-            c.setTimeInMillis(0);
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.MONTH, -1);
             startTime = c;
         }
 
