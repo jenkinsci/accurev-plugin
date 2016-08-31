@@ -331,8 +331,7 @@ public final class AccurevLauncher {
             final InputStream commandStderrOrNull, //
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
-        //final String msg = commandDescription + " (" + command.toStringWithQuote() + ")" + " failed with exit code " + commandExitCode;
-        final String msg = "Failed authentication. (failed with exit code " + commandExitCode+" )";
+        final String msg = commandDescription + " (" + command.toStringWithQuote() + ")" + " failed with exit code " + commandExitCode;
         String stderr = null;
         try {
             stderr = getCommandErrorOutput(commandStdoutOrNull, commandStderrOrNull);

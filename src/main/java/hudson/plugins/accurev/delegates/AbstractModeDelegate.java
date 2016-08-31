@@ -86,6 +86,8 @@ public abstract class AbstractModeDelegate {
             return PollingResult.NO_CHANGES;
         }
         if (jenkinsWorkspace == null) {
+            listener.getLogger().println("No workspace required.");
+
             // If we're claiming not to need a workspace in order to poll, then
             // workspace will be null.  In that case, we need to run directly
             // from the project folder on the master.
