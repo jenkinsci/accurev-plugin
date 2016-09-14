@@ -143,6 +143,7 @@ public final class AccurevLauncher {
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
+        if (result == null) return false;
         return result;
     }
 
@@ -270,8 +271,7 @@ public final class AccurevLauncher {
                             commandExitCode, outputFromCommand, errorFromCommand, loggerToLogFailuresTo, listenerToLogFailuresTo);
                     return null;
                 }
-                final TResult parsedResult = commandOutputParser.parse(outputFromCommand, commandOutputParserContext);
-                return parsedResult;
+                return commandOutputParser.parse(outputFromCommand, commandOutputParserContext);
             } catch (Exception ex) {
                 logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex,
                         loggerToLogFailuresTo, listenerToLogFailuresTo);

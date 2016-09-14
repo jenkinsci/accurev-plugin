@@ -62,9 +62,9 @@ public class Update extends Command {
 
         List<String> files = new ArrayList<>();
         final ArgumentListBuilder cmd = createCommand(server, accurevPath, true, reftree, false);
-        boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
+        Boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, XmlParserFactory.getFactory(), new ParseUpdate(), files);
-        if (transactionFound) {
+        if (transactionFound != null && transactionFound) {
             String filterForPollSCM = scm.getFilterForPollSCM();
             String subPath = scm.getSubPath();
             Collection<String> filterPaths = null;
@@ -94,6 +94,8 @@ public class Update extends Command {
                     }
                 }
             }
+        } else {
+            return false;
         }
         return transactionFound;
     }
@@ -108,10 +110,11 @@ public class Update extends Command {
             final String reftree,
             File changelogFile) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = createCommand(server, accurevPath, false, reftree, false);
-        boolean success = AccurevLauncher.runCommand("Update command", launcher,
+        final Boolean result = AccurevLauncher.runCommand("Update command", launcher,
                 cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, new ParseOutputToFile(), changelogFile);
+        if (result == null) return false;
+        return result;
 
-        return success;
     }
 }

@@ -25,10 +25,10 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
                             "time")));
                     resultTransaction.setUser(parser.getAttributeValue("", "user"));
-                } else if (parser.getName().equalsIgnoreCase("comment")) {
+                } else if (parser.getName().equalsIgnoreCase("comment") && resultTransaction != null) {
                     // parse comments
                     resultTransaction.setMsg(parser.nextText());
-                }else if (parser.getName().equalsIgnoreCase("version")) {
+                }else if (parser.getName().equalsIgnoreCase("version") && resultTransaction != null) {
                     // parse path & convert it to standard format
                 	String path = parser.getAttributeValue("", "path");
                     if (path != null) {
