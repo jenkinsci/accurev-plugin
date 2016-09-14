@@ -38,6 +38,9 @@
                         <f:entry title="Show one stream at a time" help="/plugin/accurev/help/use-restricted-show-streams.html">
                             <f:checkbox name="server.useRestrictedShowStreams" checked="${server.useRestrictedShowStreams}" default="false" />
                         </f:entry>
+                        <f:entry title="Enable reset Color" help="/plugin/accurev/help/use-color.html">
+                            <f:checkbox name="server.useColor" checked="${server.useColor}" default="false" />
+                        </f:entry>
                     </f:advanced>
                 </table>
                 <div align="right">

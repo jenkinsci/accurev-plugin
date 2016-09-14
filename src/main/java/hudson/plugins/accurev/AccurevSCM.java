@@ -737,6 +737,7 @@ public class AccurevSCM extends SCM {
         private boolean minimiseLogins;
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
+        private boolean useColor;
         private static final long serialVersionUID = 3270850408409304611L;
 
         /**
@@ -786,7 +787,8 @@ public class AccurevSCM extends SCM {
                 boolean syncOperations, //
                 boolean minimiseLogins, //
                 boolean useNonexpiringLogin, //
-                boolean useRestrictedShowStreams) {
+                boolean useRestrictedShowStreams,
+                boolean useColor) {
             this();
             this.name = name;
             this.host = host;
@@ -798,6 +800,7 @@ public class AccurevSCM extends SCM {
             this.minimiseLogins = minimiseLogins;
             this.useNonexpiringLogin = useNonexpiringLogin;
             this.useRestrictedShowStreams = useRestrictedShowStreams;
+            this.useColor = useColor;
         }
 
         /**
@@ -930,6 +933,12 @@ public class AccurevSCM extends SCM {
 
         public void setUseRestrictedShowStreams(boolean useRestrictedShowStreams) {
             this.useRestrictedShowStreams = useRestrictedShowStreams;
+        }
+
+        public boolean isUseColor() { return useColor; }
+
+        public void setUseColor(boolean useColor) {
+            this.useColor = useColor;
         }
 
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
