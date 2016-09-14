@@ -303,7 +303,6 @@ public class AccurevSCM extends SCM {
      * <li>ACCUREV_SERVER - The server name</li>
      * <li>ACCUREV_REFTREE - The workspace name</li>
      * <li>ACCUREV_SUBPATH - The workspace subpath</li>
-     *
      * </ul>
      *
      * @param build build

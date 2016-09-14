@@ -28,8 +28,14 @@ public class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails,
         } catch (IOException e) {
             path = f.getAbsolutePath();
         }
-
-        return new RemoteWorkspaceDetails(addr.getCanonicalHostName(), path, File.separator);
+        String ipPattern = "^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$";
+        String hostName = addr.getCanonicalHostName(); // try full hostname
+        if (hostName.matches(ipPattern))
+            hostName = addr.getHostName(); // try hostname
+        // Accurev does not accept IP addresses so we are going to throw an error.
+        if (hostName.matches(ipPattern))
+            throw new UnknownHostException("Unable to determine actual hostname, ensure proper FQDN: " + hostName);
+        return new RemoteWorkspaceDetails(hostName, path, File.separator);
     }
 
     @Override
