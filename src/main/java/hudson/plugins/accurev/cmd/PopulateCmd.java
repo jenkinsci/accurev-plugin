@@ -17,19 +17,19 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
 public class PopulateCmd extends Command  {
 
-	   
+
 	   private static final Logger logger = Logger.getLogger(PopulateCmd.class.getName());
-	   
+
 	   private Date _startDateOfPopulate;
-	   
+
 	   /**
-	    * 
+	    *
 	    * @return Date
 	    */
 	   public Date get_startDateOfPopulate() {
 	      return (Date) _startDateOfPopulate.clone();
 	   }
-	     
+
 	   /**
      * @param launcher             launcher
      * @param listener             listener
@@ -43,10 +43,10 @@ public class PopulateCmd extends Command  {
      * @param overwrite            overwrite
      * @return boolean
      */
-	  public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener, 
-	        AccurevServer server, String accurevClientExePath, 
-	        String streamName, 
-	        boolean overwrite, 
+	  public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener,
+	        AccurevServer server, String accurevClientExePath,
+	        String streamName,
+	        boolean overwrite,
 	        String fromMessage,
 	        FilePath accurevWorkingSpace, Map<String, String> accurevEnv) {
 	     listener.getLogger().println("Populating " + fromMessage + "...");
@@ -54,17 +54,17 @@ public class PopulateCmd extends Command  {
 	     popcmd.add(accurevClientExePath);
 	     popcmd.add("pop");
 	     addServer(popcmd, server);
-	     
+
 	     if ( streamName != null ) {
 	        popcmd.add("-v");
 	        popcmd.add(streamName);
 	     }
-	     
+
 	     popcmd.add("-L");
 	     popcmd.add(accurevWorkingSpace.getRemote());
-	     
+
 	     if ( overwrite ) popcmd.add("-O");
-	     
+
 	     popcmd.add("-R");
 	     if ((scm.getSubPath() == null) || (scm.getSubPath().trim().length() == 0)) {
 	        popcmd.add(".");
@@ -75,12 +75,12 @@ public class PopulateCmd extends Command  {
 	        }
 	     }
 	     _startDateOfPopulate = new Date();
-	     if (!AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
-	           accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger())) {
-	        return false;
-	     }
+			 final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
+	              accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger());
+	      if (success == null || !success) {
+	          return false;
+	    	}
 	     listener.getLogger().println("Populate completed successfully.");
 	     return true;
 	  }
 	}
-

@@ -74,15 +74,15 @@ public class ChangeLogCmd {
 		final String commandDescription = "Changelog command";
 		final Boolean success = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, scm.getOptionalLock(),
 				accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
-		if (!success) {
+		if (success == null || !success) {
 			return false;
 		}
 		//==============================================================================================
 		//See the content of changelogfile
 
 		if ( changelogFile != null ) {
-		   applyWebURL( server, accurevEnv, workspace, listener, accurevPath, launcher, changelogFile, logger, scm ); 
-		}        
+		   applyWebURL( server, accurevEnv, workspace, listener, accurevPath, launcher, changelogFile, logger, scm );
+		}
 		//=============================================================================================
 		listener.getLogger().println("Changelog calculated successfully.");
 		return true;
@@ -90,7 +90,7 @@ public class ChangeLogCmd {
 
 	/**
 	 * Parse the settings.xml file to get the webui url and apply it to the changelog.
-	 * 
+	 *
      * @param server        Server
      * @param accurevEnv    Accurev Enviroment
      * @param workspace     Workspace
@@ -101,26 +101,26 @@ public class ChangeLogCmd {
      * @param logger        logger
      * @param scm           Accurev SCM
 	 */
-	private static void applyWebURL(AccurevServer server, 
-	      Map<String, String> accurevEnv, 
-	      FilePath workspace, 
-	      TaskListener listener, 
-	      String accurevPath, 
-	      Launcher launcher, 
-	      File changelogFile, 
-	      Logger logger, 
+	private static void applyWebURL(AccurevServer server,
+	      Map<String, String> accurevEnv,
+	      FilePath workspace,
+	      TaskListener listener,
+	      String accurevPath,
+	      Launcher launcher,
+	      File changelogFile,
+	      Logger logger,
 	      AccurevSCM scm) {
-	   
+
       final ArgumentListBuilder getConfigcmd = new ArgumentListBuilder();
       getConfigcmd.add(accurevPath);
       getConfigcmd.add("getconfig");
       Command.addServer(getConfigcmd, server);
-      getConfigcmd.add("-s");        
+      getConfigcmd.add("-s");
       getConfigcmd.add("-r");
       getConfigcmd.add("settings.xml");
       GetConfigWebURL webuiURL;
       Map<String, GetConfigWebURL> webURL = null;
-      
+
       try {
           webURL = AccurevLauncher.runCommand("Get config to fetch webURL",
                launcher, getConfigcmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
@@ -129,35 +129,35 @@ public class ChangeLogCmd {
           logger.warning("Error loading settings.xml");
          // Error getting settings.xml file.
       }
-      
+
       if( webURL == null || webURL.isEmpty() ) {
          return;
       }
-      
+
       webuiURL = webURL.get("webuiURL");
       DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder documentBuilder;
       try {
          documentBuilder = documentBuilderFactory.newDocumentBuilder();
          Document document = documentBuilder.parse(changelogFile);
-         
+
          NodeList nodes = document.getElementsByTagName("transaction");
-         
+
          Element depotElement = document.createElement("depot");
          if(nodes!=null && nodes.getLength()>0)
             nodes.item(0).getParentNode().insertBefore(depotElement, nodes.item(0));
-         
+
          depotElement.appendChild(document.createTextNode(scm.getDepot()));
 
          Element webuiElement = document.createElement("webuiURL");
          if(nodes!=null && nodes.getLength()>0)
             nodes.item(0).getParentNode().insertBefore(webuiElement, nodes.item(0));
-         
+
          if(webuiURL!=null)
             webuiElement.appendChild(document.createTextNode((webuiURL.getWebURL().endsWith("/")?(webuiURL.getWebURL().substring(0, webuiURL.getWebURL().length()-1)):(webuiURL.getWebURL()))));
          else
-            webuiElement.appendChild(document.createTextNode("")); 
-         
+            webuiElement.appendChild(document.createTextNode(""));
+
          DOMSource source = new DOMSource(document);
 
          TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -165,7 +165,7 @@ public class ChangeLogCmd {
          StreamResult result = new StreamResult(changelogFile);
          transformer.transform(source, result);
       } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
-         
+
       }
     }
 }

@@ -188,7 +188,10 @@ public abstract class AbstractModeDelegate {
             return false;
         }
 
-        setStreamColor();
+        //Disable for now until toggle is available. Also do not fail if admin privileges is not provided.
+        if (server.isUseColor()) {
+            setStreamColor();
+        }
 
         if (!checkout(build, changelogFile)) {
             return false;
