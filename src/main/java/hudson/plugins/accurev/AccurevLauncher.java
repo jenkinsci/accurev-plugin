@@ -433,7 +433,7 @@ public final class AccurevLauncher {
             final String hostName = act.getHostName();
             return hostName;
         } catch (UnknownHostException e) {
-            return e.toString();
+            return "Unable to determine actual hostname, ensure proper FQDN.\n"+e.toString();
         } catch (IOException e) {
             return e.toString();
         } catch (InterruptedException e) {
