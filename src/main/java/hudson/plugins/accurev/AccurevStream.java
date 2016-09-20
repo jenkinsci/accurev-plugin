@@ -35,8 +35,8 @@ public class AccurevStream implements Serializable {
         this.basisNumber = basisNumber;
         this.dynamic = dynamic;
         this.type = type;
-        this.time = (Date) time.clone();
-        this.startTime = (Date) startTime.clone();
+        this.time = time == null ? null : (Date) time.clone();
+        this.startTime = startTime == null ? null :  (Date) startTime.clone();
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {

@@ -77,7 +77,7 @@ public class ShowStreams extends Command {
       cmd.add("streams");
       final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv,
             workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), scm.getDepot());
-      return streams;
+      return setParents(streams);
    }
 
    private static Map<String, AccurevStream> getAllAncestorStreams(//
@@ -104,7 +104,7 @@ public class ShowStreams extends Command {
             streams.putAll(oneStream);
          }
       }
-      return streams;
+      return setParents(streams);
    }
 
    private static Map<String, AccurevStream> getOneStream(//
@@ -130,6 +130,15 @@ public class ShowStreams extends Command {
             accurevEnv, workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), scm.getDepot());
       return oneStream;
    }
+
+    private static Map<String, AccurevStream> setParents(Map<String, AccurevStream> streams) {
+        //build the tree
+        streams.values()
+                .stream()
+                .filter(stream -> stream.getBasisName() != null)
+                .forEachOrdered(stream -> stream.setParent(streams.get(stream.getBasisName())));
+        return streams;
+    }
    
    //Populating streams dynamically in the global config page
    
