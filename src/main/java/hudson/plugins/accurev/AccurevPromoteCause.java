@@ -17,6 +17,6 @@ public class AccurevPromoteCause extends Cause {
 
     @Override
     public String getShortDescription() {
-        return "Triggered by "+ author +" on "+ stream + " via Accurev Promote";
+        return "Triggered by " + author + " on " + stream + " via Accurev Promote";
     }
 }
