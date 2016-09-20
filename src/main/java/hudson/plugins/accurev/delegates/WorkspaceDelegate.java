@@ -51,7 +51,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         String depot = scm.getDepot();
         String _accurevWorkspace = scm.getWorkspace();
         Map<String, AccurevWorkspace> workspaces = getWorkspaces();
-        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
+        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
                 launcher);
 
         if (workspaces == null) {
@@ -66,10 +66,8 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         }
 
         if (scm.isIgnoreStreamParent()) {
-            Map<String, AccurevStream> workspaceStreams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
-                    launcher);
-            if (!workspaceStreams.isEmpty()) {
-                AccurevStream workspaceStream = workspaceStreams.values().iterator().next();
+            if (!streams.isEmpty()) {
+                AccurevStream workspaceStream = streams.values().iterator().next();
                 accurevWorkspace.setStream(workspaceStream);
                 String workspaceBasisStream = workspaceStream.getBasisName();
                 if (streams.containsKey(workspaceBasisStream)) {
