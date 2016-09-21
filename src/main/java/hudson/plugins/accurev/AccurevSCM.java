@@ -15,6 +15,7 @@ import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -45,7 +46,7 @@ public class AccurevSCM extends SCM {
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     static final Date NO_TRANS_DATE = new Date(0);
-    private final String serverName;
+    private String serverName;
     private final String depot;
     private final String stream;
     private final boolean ignoreStreamParent;
@@ -86,7 +87,8 @@ public class AccurevSCM extends SCM {
      * @param ignoreStreamParent ignore Parent Stream
      */
     @DataBoundConstructor
-    public AccurevSCM(String serverName,
+    public AccurevSCM(
+            String serverName,
             String depot,
             String stream,
             String wspaceORreftree,
@@ -134,14 +136,21 @@ public class AccurevSCM extends SCM {
     }
 
     /**
-     * Getter for property 'serverName'.
+     * Getter for property 'serverUUID'.
      *
-     * @return Value for property 'serverName'.
+     * @return Value for property 'serverUUID'.
      */
     public String getServerName() {
         return serverName;
     }
 
+    public void setServerName(String uuid) {
+        serverName = uuid;
+    }
+
+    public AccurevServer getServer() {
+        return ((AccurevSCMDescriptor)getDescriptor()).getServer(serverName);
+    }
     /**
      * Getter for property 'stream'.
      *
@@ -433,6 +442,7 @@ public class AccurevSCM extends SCM {
 
         private boolean pollOnMaster;
         private String accurevPath;
+        private int migrate;
 
         /**
          * Constructs a new AccurevSCMDescriptor.
@@ -544,12 +554,23 @@ public class AccurevSCM extends SCM {
             this.pollOnMaster = pollOnMaster;
         }
 
-        public AccurevServer getServer(String name) {
-            if (name == null) {
+        public int getMigrate() {
+            return migrate;
+        }
+
+        public void setMigrate(int number) {
+            migrate = number;
+        }
+
+        public AccurevServer getServer(String uuid) {
+            if (uuid == null) {
                 return null;
             }
             for (AccurevServer server : this._servers) {
-                if (name.equals(server.getName())) {
+                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
+                    return server;
+                } else if (uuid.equals(server.getName())) {
+                    // support old server name
                     return server;
                 }
             }
@@ -564,8 +585,9 @@ public class AccurevSCM extends SCM {
                 return s;
             }
             for (AccurevServer server : this._servers) {
-                s.add(server.getName(), server.getName());
+                s.add(server.getName(), server.getUUID());
             }
+
             return s;
         }
 
@@ -579,8 +601,8 @@ public class AccurevSCM extends SCM {
 
         }
 
-        private AccurevServer getServerAndPath(String serverName) {
-            final AccurevServer server = getServer(serverName);
+        private AccurevServer getServerAndPath(String serverUUID) {
+            final AccurevServer server = getServer(serverUUID);
             String accurevBinName = "accurev";
 
             if (server == null) {
@@ -687,7 +709,7 @@ public class AccurevSCM extends SCM {
             }
             // Below while loop is for to retain the selected item when you open the
             // Job to reconfigure
-            d.stream().filter(o -> depot.equals(o.name)).forEachOrdered(o -> o.selected = true);
+            d.stream().filter(o -> depot.equals(o.name)).forEach(o -> o.selected = true);
             return d;
         }
 
@@ -725,6 +747,7 @@ public class AccurevSCM extends SCM {
     // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer implements Serializable {
 
+        private UUID uuid;
         private String name;
         private String host;
         private int port;
@@ -778,6 +801,7 @@ public class AccurevSCM extends SCM {
 
         @DataBoundConstructor
         public AccurevServer(//
+                String uuid,
                 String name, //
                 String host, //
                 int port, //
@@ -790,6 +814,8 @@ public class AccurevSCM extends SCM {
                 boolean useRestrictedShowStreams,
                 boolean useColor) {
             this();
+            if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
+            else this.uuid = UUID.fromString(uuid);
             this.name = name;
             this.host = host;
             this.port = port;
@@ -817,7 +843,15 @@ public class AccurevSCM extends SCM {
             if (nixCmdLocations == null) {
                 nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
             }
+            if (uuid == null) {
+                this.uuid = UUID.randomUUID();
+            }
             return this;
+        }
+
+        public String getUUID() {
+            if (uuid == null) { uuid = UUID.randomUUID(); }
+            return uuid.toString();
         }
 
         /**
