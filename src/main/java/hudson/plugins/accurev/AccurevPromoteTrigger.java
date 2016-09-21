@@ -168,7 +168,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
                     AccurevStream stream = streams.get(localStream);
                     do {
                         if (stream.getName().equals(promoteStream)) {
-                            logger.println("Found matching parent stream");
+                            logger.println("Found matching parent stream: "+ promoteStream);
                             return true;
                         }
                         stream = stream.getParent();
