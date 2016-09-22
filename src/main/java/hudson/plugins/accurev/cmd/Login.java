@@ -95,7 +95,7 @@ public class Login extends Command {
          cmd.add("-n");
       }
       cmd.add(server.getUsername());
-      if (StringUtils.isBlank(server.getPassword())) {
+      if (StringUtils.isEmpty(server.getPassword())) {
          cmd.addQuoted("");
          masks = new boolean[cmd.toCommandArray().length];
       } else {
@@ -136,8 +136,12 @@ public class Login extends Command {
 	    	  cmd.add("-n");
 	      }
 	      cmd.add(server.getUsername());
-	      // If the password is blank, "" should be passed
-	      cmd.add(server.getPassword().length() == 0 ? "\"\"" : server.getPassword());
+	      // If the password is Empty, "" should be passed
+          if (StringUtils.isEmpty(server.getPassword())) {
+              cmd.addQuoted("");
+          } else {
+              cmd.add(server.getPassword());
+          }
 	      ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
 	      processBuilder.redirectErrorStream(true);
 
