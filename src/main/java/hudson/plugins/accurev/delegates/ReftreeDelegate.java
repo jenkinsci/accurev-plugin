@@ -16,6 +16,8 @@ import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
 import hudson.plugins.accurev.parsers.xml.ParseShowReftrees;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -187,7 +189,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
 
     protected boolean validateCheckout(Run<?, ?> build) {
         String reftree = getRefTree();
-        if (reftree == null || reftree.isEmpty()) {
+        if (StringUtils.isEmpty(reftree)) {
             listener.fatalError("Must specify a reference tree");
             return false;
         }

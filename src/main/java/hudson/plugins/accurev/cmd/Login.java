@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
+import org.apache.commons.lang.StringUtils;
 
 public class Login extends Command {
    private static final Logger logger = Logger.getLogger(Login.class.getName());
@@ -48,7 +49,7 @@ public class Login extends Command {
          return false;
       }
       final String requiredUsername = server.getUsername();
-      if (requiredUsername == null || requiredUsername.trim().length() == 0) {
+      if (StringUtils.isBlank(requiredUsername)) {
          listener.getLogger().println("Authentication failure");
          return false;
       }
@@ -94,7 +95,7 @@ public class Login extends Command {
          cmd.add("-n");
       }
       cmd.add(server.getUsername());
-      if (server.getPassword() == null || "".equals(server.getPassword())) {
+      if (StringUtils.isBlank(server.getPassword())) {
          cmd.addQuoted("");
          masks = new boolean[cmd.toCommandArray().length];
       } else {

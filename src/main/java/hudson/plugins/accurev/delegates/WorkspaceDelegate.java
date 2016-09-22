@@ -15,6 +15,7 @@ import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
 import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,7 +120,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     @Override
     protected boolean validateCheckout(Run<?, ?> build) {
         String workspace = scm.getWorkspace();
-        if (workspace == null || workspace.isEmpty()) {
+        if (StringUtils.isEmpty(workspace)) {
             listener.fatalError("Must specify a workspace");
             return false;
         }

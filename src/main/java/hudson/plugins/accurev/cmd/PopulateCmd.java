@@ -15,6 +15,8 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
+import org.apache.commons.lang.StringUtils;
+
 public class PopulateCmd extends Command  {
 
 
@@ -66,7 +68,7 @@ public class PopulateCmd extends Command  {
 	     if ( overwrite ) popcmd.add("-O");
 
 	     popcmd.add("-R");
-	     if ((scm.getSubPath() == null) || (scm.getSubPath().trim().length() == 0)) {
+	     if (StringUtils.isBlank(scm.getSubPath())) {
 	        popcmd.add(".");
 	     } else {
 	        final StringTokenizer st = new StringTokenizer(scm.getSubPath(), ",");

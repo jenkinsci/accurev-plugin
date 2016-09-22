@@ -11,6 +11,7 @@ import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -164,12 +165,12 @@ public abstract class AbstractModeDelegate {
             accurevWorkingSpace.mkdirs();
         }
 
-        if (scm.getDepot() == null || scm.getDepot().isEmpty()) {
+        if (StringUtils.isEmpty(scm.getDepot())) {
             listener.fatalError("Must specify a depot");
             return false;
         }
 
-        if (scm.getStream() == null || scm.getStream().isEmpty()) {
+        if (StringUtils.isEmpty(scm.getStream())) {
             listener.fatalError("Must specify a stream");
             return false;
         }

@@ -6,6 +6,8 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.util.ArgumentListBuilder;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -26,8 +28,7 @@ public class SnapshotDelegate extends StreamDelegate {
 
     private String calculateSnapshotName(final Run<?, ?> build) throws IOException, InterruptedException {
         String snapshotNameFormat = scm.getSnapshotNameFormat();
-        final String actualFormat = (snapshotNameFormat == null || snapshotNameFormat
-                .trim().isEmpty()) ? DEFAULT_SNAPSHOT_NAME_FORMAT : snapshotNameFormat.trim();
+        final String actualFormat = StringUtils.isBlank(snapshotNameFormat) ? DEFAULT_SNAPSHOT_NAME_FORMAT : snapshotNameFormat.trim();
         final EnvVars environment = build.getEnvironment(listener);
         return environment.expand(actualFormat);
     }

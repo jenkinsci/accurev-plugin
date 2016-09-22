@@ -11,6 +11,7 @@ import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ComboBoxModel;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -154,7 +155,7 @@ public class ShowStreams extends Command {
         cmd.add(depot);
         cmd.add("streams");
 
-        if (depot == null || depot.equalsIgnoreCase("")) {
+        if (StringUtils.isEmpty(depot)) {
             return cbm;
         }
 
