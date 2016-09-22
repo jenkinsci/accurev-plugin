@@ -46,7 +46,8 @@ public class AccurevSCM extends SCM {
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     static final Date NO_TRANS_DATE = new Date(0);
-    private String serverName;
+    private String serverUUID;
+    private final String serverName;
     private final String depot;
     private final String stream;
     private final boolean ignoreStreamParent;
@@ -88,6 +89,7 @@ public class AccurevSCM extends SCM {
      */
     @DataBoundConstructor
     public AccurevSCM(
+            String serverUUID,
             String serverName,
             String depot,
             String stream,
@@ -104,6 +106,7 @@ public class AccurevSCM extends SCM {
             String directoryOffset,
             boolean ignoreStreamParent) {
         super();
+        this.serverUUID = serverUUID;
         this.serverName = serverName;
         this.depot = depot;
         this.stream = stream;
@@ -136,16 +139,28 @@ public class AccurevSCM extends SCM {
     }
 
     /**
-     * Getter for property 'serverUUID'.
+     * Getter for property 'serverName'.
      *
-     * @return Value for property 'serverUUID'.
+     * @return Value for property 'serverName'.
      */
     public String getServerName() {
         return serverName;
     }
 
-    public void setServerName(String uuid) {
-        serverName = uuid;
+    /**
+     * Getter for property 'serverUUID'.
+     *
+     * @return Value for property 'serverUUID'.
+     */
+    public String getServerUUID() {
+        return serverUUID;
+    }
+
+    /**
+     * Setter for property 'serverUUID'.
+     */
+    public void setServerUUID(String uuid) {
+        serverUUID = uuid;
     }
 
     public AccurevServer getServer() {
@@ -490,9 +505,11 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-
+            String serverUUID = req.getParameter("_.serverUUID");
+            String serverName = getServer(serverUUID).getName();
             return new AccurevSCM( //
-                    req.getParameter("_.serverName"), //
+                    serverUUID, //
+                    serverName, //
                     req.getParameter("_.depot"), //
                     req.getParameter("_.stream"), //           
                     req.getParameter("accurev.wspaceORreftree"),//           
@@ -578,7 +595,7 @@ public class AccurevSCM extends SCM {
         }
 
         // This method will populate the servers in the select box
-        public ListBoxModel doFillServerNameItems(@QueryParameter String serverName) {
+        public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
                 descriptorlogger.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
@@ -682,9 +699,9 @@ public class AccurevSCM extends SCM {
 
         // This method will populate the depots in the select box depending upon the
         // server selected.
-        public ListBoxModel doFillDepotItems(@QueryParameter String serverName, @QueryParameter String depot) {
+        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
 
-            final AccurevServer server = getServerAndPath(serverName);
+            final AccurevServer server = getServerAndPath(serverUUID);
             if (server == null) {
                 return new ListBoxModel();
             }
@@ -714,9 +731,9 @@ public class AccurevSCM extends SCM {
         }
 
         // Populating the streams
-        public ComboBoxModel doFillStreamItems(@QueryParameter String serverName, @QueryParameter String depot) {
+        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
             ComboBoxModel cbm = new ComboBoxModel();
-            final AccurevServer server = getServerAndPath(serverName);
+            final AccurevServer server = getServerAndPath(serverUUID);
             if (server == null) {
                 //descriptorlogger.warning("Failed to find server.");
                 return new ComboBoxModel();
@@ -844,7 +861,7 @@ public class AccurevSCM extends SCM {
                 nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
             }
             if (uuid == null) {
-                this.uuid = UUID.randomUUID();
+                uuid = UUID.randomUUID();
             }
             return this;
         }

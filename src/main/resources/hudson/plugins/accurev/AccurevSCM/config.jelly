@@ -5,7 +5,7 @@
         <fieldset>
             <legend>AccuRev Configurations</legend>
             <table width="100%">
-                <f:entry title="Server ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}" field="serverName" help="/plugin/accurev/help/project/server.html">
+                <f:entry title="Server ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}" field="serverUUID" help="/plugin/accurev/help/project/server.html">
                     <f:select />
                 </f:entry>
 

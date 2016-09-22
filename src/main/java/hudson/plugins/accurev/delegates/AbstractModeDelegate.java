@@ -58,7 +58,7 @@ public abstract class AbstractModeDelegate {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
-        server = DESCRIPTOR.getServer(scm.getServerName());
+        server = DESCRIPTOR.getServer(scm.getServerUUID());
         accurevEnv = new HashMap<>();
         if (jenkinsWorkspace != null) {
             accurevPath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
