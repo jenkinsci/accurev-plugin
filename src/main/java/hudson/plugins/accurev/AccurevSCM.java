@@ -71,6 +71,7 @@ public class AccurevSCM extends SCM {
     /**
      * Our constructor.
      *
+     * @param serverUUID Unique identifier for server
      * @param serverName name for the server
      * @param depot depot
      * @param stream stream
@@ -158,6 +159,8 @@ public class AccurevSCM extends SCM {
 
     /**
      * Setter for property 'serverUUID'.
+     *
+     * @param uuid Value for property 'serverUUID'
      */
     public void setServerUUID(String uuid) {
         serverUUID = uuid;
@@ -457,7 +460,6 @@ public class AccurevSCM extends SCM {
 
         private boolean pollOnMaster;
         private String accurevPath;
-        private int migrate;
 
         /**
          * Constructs a new AccurevSCMDescriptor.
@@ -569,14 +571,6 @@ public class AccurevSCM extends SCM {
          */
         public void setPollOnMaster(boolean pollOnMaster) {
             this.pollOnMaster = pollOnMaster;
-        }
-
-        public int getMigrate() {
-            return migrate;
-        }
-
-        public void setMigrate(int number) {
-            migrate = number;
         }
 
         public AccurevServer getServer(String uuid) {
