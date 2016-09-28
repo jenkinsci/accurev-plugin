@@ -375,8 +375,9 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
-        if (DESCRIPTOR.isPollOnMaster()) {
-            // Polling on master; workspace not required.
+        boolean requiresWorkspace = AccurevMode.findMode(this).isRequiresWorkspace();
+        if (DESCRIPTOR.isPollOnMaster() && !requiresWorkspace) {
+            // Does not require workspace if Poll On Master is enabled; unless build is using workspace
             return false;
         }
 
@@ -385,7 +386,7 @@ public class AccurevSCM extends SCM {
             activeProject = null;
         }
 
-        if (AccurevMode.findMode(this).isRequiresWorkspace() && activeProject == null) {
+        if (requiresWorkspace && activeProject == null) {
             return true;
         }
 
