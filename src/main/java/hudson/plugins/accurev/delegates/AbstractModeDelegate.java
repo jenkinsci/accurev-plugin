@@ -11,6 +11,7 @@ import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +59,7 @@ public abstract class AbstractModeDelegate {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
-        server = DESCRIPTOR.getServer(scm.getServerName());
+        server = DESCRIPTOR.getServer(scm.getServerUUID());
         accurevEnv = new HashMap<>();
         if (jenkinsWorkspace != null) {
             accurevPath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
@@ -164,12 +165,12 @@ public abstract class AbstractModeDelegate {
             accurevWorkingSpace.mkdirs();
         }
 
-        if (scm.getDepot() == null || scm.getDepot().isEmpty()) {
+        if (StringUtils.isEmpty(scm.getDepot())) {
             listener.fatalError("Must specify a depot");
             return false;
         }
 
-        if (scm.getStream() == null || scm.getStream().isEmpty()) {
+        if (StringUtils.isEmpty(scm.getStream())) {
             listener.fatalError("Must specify a stream");
             return false;
         }
@@ -275,7 +276,7 @@ public abstract class AbstractModeDelegate {
                 changedStreams.add(streamChangeLog.getName());
             }
             stream = stream.getParent();
-        } while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null);
+        } while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null && !scm.isIgnoreStreamParent());
 
         XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile, getUpdateFileName());
         return capturedChangelog;
@@ -354,8 +355,8 @@ public abstract class AbstractModeDelegate {
             env.put(ACCUREV_STREAM, "");
         }
 
-        if (scm.getServerName() != null) {
-            env.put(ACCUREV_SERVER, scm.getServerName());
+        if (server != null && server.getName() != null) {
+            env.put(ACCUREV_SERVER, server.getName());
         } else {
             env.put(ACCUREV_SERVER, "");
         }

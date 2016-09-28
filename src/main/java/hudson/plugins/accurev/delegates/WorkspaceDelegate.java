@@ -15,6 +15,7 @@ import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
 import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         String depot = scm.getDepot();
         String _accurevWorkspace = scm.getWorkspace();
         Map<String, AccurevWorkspace> workspaces = getWorkspaces();
-        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
+        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
                 launcher);
 
         if (workspaces == null) {
@@ -66,10 +67,8 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         }
 
         if (scm.isIgnoreStreamParent()) {
-            Map<String, AccurevStream> workspaceStreams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
-                    launcher);
-            if (!workspaceStreams.isEmpty()) {
-                AccurevStream workspaceStream = workspaceStreams.values().iterator().next();
+            if (!streams.isEmpty()) {
+                AccurevStream workspaceStream = streams.values().iterator().next();
                 accurevWorkspace.setStream(workspaceStream);
                 String workspaceBasisStream = workspaceStream.getBasisName();
                 if (streams.containsKey(workspaceBasisStream)) {
@@ -121,7 +120,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     @Override
     protected boolean validateCheckout(Run<?, ?> build) {
         String workspace = scm.getWorkspace();
-        if (workspace == null || workspace.isEmpty()) {
+        if (StringUtils.isEmpty(workspace)) {
             listener.fatalError("Must specify a workspace");
             return false;
         }

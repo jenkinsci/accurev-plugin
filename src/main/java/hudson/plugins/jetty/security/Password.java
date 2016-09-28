@@ -15,6 +15,7 @@
 package hudson.plugins.jetty.security;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -74,6 +75,7 @@ public final class Password {
     public static String deobfuscate(String s) {
         if (s.startsWith(__OBFUSCATE))
             s = s.substring(4);
+        if (StringUtils.isEmpty(s)) return "";
         byte[] b = new byte[s.length() / 2];
         int l = 0;
         for (int i = 0; i < s.length(); i += 4) {

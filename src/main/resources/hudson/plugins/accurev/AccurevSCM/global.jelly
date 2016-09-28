@@ -5,6 +5,7 @@
         <f:entry title="Servers">
             <f:repeatable var="server" varStatus="loopStatus" items="${descriptor.servers}" minimum="1">
                 <table width="100%">
+                    <input type="hidden" name="server.uuid" value="${server.getUUID()}"/>
                     <f:entry title="Name">
                         <input class="setting-input" type="text"
                                name="server.name" value="${server.name}"/>

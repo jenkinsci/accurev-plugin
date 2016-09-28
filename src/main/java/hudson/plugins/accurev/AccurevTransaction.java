@@ -4,6 +4,7 @@ import hudson.model.User;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -113,7 +114,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     @Exported
     public String getMsg() {
-        return (null == msg ? "" : msg);
+        return (StringUtils.isEmpty(msg) ? "" : msg);
     }
 
     public void setMsg(String msg) {
@@ -122,7 +123,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     public void setAction(String action) {
         this.action = action;
-        if ("chstream".equals(action) && (msg == null || "".equals(msg))) {
+        if ("chstream".equals(action) && StringUtils.isEmpty(msg)) {
             msg = "Changed Parent Stream";
         }
     }

@@ -15,6 +15,7 @@ import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -45,6 +46,7 @@ public class AccurevSCM extends SCM {
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     static final Date NO_TRANS_DATE = new Date(0);
+    private String serverUUID;
     private final String serverName;
     private final String depot;
     private final String stream;
@@ -69,6 +71,7 @@ public class AccurevSCM extends SCM {
     /**
      * Our constructor.
      *
+     * @param serverUUID Unique identifier for server
      * @param serverName name for the server
      * @param depot depot
      * @param stream stream
@@ -86,7 +89,9 @@ public class AccurevSCM extends SCM {
      * @param ignoreStreamParent ignore Parent Stream
      */
     @DataBoundConstructor
-    public AccurevSCM(String serverName,
+    public AccurevSCM(
+            String serverUUID,
+            String serverName,
             String depot,
             String stream,
             String wspaceORreftree,
@@ -102,6 +107,7 @@ public class AccurevSCM extends SCM {
             String directoryOffset,
             boolean ignoreStreamParent) {
         super();
+        this.serverUUID = serverUUID;
         this.serverName = serverName;
         this.depot = depot;
         this.stream = stream;
@@ -142,6 +148,27 @@ public class AccurevSCM extends SCM {
         return serverName;
     }
 
+    /**
+     * Getter for property 'serverUUID'.
+     *
+     * @return Value for property 'serverUUID'.
+     */
+    public String getServerUUID() {
+        return serverUUID;
+    }
+
+    /**
+     * Setter for property 'serverUUID'.
+     *
+     * @param uuid Value for property 'serverUUID'
+     */
+    public void setServerUUID(String uuid) {
+        serverUUID = uuid;
+    }
+
+    public AccurevServer getServer() {
+        return ((AccurevSCMDescriptor)getDescriptor()).getServer(serverName);
+    }
     /**
      * Getter for property 'stream'.
      *
@@ -348,8 +375,9 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
-        if (DESCRIPTOR.isPollOnMaster()) {
-            // Polling on master; workspace not required.
+        boolean requiresWorkspace = AccurevMode.findMode(this).isRequiresWorkspace();
+        if (DESCRIPTOR.isPollOnMaster() && !requiresWorkspace) {
+            // Does not require workspace if Poll On Master is enabled; unless build is using workspace
             return false;
         }
 
@@ -358,7 +386,7 @@ public class AccurevSCM extends SCM {
             activeProject = null;
         }
 
-        if (AccurevMode.findMode(this).isRequiresWorkspace() && activeProject == null) {
+        if (requiresWorkspace && activeProject == null) {
             return true;
         }
 
@@ -480,9 +508,11 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-
+            String serverUUID = req.getParameter("_.serverUUID");
+            String serverName = getServer(serverUUID).getName();
             return new AccurevSCM( //
-                    req.getParameter("_.serverName"), //
+                    serverUUID, //
+                    serverName, //
                     req.getParameter("_.depot"), //
                     req.getParameter("_.stream"), //           
                     req.getParameter("accurev.wspaceORreftree"),//           
@@ -544,12 +574,15 @@ public class AccurevSCM extends SCM {
             this.pollOnMaster = pollOnMaster;
         }
 
-        public AccurevServer getServer(String name) {
-            if (name == null) {
+        public AccurevServer getServer(String uuid) {
+            if (uuid == null) {
                 return null;
             }
             for (AccurevServer server : this._servers) {
-                if (name.equals(server.getName())) {
+                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
+                    return server;
+                } else if (uuid.equals(server.getName())) {
+                    // support old server name
                     return server;
                 }
             }
@@ -557,15 +590,16 @@ public class AccurevSCM extends SCM {
         }
 
         // This method will populate the servers in the select box
-        public ListBoxModel doFillServerNameItems(@QueryParameter String serverName) {
+        public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
                 descriptorlogger.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
                 return s;
             }
             for (AccurevServer server : this._servers) {
-                s.add(server.getName(), server.getName());
+                s.add(server.getName(), server.getUUID());
             }
+
             return s;
         }
 
@@ -579,8 +613,8 @@ public class AccurevSCM extends SCM {
 
         }
 
-        private AccurevServer getServerAndPath(String serverName) {
-            final AccurevServer server = getServer(serverName);
+        private AccurevServer getServerAndPath(String serverUUID) {
+            final AccurevServer server = getServer(serverUUID);
             String accurevBinName = "accurev";
 
             if (server == null) {
@@ -660,9 +694,9 @@ public class AccurevSCM extends SCM {
 
         // This method will populate the depots in the select box depending upon the
         // server selected.
-        public ListBoxModel doFillDepotItems(@QueryParameter String serverName, @QueryParameter String depot) {
+        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
 
-            final AccurevServer server = getServerAndPath(serverName);
+            final AccurevServer server = getServerAndPath(serverUUID);
             if (server == null) {
                 return new ListBoxModel();
             }
@@ -687,14 +721,14 @@ public class AccurevSCM extends SCM {
             }
             // Below while loop is for to retain the selected item when you open the
             // Job to reconfigure
-            d.stream().filter(o -> depot.equals(o.name)).forEachOrdered(o -> o.selected = true);
+            d.stream().filter(o -> depot.equals(o.name)).forEach(o -> o.selected = true);
             return d;
         }
 
         // Populating the streams
-        public ComboBoxModel doFillStreamItems(@QueryParameter String serverName, @QueryParameter String depot) {
+        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
             ComboBoxModel cbm = new ComboBoxModel();
-            final AccurevServer server = getServerAndPath(serverName);
+            final AccurevServer server = getServerAndPath(serverUUID);
             if (server == null) {
                 //descriptorlogger.warning("Failed to find server.");
                 return new ComboBoxModel();
@@ -725,6 +759,7 @@ public class AccurevSCM extends SCM {
     // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer implements Serializable {
 
+        private UUID uuid;
         private String name;
         private String host;
         private int port;
@@ -778,6 +813,7 @@ public class AccurevSCM extends SCM {
 
         @DataBoundConstructor
         public AccurevServer(//
+                String uuid,
                 String name, //
                 String host, //
                 int port, //
@@ -790,6 +826,8 @@ public class AccurevSCM extends SCM {
                 boolean useRestrictedShowStreams,
                 boolean useColor) {
             this();
+            if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
+            else this.uuid = UUID.fromString(uuid);
             this.name = name;
             this.host = host;
             this.port = port;
@@ -817,7 +855,15 @@ public class AccurevSCM extends SCM {
             if (nixCmdLocations == null) {
                 nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
             }
+            if (uuid == null) {
+                uuid = UUID.randomUUID();
+            }
             return this;
+        }
+
+        public String getUUID() {
+            if (uuid == null) { uuid = UUID.randomUUID(); }
+            return uuid.toString();
         }
 
         /**

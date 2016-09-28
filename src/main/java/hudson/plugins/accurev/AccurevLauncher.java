@@ -260,7 +260,7 @@ public final class AccurevLauncher {
             final OutputStream stderrStream = stderr.getOutput();
             final ProcStarter starter = createProcess(launcher, machineReadableCommand, masksOrNull,
                     environmentVariables, directoryToRunCommandFrom, stdoutStream, stderrStream);
-            logCommandExecution(machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
+            logCommandExecution(humanReadableCommandName, machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
                     listenerToLogFailuresTo);
             try {
                 final int commandExitCode = runCommandToCompletion(starter, synchronizationLockObjectOrNull);
@@ -331,7 +331,7 @@ public final class AccurevLauncher {
             final InputStream commandStderrOrNull, //
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
-        final String msg = commandDescription + " (" + command.toStringWithQuote() + ")" + " failed with exit code " + commandExitCode;
+        final String msg = commandDescription + " (" + maskCommandForPassword(commandDescription, command) + ")" + " failed with exit code " + commandExitCode;
         String stderr = null;
         try {
             stderr = getCommandErrorOutput(commandStdoutOrNull, commandStderrOrNull);
@@ -395,7 +395,7 @@ public final class AccurevLauncher {
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
         final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-        final String msg = hostname + ": " + commandDescription + " (" + command.toStringWithQuote() + ")"
+        final String msg = hostname + ": " + commandDescription + " (" + maskCommandForPassword(commandDescription, command) + ")"
                 + " failed with " + exception.toString();
         logException(msg, exception, loggerToLogFailuresTo, taskListener);
     }
@@ -416,22 +416,30 @@ public final class AccurevLauncher {
     }
 
     private static void logCommandExecution(//
+            final String commandDescription,
             final ArgumentListBuilder command, //
             final FilePath directoryToRunCommandFrom, //
             final Logger loggerToLogFailuresTo, //
             final TaskListener taskListener) {
         if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.FINE)) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-            final String msg = hostname + ": " + command.toStringWithQuote();
+            final String msg = hostname + ": " + maskCommandForPassword(commandDescription, command);
             loggerToLogFailuresTo.log(Level.FINE, msg);
         }
+    }
+
+    private static String maskCommandForPassword(String desc, ArgumentListBuilder command) {
+        String cmd = command.toStringWithQuote();
+        if (desc.equalsIgnoreCase("login")) {
+            cmd = cmd.replaceAll("\\w+$", "********");
+        }
+        return cmd;
     }
 
     private static String getRemoteHostname(final FilePath directoryToRunCommandFrom) {
         try {
             final RemoteWorkspaceDetails act = directoryToRunCommandFrom.act(new DetermineRemoteHostname("."));
-            final String hostName = act.getHostName();
-            return hostName;
+            return act.getHostName();
         } catch (UnknownHostException e) {
             return "Unable to determine actual hostname, ensure proper FQDN.\n"+e.toString();
         } catch (IOException e) {
