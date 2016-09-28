@@ -49,9 +49,9 @@ public class ParseChangeLog extends ChangeLogParser {
 
     
     private List<AccurevTransaction> filterTransactions(List<AccurevTransaction> transactions, UpdateLog updateLog){
-        List<AccurevTransaction> retVal;
+        List<AccurevTransaction> filteredTransactions;
         if (updateLog.hasUpdate()){
-            retVal = new ArrayList<>();
+            filteredTransactions = new ArrayList<>();
             if (updateLog.hasChanges()){
                 List<String> changesFiles = updateLog.changedFiles;
                 List<String> filteredFiles = new ArrayList<>(changesFiles);
@@ -65,7 +65,7 @@ public class ParseChangeLog extends ChangeLogParser {
                         }
                     }
                     if (includeTransaction){
-                        retVal.add(transaction);
+                        filteredTransactions.add(transaction);
                         rawPaths.forEach(filteredFiles::remove);
                     }
                 }
@@ -77,14 +77,15 @@ public class ParseChangeLog extends ChangeLogParser {
                     extraFiles.setMsg("Upstream changes");
                     extraFiles.setUser("upstream");
                     filteredFiles.forEach(extraFiles::addAffectedPath);
-                    retVal.add(extraFiles);
+                    filteredTransactions.add(extraFiles);
                 }
             }
         }else{
             // No Update log dont filter
-            retVal = transactions;
+            filteredTransactions = transactions;
         }
-        return retVal;
+        filteredTransactions.removeIf(t -> t.getAction().equalsIgnoreCase("dispatch"));
+        return filteredTransactions;
     }
 
     private List<AccurevTransaction> parse(File changelogFile, UpdateLog updateLog) throws IOException {
