@@ -14,7 +14,6 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
@@ -109,7 +108,7 @@ public class ParseChangeLog extends ChangeLogParser {
         List<AccurevTransaction> transactions = null;
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
-            try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath(), Charset.defaultCharset())) {
+            try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath())) {
                 parser.setInput(br);
                 transactions = parseTransactions(parser, changelogFile, updateLog);
             } finally {
@@ -244,7 +243,7 @@ public class ParseChangeLog extends ChangeLogParser {
         try {
             try {
                 XmlPullParser parser = XmlParserFactory.newParser();
-                try (BufferedReader br = Files.newBufferedReader(updateLogFile.toPath(), Charset.defaultCharset())) {
+                try (BufferedReader br = Files.newBufferedReader(updateLogFile.toPath())) {
                     parser.setInput(br);
                     parseUpdate.parse(parser, updatedFiles);
                 } finally {

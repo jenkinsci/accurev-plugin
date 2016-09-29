@@ -15,6 +15,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
@@ -288,28 +289,17 @@ public final class AccurevLauncher {
 
     private static String getCommandErrorOutput(final InputStream commandStdoutOrNull,
                                                 final InputStream commandStderrOrNull) throws IOException {
-        final Integer maxNumberOfStderrLines = 10;
-        final Integer maxNumberOfStdoutLines = 5;
+        final InputStream commandErrorOutput = new SequenceInputStream(commandStdoutOrNull, commandStderrOrNull);
+        final Integer maxNumberOfLines = 10;
         final String newLine = System.getProperty("line.separator");
         final ParseLastFewLines tailParser = new ParseLastFewLines();
         final StringBuilder outputText = new StringBuilder();
-        if (commandStdoutOrNull != null) {
-            final List<String> stdoutLines = tailParser.parse(commandStdoutOrNull, maxNumberOfStdoutLines);
-            for (final String line : stdoutLines) {
-                if (outputText.length() > 0) {
-                    outputText.append(newLine);
-                }
-                outputText.append(line);
+        final List<String> stdoutLines = tailParser.parse(commandErrorOutput, maxNumberOfLines);
+        for (final String line : stdoutLines) {
+            if (outputText.length() > 0) {
+                outputText.append(newLine);
             }
-        }
-        if (commandStderrOrNull != null) {
-            final List<String> stderrLines = tailParser.parse(commandStderrOrNull, maxNumberOfStderrLines);
-            for (final String line : stderrLines) {
-                if (outputText.length() > 0) {
-                    outputText.append(newLine);
-                }
-                outputText.append(line);
-            }
+            outputText.append(line);
         }
         if (outputText.length() > 0) {
             return outputText.toString();
