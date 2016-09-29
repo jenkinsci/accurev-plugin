@@ -16,6 +16,7 @@ import static hudson.init.InitMilestone.JOB_LOADED;
  */
 public class AccurevPlugin extends Plugin {
     private static final Logger LOGGER = Logger.getLogger(AccurevPlugin.class.getName());
+
     /**
      * Launches migration after plugin and jobs already initialized.
      * Expected milestone: @Initializer(after = JOB_LOADED)

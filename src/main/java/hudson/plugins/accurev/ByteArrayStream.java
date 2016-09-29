@@ -1,25 +1,12 @@
 package hudson.plugins.accurev;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 /**
  * Simple class to capture the output of something, and then allow that output
  * to be read.
  */
 public class ByteArrayStream implements Closeable {
-    private static final class Output extends ByteArrayOutputStream {
-        /**
-         * Returns an {@link InputStream} of our data without copying the data.
-         */
-        InputStream toInputStream() {
-            return new ByteArrayInputStream(super.buf, 0, super.count);
-        }
-    }
-
     private final Output mOutputStream = new Output();
 
     /**
@@ -48,5 +35,14 @@ public class ByteArrayStream implements Closeable {
     public void close() throws IOException {
         mOutputStream.reset();
         mOutputStream.close();
+    }
+
+    private static final class Output extends ByteArrayOutputStream {
+        /**
+         * Returns an {@link InputStream} of our data without copying the data.
+         */
+        InputStream toInputStream() {
+            return new ByteArrayInputStream(super.buf, 0, super.count);
+        }
     }
 }

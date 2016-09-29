@@ -3,13 +3,7 @@ package hudson.plugins.accurev.delegates;
 import hudson.model.AbstractBuild;
 import hudson.model.Job;
 import hudson.model.Run;
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevReferenceTree;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.DetermineRemoteHostname;
-import hudson.plugins.accurev.RemoteWorkspaceDetails;
-import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
-import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.plugins.accurev.cmd.Update;
 import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
@@ -26,14 +20,13 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- *
  * @author raymond
  */
 public class ReftreeDelegate extends AbstractModeDelegate {
 
+    private static final Logger logger = Logger.getLogger(ReftreeDelegate.class.getName());
     protected boolean popRequired = false;
     private File updateLogFile;
-    private static final Logger logger = Logger.getLogger(ReftreeDelegate.class.getName());
 
     public ReftreeDelegate(AccurevSCM scm) {
         super(scm);
@@ -204,34 +197,32 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     private enum RefTreeRelocation implements RelocationOption {
 
         HOST {
+            @Override
+            protected boolean isRequired(AccurevReferenceTree accurevReftree, RemoteWorkspaceDetails remoteDetails) {
+                return !accurevReftree.getHost().equals(remoteDetails.getHostName());
+            }
 
-                    @Override
-                    protected boolean isRequired(AccurevReferenceTree accurevReftree, RemoteWorkspaceDetails remoteDetails) {
-                        return !accurevReftree.getHost().equals(remoteDetails.getHostName());
-                    }
+            public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
+                cmd.add("-m");
+                cmd.add(relocation.getNewHost());
+            }
 
-                    public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
-                        cmd.add("-m");
-                        cmd.add(relocation.getNewHost());
-                    }
-
-                },
+        },
         STORAGE {
-
-                    @Override
-                    protected boolean isRequired(AccurevReferenceTree accurevReftree, RemoteWorkspaceDetails remoteDetails) {
-                        String oldStorage = accurevReftree.getStorage()
+            @Override
+            protected boolean isRequired(AccurevReferenceTree accurevReftree, RemoteWorkspaceDetails remoteDetails) {
+                String oldStorage = accurevReftree.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
-                        return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
-                    }
+                return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
+            }
 
-                    public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
-                        cmd.add("-l");
-                        cmd.add(relocation.getNewPath());
-                    }
+            public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
+                cmd.add("-l");
+                cmd.add(relocation.getNewPath());
+            }
 
-                };
+        };
 
         public boolean isPopRequired() {
             return true;

@@ -1,12 +1,12 @@
 <div>
     <p>
-        This option causes the accurev plugin to revert any overlapped entries in the workspace prior to performing an 
-        update of the workspace.  Overlapped entries cause the update step to fail, which in turn causes the build to be marked
+        This option causes the accurev plugin to revert any overlapped entries in the workspace prior to performing an
+        update of the workspace. Overlapped entries cause the update step to fail, which in turn causes the build to be marked
         as failed. (which in turn causes the next build to purge the workspace and therefore negate any purpose in using workspaces)
     </p>
     <p>
-		this option is primarily useful in cases where you are using an accurev workspace and when performing a build on that workspace
-		would cause artifacts to overlap in the parent stream.  If you keep getting warnings and failed builds due to overlaps, and you don't
-		want to purge the entire workspace on each build then you need this option.
+        this option is primarily useful in cases where you are using an accurev workspace and when performing a build on that workspace
+        would cause artifacts to overlap in the parent stream. If you keep getting warnings and failed builds due to overlaps, and you don't
+        want to purge the entire workspace on each build then you need this option.
     </p>
 </div>

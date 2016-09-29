@@ -4,10 +4,11 @@ import java.io.Serializable;
 
 public class GetConfigWebURL implements Serializable {
     private final String webURL;
-    
+
     public GetConfigWebURL(String webURL) {
-        this.webURL = webURL;        
+        this.webURL = webURL;
     }
+
     /**
      * Getter for property 'webURL'.
      *
@@ -16,5 +17,5 @@ public class GetConfigWebURL implements Serializable {
     public String getWebURL() {
         return webURL;
     }
-      
+
 }

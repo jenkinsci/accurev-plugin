@@ -24,10 +24,20 @@ import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
 
 /**
  * Performs actual SCM operations
- *
  */
 public abstract class AbstractModeDelegate {
 
+    protected static final String ACCUREV_WORKSPACE = "ACCUREV_WORKSPACE";
+    protected static final String ACCUREV_REFTREE = "ACCUREV_REFTREE";
+    private static final Logger logger = Logger.getLogger(AbstractModeDelegate.class.getName());
+    private static final String ACCUREV_DEPOT = "ACCUREV_DEPOT";
+    private static final String ACCUREV_STREAM = "ACCUREV_STREAM";
+    private static final String ACCUREV_SERVER = "ACCUREV_SERVER";
+    private static final String ACCUREV_SERVER_HOSTNAME = "ACCUREV_SERVER_HOSTNAME";
+    private static final String ACCUREV_SERVER_PORT = "ACCUREV_SERVER_PORT";
+    private static final String ACCUREV_SUBPATH = "ACCUREV_SUBPATH";
+    private static final String ACCUREV_LAST_TRANSACTION = "ACCUREV_LAST_TRANSACTION";
+    private static final String ACCUREV_HOME = "ACCUREV_HOME";
     protected final AccurevSCM scm;
     protected Launcher launcher;
     protected AccurevSCM.AccurevServer server;
@@ -38,18 +48,6 @@ public abstract class AbstractModeDelegate {
     protected FilePath accurevWorkingSpace;
     protected String localStream;
     protected Date startDateOfPopulate;
-
-    private static final Logger logger = Logger.getLogger(AbstractModeDelegate.class.getName());
-    private static final String ACCUREV_DEPOT = "ACCUREV_DEPOT";
-    private static final String ACCUREV_STREAM = "ACCUREV_STREAM";
-    private static final String ACCUREV_SERVER = "ACCUREV_SERVER";
-    private static final String ACCUREV_SERVER_HOSTNAME = "ACCUREV_SERVER_HOSTNAME";
-    private static final String ACCUREV_SERVER_PORT = "ACCUREV_SERVER_PORT";
-    protected static final String ACCUREV_WORKSPACE = "ACCUREV_WORKSPACE";
-    protected static final String ACCUREV_REFTREE = "ACCUREV_REFTREE";
-    private static final String ACCUREV_SUBPATH = "ACCUREV_SUBPATH";
-    private static final String ACCUREV_LAST_TRANSACTION = "ACCUREV_LAST_TRANSACTION";
-    private static final String ACCUREV_HOME = "ACCUREV_HOME";
 
     public AbstractModeDelegate(AccurevSCM scm) {
         this.scm = scm;
@@ -152,7 +150,7 @@ public abstract class AbstractModeDelegate {
     }
 
     public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
-            File changelogFile) throws IOException, InterruptedException {
+                            File changelogFile) throws IOException, InterruptedException {
 
         try {
             setup(launcher, jenkinsWorkspace, listener);
@@ -330,8 +328,9 @@ public abstract class AbstractModeDelegate {
             startDateOfPopulate = new Date();
         }
         return true;
-        
+
     }
+
     protected boolean populate() {
         return populate(isPopulateRequired());
     }
@@ -375,7 +374,7 @@ public abstract class AbstractModeDelegate {
 
         env.put(ACCUREV_WORKSPACE, "");
         env.put(ACCUREV_REFTREE, "");
-        
+
         if (scm.getSubPath() != null) {
             env.put(ACCUREV_SUBPATH, scm.getSubPath());
         } else {
@@ -416,10 +415,10 @@ public abstract class AbstractModeDelegate {
         if (System.getenv(ACCUREV_HOME) != null) {
             env.put(ACCUREV_HOME, System.getenv(ACCUREV_HOME));
         }
-        
+
         buildEnvVarsCustom(build, env);
     }
-    
+
     protected void buildEnvVarsCustom(AbstractBuild<?, ?> build, Map<String, String> env) {
         // override to put implementation specific values
     }

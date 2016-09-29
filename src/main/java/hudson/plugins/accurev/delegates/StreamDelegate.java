@@ -7,6 +7,7 @@ import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.CheckForChanges;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.scm.PollingResult;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -14,7 +15,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- *
  * @author raymond
  */
 public class StreamDelegate extends AbstractModeDelegate {

@@ -19,15 +19,6 @@ public class AccurevReferenceTree implements Serializable {
     }
 
     /**
-     * Setter for property 'stream'.
-     *
-     * @param stream Value to set for property 'stream'.
-     */
-    public void setStream(AccurevStream stream) {
-        this.stream = stream;
-    }
-
-    /**
      * Getter for property 'depot'.
      *
      * @return Value for property 'depot'.
@@ -79,5 +70,14 @@ public class AccurevReferenceTree implements Serializable {
      */
     public AccurevStream getStream() {
         return stream;
+    }
+
+    /**
+     * Setter for property 'stream'.
+     *
+     * @param stream Value to set for property 'stream'.
+     */
+    public void setStream(AccurevStream stream) {
+        this.stream = stream;
     }
 }

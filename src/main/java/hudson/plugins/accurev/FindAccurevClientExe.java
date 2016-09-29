@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 @SuppressWarnings("serial")
 public final class FindAccurevClientExe implements FilePath.FileCallable<String> {
 
-    private final AccurevServer server;
     private static final Logger logger = Logger.getLogger(FindAccurevClientExe.class.getName());
+    private final AccurevServer server;
 
     public FindAccurevClientExe(AccurevServer server) {
         this.server = server;
@@ -79,10 +79,10 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
                 logger.info("Using the AccuRev client we found on the system path.");
                 accurevPath = accurevBinName;
             } else {
-                throw new RuntimeException("AccuRev binary is not found or not set in the environment's path."); 
+                throw new RuntimeException("AccuRev binary is not found or not set in the environment's path.");
             }
         }
-        
+
         logger.info("Path to the AccuRev client: " + accurevPath);
         return accurevPath;
     }
