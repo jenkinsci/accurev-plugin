@@ -3,7 +3,6 @@ package hudson.plugins.accurev;
 import hudson.model.User;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
-
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
@@ -16,9 +15,11 @@ import java.util.List;
 /**
  * One commit.
  */
-@ExportedBean(defaultVisibility=999)
+@ExportedBean(defaultVisibility = 999)
 public final class AccurevTransaction extends ChangeLogSet.Entry {
-//    private String revision;
+    private static final String FIELD_SEPARATOR = ", ";
+    private static final String EQ = "=";
+    //    private String revision;
     private User author;
     private Date date;
     private String msg;
@@ -30,41 +31,41 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     private String issueNum;
     private String webuiURLforTrans;
     private String webuiURLforIssue;
-    
+
     @Exported
     public String getIssueNum() {
-		return issueNum;
-	}
+        return issueNum;
+    }
 
-	public void setIssueNum(String issueNum) {
-		this.issueNum = issueNum;
-	}
+    public void setIssueNum(String issueNum) {
+        this.issueNum = issueNum;
+    }
 
-	@Exported
+    @Exported
     public String getWebuiURLforTrans() {
-		return webuiURLforTrans;
-	}
+        return webuiURLforTrans;
+    }
 
-	public void setWebuiURLforTrans(String webuiURLforTrans) {
-		this.webuiURLforTrans = webuiURLforTrans;
-	}
-	
-	@Exported
-    public String getWebuiURLforIssue() {
-		return webuiURLforIssue;
-	}
+    public void setWebuiURLforTrans(String webuiURLforTrans) {
+        this.webuiURLforTrans = webuiURLforTrans;
+    }
 
-	public void setWebuiURLforIssue(String webuiURLforIssue) {
-		this.webuiURLforIssue = webuiURLforIssue;
-	}
-	
 	/*@Exported
     public String getRevision() {
         return revision;
     }*/
 
-	public void addFileRevision(String revision) {
-		fileRevisions.add(revision);
+    @Exported
+    public String getWebuiURLforIssue() {
+        return webuiURLforIssue;
+    }
+
+    public void setWebuiURLforIssue(String webuiURLforIssue) {
+        this.webuiURLforIssue = webuiURLforIssue;
+    }
+
+    public void addFileRevision(String revision) {
+        fileRevisions.add(revision);
     }
 
     @Exported
@@ -88,19 +89,19 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     public List<String> getAffectedRawPaths() {
         return affectedRawPaths;
     }
-    
+
     @Exported
     public Collection<String> getFileRevisions() {
         return fileRevisions;
     }
 
-    public void setUser(String author) {
-        this.author = User.get(author);
-    }
-
     @Exported
     public String getUser() {// digester wants read/write property, even though it never reads. Duh.
         return author.getDisplayName();
+    }
+
+    public void setUser(String author) {
+        this.author = User.get(author);
     }
 
     @Exported
@@ -119,13 +120,6 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     public void setMsg(String msg) {
         this.msg = msg;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-        if ("chstream".equals(action) && StringUtils.isEmpty(msg)) {
-            msg = "Changed Parent Stream";
-        }
     }
 
     protected void setParent(ChangeLogSet parent) {
@@ -148,12 +142,15 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     public void addAffectedPath(String path) {
         affectedPaths.add(path);
     }
+
     public void addAffectedRawPath(String path) {
         affectedRawPaths.add(path);
     }
+
     /**
      * Getter for action
      * Enables accurate filtering by AccuRev transaction type since the metod getEditType censors the actual type.
+     *
      * @return transaction type of the AccuRev transaction
      */
     @Exported
@@ -161,9 +158,17 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
         return action;
     }
 
+    public void setAction(String action) {
+        this.action = action;
+        if ("chstream".equals(action) && StringUtils.isEmpty(msg)) {
+            msg = "Changed Parent Stream";
+        }
+    }
+
     /**
      * Getter for id
      * Enables logging with AccuRev transaction id
+     *
      * @return transaction id of the AccuRev transaction
      */
     @Exported
@@ -173,14 +178,12 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
 
     /**
      * Setter for id
+     *
      * @param id transaction id of the AccuRev transaction
      */
     public void setId(String id) {
         this.id = id;
     }
-
-    private static final String FIELD_SEPARATOR = ", ";
-    private static final String EQ = "=";
 
     @Override
     public String toString() {

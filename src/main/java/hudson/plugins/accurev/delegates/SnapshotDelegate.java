@@ -13,14 +13,13 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- *
  * @author raymond
  */
 public class SnapshotDelegate extends StreamDelegate {
 
     private static final Logger logger = Logger.getLogger(SnapshotDelegate.class.getName());
-    private String snapshotName;
     private static final String DEFAULT_SNAPSHOT_NAME_FORMAT = "${JOB_NAME}_${BUILD_NUMBER}";
+    private String snapshotName;
 
     public SnapshotDelegate(AccurevSCM scm) {
         super(scm);

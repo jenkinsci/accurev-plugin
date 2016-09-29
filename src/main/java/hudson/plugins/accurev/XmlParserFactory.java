@@ -1,42 +1,39 @@
 package hudson.plugins.accurev;
 
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.logging.Logger;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.logging.Logger;
 
 /**
  * Utility class that provides {@link XmlPullParserFactory}s.
  */
 public class XmlParserFactory {
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
+    private static final Map<Object, XmlPullParserFactory> PARSER_FACTORY_CACHE = new WeakHashMap<>(
+            1);
 
     /**
      * Gets a new {@link XmlPullParser} configured for parsing Accurev XML
      * files.
      *
      * @return a new {@link XmlPullParser} configured for parsing Accurev XML
-     *         files.
-     *
-     * @throws XmlPullParserException
-     *             when things go wrong/
+     * files.
+     * @throws XmlPullParserException when things go wrong/
      */
     static XmlPullParser newParser() throws XmlPullParserException {
         return getFactory().newPullParser();
     }
-
-    private static final Map<Object, XmlPullParserFactory> PARSER_FACTORY_CACHE = new WeakHashMap<>(
-            1);
 
     /**
      * Gets a new {@link XmlPullParserFactory} configured for parsing Accurev
      * XML files.
      *
      * @return a new {@link XmlPullParserFactory} configured for parsing Accurev
-     *         XML files, or <code>null</code> if things go wrong.
+     * XML files, or <code>null</code> if things go wrong.
      */
     public static XmlPullParserFactory getFactory() {
         synchronized (PARSER_FACTORY_CACHE) {

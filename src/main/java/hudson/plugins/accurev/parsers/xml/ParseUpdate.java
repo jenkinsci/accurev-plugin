@@ -1,13 +1,13 @@
 package hudson.plugins.accurev.parsers.xml;
 
 import hudson.plugins.accurev.AccurevLauncher;
-import java.io.IOException;
-import java.util.List;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
- *
  * @author raymond
  */
 public class ParseUpdate implements AccurevLauncher.ICmdOutputXmlParser<Boolean, List<String>> {

@@ -3,12 +3,7 @@ package hudson.plugins.accurev.delegates;
 import hudson.model.AbstractBuild;
 import hudson.model.Job;
 import hudson.model.Run;
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.AccurevWorkspace;
-import hudson.plugins.accurev.RemoteWorkspaceDetails;
-import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
@@ -25,7 +20,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- *
  * @author raymond
  */
 public class WorkspaceDelegate extends ReftreeDelegate {
@@ -171,52 +165,49 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     private enum WorkspaceRelocation implements RelocationOption {
 
         HOST {
+            @Override
+            protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
+                return !accurevWorkspace.getHost().equalsIgnoreCase(remoteDetails.getHostName());
+            }
 
-                    @Override
-                    protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
-                        return !accurevWorkspace.getHost().equalsIgnoreCase(remoteDetails.getHostName());
-                    }
+            public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
+                cmd.add("-m");
+                cmd.add(relocation.getNewHost());
+            }
 
-                    public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
-                        cmd.add("-m");
-                        cmd.add(relocation.getNewHost());
-                    }
-
-                },
+        },
         STORAGE {
-
-                    @Override
-                    protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
-                        String oldStorage = accurevWorkspace.getStorage()
+            @Override
+            protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
+                String oldStorage = accurevWorkspace.getStorage()
                         .replace("/", remoteDetails.getFileSeparator())
                         .replace("\\", remoteDetails.getFileSeparator());
-                        return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
-                    }
+                return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
+            }
 
-                    public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
-                        cmd.add("-l");
-                        cmd.add(relocation.getNewPath());
-                    }
+            public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
+                cmd.add("-l");
+                cmd.add(relocation.getNewPath());
+            }
 
-                },
+        },
         REPARENT {
+            @Override
+            protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
+                return !localStream.equals(accurevWorkspace.getStream().getParent().getName());
+            }
 
-                    @Override
-                    protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
-                        return !localStream.equals(accurevWorkspace.getStream().getParent().getName());
-                    }
+            @Override
+            public boolean isPopRequired() {
+                return false;
+            }
 
-                    @Override
-                    public boolean isPopRequired() {
-                        return false;
-                    }
+            public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
+                cmd.add("-b");
+                cmd.add(relocation.getNewParent());
+            }
 
-                    public void appendCommand(ArgumentListBuilder cmd, Relocation relocation) {
-                        cmd.add("-b");
-                        cmd.add(relocation.getNewParent());
-                    }
-
-                };
+        };
 
         public boolean isPopRequired() {
             return true;

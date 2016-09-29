@@ -5,10 +5,12 @@ import java.io.Serializable;
 public class RefTreeExternalFile implements Serializable {
     private final String location;
     private final String status;
+
     public RefTreeExternalFile(String location, String status) {
         this.location = location;
         this.status = status;
     }
+
     /**
      * Getter for property 'location'.
      *
@@ -17,6 +19,7 @@ public class RefTreeExternalFile implements Serializable {
     public String getLocation() {
         return location;
     }
+
     /**
      * Getter for property 'status'.
      *
@@ -24,5 +27,5 @@ public class RefTreeExternalFile implements Serializable {
      */
     public String getStatus() {
         return status;
-    }   
+    }
 }

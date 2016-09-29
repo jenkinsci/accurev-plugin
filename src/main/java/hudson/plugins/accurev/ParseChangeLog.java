@@ -6,6 +6,10 @@ import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
+import hudson.scm.RepositoryBrowser;
+import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,11 +21,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
-import hudson.scm.RepositoryBrowser;
-import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 /**
  * Parses a change log that was recorded by {@link ParseOutputToFile}.
  */
@@ -31,10 +30,29 @@ public class ParseChangeLog extends ChangeLogParser {
     private static final long MILLIS_PER_SECOND = 1000L;
 
     /**
+     * Converts an Accurev timestamp into a {@link Date}
+     *
+     * @param transactionTime The accurev timestamp.
+     * @return A {@link Date} set to the time for the accurev timestamp.
+     */
+    public static Date convertAccurevTimestamp(String transactionTime) {
+        if (transactionTime == null) {
+            return null;
+        }
+        try {
+            final long time = Long.parseLong(transactionTime);
+            final long date = time * MILLIS_PER_SECOND;
+            return new Date(date);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      *
-     * @param build build
-     * @param browser  Repository browser
+     * @param build         build
+     * @param browser       Repository browser
      * @param changelogFile change log file
      * @return ChangeLogSet with AccurevTransactions
      * @throws IOException  failing IO
@@ -47,29 +65,28 @@ public class ParseChangeLog extends ChangeLogParser {
         return new AccurevChangeLogSet(build, transactions);
     }
 
-    
-    private List<AccurevTransaction> filterTransactions(List<AccurevTransaction> transactions, UpdateLog updateLog){
+    private List<AccurevTransaction> filterTransactions(List<AccurevTransaction> transactions, UpdateLog updateLog) {
         List<AccurevTransaction> filteredTransactions;
-        if (updateLog.hasUpdate()){
+        if (updateLog.hasUpdate()) {
             filteredTransactions = new ArrayList<>();
-            if (updateLog.hasChanges()){
+            if (updateLog.hasChanges()) {
                 List<String> changesFiles = updateLog.changedFiles;
                 List<String> filteredFiles = new ArrayList<>(changesFiles);
                 for (AccurevTransaction transaction : transactions) {
                     List<String> rawPaths = transaction.getAffectedRawPaths();
                     boolean includeTransaction = true;
                     for (String rawPath : rawPaths) {
-                        if (!changesFiles.contains(rawPath)){
+                        if (!changesFiles.contains(rawPath)) {
                             includeTransaction = false;
                             break;
                         }
                     }
-                    if (includeTransaction){
+                    if (includeTransaction) {
                         filteredTransactions.add(transaction);
                         rawPaths.forEach(filteredFiles::remove);
                     }
                 }
-                if (!filteredFiles.isEmpty()){
+                if (!filteredFiles.isEmpty()) {
                     AccurevTransaction extraFiles = new AccurevTransaction();
                     extraFiles.setDate(new Date());
                     extraFiles.setAction("promote");
@@ -80,7 +97,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     filteredTransactions.add(extraFiles);
                 }
             }
-        }else{
+        } else {
             // No Update log dont filter
             filteredTransactions = transactions;
         }
@@ -238,26 +255,6 @@ public class ParseChangeLog extends ChangeLogParser {
             }
         } catch (AccurevLauncher.UnhandledAccurevCommandOutput ex) {
             throw new IOException(ex);
-        }
-    }
-
-    /**
-     * Converts an Accurev timestamp into a {@link Date}
-     *
-     * @param transactionTime The accurev timestamp.
-     *
-     * @return A {@link Date} set to the time for the accurev timestamp.
-     */
-    public static Date convertAccurevTimestamp(String transactionTime) {
-        if (transactionTime == null) {
-            return null;
-        }
-        try {
-            final long time = Long.parseLong(transactionTime);
-            final long date = time * MILLIS_PER_SECOND;
-            return new Date(date);
-        } catch (NumberFormatException e) {
-            return null;
         }
     }
 

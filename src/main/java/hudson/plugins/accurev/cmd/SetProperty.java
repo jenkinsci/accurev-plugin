@@ -1,8 +1,5 @@
 package hudson.plugins.accurev.cmd;
 
-import java.util.Map;
-import java.util.logging.Logger;
-
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -10,6 +7,9 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
+
+import java.util.Map;
+import java.util.logging.Logger;
 
 public class SetProperty extends Command {
 

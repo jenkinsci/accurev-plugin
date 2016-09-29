@@ -1,10 +1,10 @@
 package hudson.plugins.accurev.delegates;
 
 import hudson.util.ArgumentListBuilder;
+
 import java.util.List;
 
 /**
- *
  * @author raymond
  */
 public class Relocation {
@@ -48,11 +48,12 @@ public class Relocation {
         return retVal;
     }
 
-    public void appendCommands(ArgumentListBuilder relocateCommand){
+    public void appendCommands(ArgumentListBuilder relocateCommand) {
         for (RelocationOption relocationOption : relocationOptions) {
             relocationOption.appendCommand(relocateCommand, this);
         }
     }
+
     public interface RelocationOption {
 
         boolean isPopRequired();

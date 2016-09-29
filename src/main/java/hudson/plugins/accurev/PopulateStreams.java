@@ -5,15 +5,15 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import java.io.Serializable;
 
-public class PopulateStreams implements Serializable,Comparable<PopulateStreams> {
+public class PopulateStreams implements Serializable, Comparable<PopulateStreams> {
     private final String name;
     private final String number;
-    
+
 
     public PopulateStreams(String name, String number) {
         this.name = name;
         this.number = number;
-        
+
     }
 
     /**
@@ -35,9 +35,9 @@ public class PopulateStreams implements Serializable,Comparable<PopulateStreams>
     }
 
     @Override
-	public int compareTo(PopulateStreams o) {
-		return name.compareTo(o.name);
-	}
+    public int compareTo(PopulateStreams o) {
+        return name.compareTo(o.name);
+    }
 
     @Override
     public boolean equals(Object o) {

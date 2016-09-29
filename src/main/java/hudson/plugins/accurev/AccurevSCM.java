@@ -44,17 +44,13 @@ public class AccurevSCM extends SCM {
 
     @Extension
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
-    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     static final Date NO_TRANS_DATE = new Date(0);
-    private String serverUUID;
+    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     private final String serverName;
     private final String depot;
     private final String stream;
     private final boolean ignoreStreamParent;
     private final String wspaceORreftree;
-    private boolean useReftree;
-    private boolean useWorkspace;
-    private boolean noWspaceNoReftree;
     private final boolean cleanreftree;
     private final String workspace;
     private final boolean useSnapshot;
@@ -65,27 +61,32 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
+    private String serverUUID;
+    private boolean useReftree;
+    private boolean useWorkspace;
+    private boolean noWspaceNoReftree;
     private Job<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
+
     /**
      * Our constructor.
      *
-     * @param serverUUID Unique identifier for server
-     * @param serverName name for the server
-     * @param depot depot
-     * @param stream stream
-     * @param wspaceORreftree workspace or reftree
-     * @param workspace workspace
-     * @param reftree reftree
-     * @param subPath subPath
-     * @param filterForPollSCM filterForPollSCM
-     * @param synctime synctime
-     * @param cleanreftree cleanreftree
-     * @param useSnapshot useSnapshot
-     * @param dontPopContent Do not populate content
+     * @param serverUUID         Unique identifier for server
+     * @param serverName         name for the server
+     * @param depot              depot
+     * @param stream             stream
+     * @param wspaceORreftree    workspace or reftree
+     * @param workspace          workspace
+     * @param reftree            reftree
+     * @param subPath            subPath
+     * @param filterForPollSCM   filterForPollSCM
+     * @param synctime           synctime
+     * @param cleanreftree       cleanreftree
+     * @param useSnapshot        useSnapshot
+     * @param dontPopContent     Do not populate content
      * @param snapshotNameFormat snapshot name format
-     * @param directoryOffset directory offset
+     * @param directoryOffset    directory offset
      * @param ignoreStreamParent ignore Parent Stream
      */
     @DataBoundConstructor
@@ -130,6 +131,7 @@ public class AccurevSCM extends SCM {
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
+
     /**
      * Getter for property 'depot'.
      *
@@ -167,8 +169,9 @@ public class AccurevSCM extends SCM {
     }
 
     public AccurevServer getServer() {
-        return ((AccurevSCMDescriptor)getDescriptor()).getServer(serverName);
+        return ((AccurevSCMDescriptor) getDescriptor()).getServer(serverName);
     }
+
     /**
      * Getter for property 'stream'.
      *
@@ -310,6 +313,7 @@ public class AccurevSCM extends SCM {
 
 // ------------------------ INTERFACE METHODS ------------------------
 // --------------------- Interface Describable ---------------------
+
     /**
      * {@inheritDoc}
      *
@@ -321,6 +325,7 @@ public class AccurevSCM extends SCM {
     }
 
 // -------------------------- OTHER METHODS --------------------------
+
     /**
      * Exposes AccuRev-specific information to the environment. The following
      * variables become available, if not null:
@@ -333,7 +338,7 @@ public class AccurevSCM extends SCM {
      * </ul>
      *
      * @param build build
-     * @param env enviroments
+     * @param env   enviroments
      * @since 0.6.9
      */
     @Override
@@ -347,17 +352,17 @@ public class AccurevSCM extends SCM {
     /**
      * {@inheritDoc}
      *
-     * @param build            build
-     * @param launcher         launcher
-     * @param workspace        jenkins workspace
-     * @param listener         listener
-     * @param changelogFile    change log file
-     * @param baseline SCMRevisionState
+     * @param build         build
+     * @param launcher      launcher
+     * @param workspace     jenkins workspace
+     * @param listener      listener
+     * @param changelogFile change log file
+     * @param baseline      SCMRevisionState
      * @throws java.io.IOException            on failing IO
      * @throws java.lang.InterruptedException on failing interrupt
      */
 
-    public void checkout(@Nonnull Run<?,?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
+    public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
@@ -420,18 +425,18 @@ public class AccurevSCM extends SCM {
     }
 
     @Override
-    public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?,?> build, @Nullable FilePath workspace,
+    public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
                                                    @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
         return SCMRevisionState.NONE;
     }
 
     @Override
-    public PollingResult compareRemoteRevisionWith(@Nonnull Job<?,?> project, @Nullable Launcher launcher,
+    public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
                                                    @Nullable FilePath workspace, @Nonnull TaskListener listener,
                                                    @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
-		if (activeProject != null && activeProject.isBuilding()) {
+        if (activeProject != null && activeProject.isBuilding()) {
             // Skip polling while there is an active project.
             // This will prevent waiting for the workspace to become available.
             return PollingResult.NO_CHANGES;
@@ -452,13 +457,11 @@ public class AccurevSCM extends SCM {
          * logged in if another client on the same machine logs in again.
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
+        private static final Logger descriptorlogger = Logger.getLogger(AccurevSCMDescriptor.class.getName());
         private List<AccurevServer> _servers;
         // The servers field is here for backwards compatibility.
         // The transient modifier means it won't be written to the config file
         private transient List<AccurevServer> servers;
-
-        private static final Logger descriptorlogger = Logger.getLogger(AccurevSCMDescriptor.class.getName());
-
         private boolean pollOnMaster;
         private String accurevPath;
 
@@ -468,6 +471,24 @@ public class AccurevSCM extends SCM {
         public AccurevSCMDescriptor() {
             super(AccurevSCM.class, null);
             load();
+        }
+
+        private static String getExistingPath(String[] paths) {
+            for (final String path : paths) {
+                if (new File(path).exists()) {
+                    return path;
+                }
+            }
+            return "";
+
+        }
+
+        public static void lock() {
+            ACCUREV_LOCK.lock();
+        }
+
+        public static void unlock() {
+            ACCUREV_LOCK.unlock();
         }
 
         /**
@@ -514,8 +535,8 @@ public class AccurevSCM extends SCM {
                     serverUUID, //
                     serverName, //
                     req.getParameter("_.depot"), //
-                    req.getParameter("_.stream"), //           
-                    req.getParameter("accurev.wspaceORreftree"),//           
+                    req.getParameter("_.stream"), //
+                    req.getParameter("accurev.wspaceORreftree"),//
                     req.getParameter("accurev.workspace"),//
                     req.getParameter("accurev.reftree"), //
                     req.getParameter("accurev.subPath"), //
@@ -603,16 +624,6 @@ public class AccurevSCM extends SCM {
             return s;
         }
 
-        private static String getExistingPath(String[] paths) {
-            for (final String path : paths) {
-                if (new File(path).exists()) {
-                    return path;
-                }
-            }
-            return "";
-
-        }
-
         private AccurevServer getServerAndPath(String serverUUID) {
             final AccurevServer server = getServer(serverUUID);
             String accurevBinName = "accurev";
@@ -666,7 +677,7 @@ public class AccurevSCM extends SCM {
                     try {
                         throw new FileNotFoundException(
                                 "The ACCUREV_BIN environment variable was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the variable. ACCUREV_BIN was set to: "
-                                + accurevBinDir);
+                                        + accurevBinDir);
                     } catch (FileNotFoundException e) {
                         logger.log(Level.SEVERE, "getEnvBinDir", e);
                     }
@@ -682,7 +693,7 @@ public class AccurevSCM extends SCM {
                     try {
                         throw new FileNotFoundException(
                                 "The accurev.bin system property was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the property. 'accurev.bin' was set to: "
-                                + accurevBinDir);
+                                        + accurevBinDir);
                     } catch (FileNotFoundException e) {
                         logger.log(Level.SEVERE, "getEnvBinDir", e);
                     }
@@ -735,7 +746,7 @@ public class AccurevSCM extends SCM {
             }
             // Execute the login command first & upon success of that run show streams
             // command. If any of the command's exitvalue is 1 proper error message is
-            // logged      
+            // logged
             try {
                 if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
                     cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm, descriptorlogger);
@@ -746,19 +757,37 @@ public class AccurevSCM extends SCM {
             }
             return cbm;
         }
-
-        public static void lock() {
-            ACCUREV_LOCK.lock();
-        }
-
-        public static void unlock() {
-            ACCUREV_LOCK.unlock();
-        }
     }
 
     // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer implements Serializable {
 
+        public static final String VTT_DELIM = ",";
+        // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
+        public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
+        public static final String DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
+        private static final long serialVersionUID = 3270850408409304611L;
+        /**
+         * The default search paths for Windows clients.
+         */
+        private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(//
+                "C:\\opt\\accurev\\bin\\accurev.exe", //
+                "C:\\Program Files\\AccuRev\\bin\\accurev.exe", //
+                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
+        /**
+         * The default search paths for *nix clients
+         */
+        private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(//
+                "/usr/local/bin/accurev", //
+                "/usr/bin/accurev", //
+                "/bin/accurev", //
+                "/local/bin/accurev",
+                "/opt/accurev/bin/accurev",
+                "/Applications/AccuRev/bin/accurev");
+        // keep all transaction types in a set for validation
+        private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
+        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
+                .split(VTT_DELIM)));
         private UUID uuid;
         private String name;
         private String host;
@@ -773,35 +802,6 @@ public class AccurevSCM extends SCM {
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
         private boolean useColor;
-        private static final long serialVersionUID = 3270850408409304611L;
-
-        /**
-         * The default search paths for Windows clients.
-         */
-        private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(//
-                "C:\\opt\\accurev\\bin\\accurev.exe", //
-                "C:\\Program Files\\AccuRev\\bin\\accurev.exe", //
-                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
-
-        /**
-         * The default search paths for *nix clients
-         */
-        private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(//
-                "/usr/local/bin/accurev", //
-                "/usr/bin/accurev", //
-                "/bin/accurev", //
-                "/local/bin/accurev",
-                "/opt/accurev/bin/accurev",
-                "/Applications/AccuRev/bin/accurev");
-
-        public static final String VTT_DELIM = ",";
-        // keep all transaction types in a set for validation
-        private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
-                .split(VTT_DELIM)));
-        // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
-        public static final String DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
 
         /**
          * Constructs a new AccurevServer.
@@ -813,18 +813,18 @@ public class AccurevSCM extends SCM {
 
         @DataBoundConstructor
         public AccurevServer(//
-                String uuid,
-                String name, //
-                String host, //
-                int port, //
-                String username, //
-                String password, //
-                String validTransactionTypes, //
-                boolean syncOperations, //
-                boolean minimiseLogins, //
-                boolean useNonexpiringLogin, //
-                boolean useRestrictedShowStreams,
-                boolean useColor) {
+                             String uuid,
+                             String name, //
+                             String host, //
+                             int port, //
+                             String username, //
+                             String password, //
+                             String validTransactionTypes, //
+                             boolean syncOperations, //
+                             boolean minimiseLogins, //
+                             boolean useNonexpiringLogin, //
+                             boolean useRestrictedShowStreams,
+                             boolean useColor) {
             this();
             if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
             else this.uuid = UUID.fromString(uuid);
@@ -862,7 +862,9 @@ public class AccurevSCM extends SCM {
         }
 
         public String getUUID() {
-            if (uuid == null) { uuid = UUID.randomUUID(); }
+            if (uuid == null) {
+                uuid = UUID.randomUUID();
+            }
             return uuid.toString();
         }
 
@@ -930,7 +932,6 @@ public class AccurevSCM extends SCM {
         }
 
         /**
-         *
          * @return returns the currently set transaction types that are seen as
          * valid for triggering builds and whos authors get notified when a
          * build fails
@@ -940,10 +941,9 @@ public class AccurevSCM extends SCM {
         }
 
         /**
-         *
          * @param validTransactionTypes the currently set transaction types that
-         * are seen as valid for triggering builds and whos authors get notified
-         * when a build fails
+         *                              are seen as valid for triggering builds and whos authors get notified
+         *                              when a build fails
          */
         public void setValidTransactionTypes(String validTransactionTypes) {
             this.validTransactionTypes = validTransactionTypes;
@@ -981,7 +981,9 @@ public class AccurevSCM extends SCM {
             this.useRestrictedShowStreams = useRestrictedShowStreams;
         }
 
-        public boolean isUseColor() { return useColor; }
+        public boolean isUseColor() {
+            return useColor;
+        }
 
         public void setUseColor(boolean useColor) {
             this.useColor = useColor;
@@ -1001,6 +1003,7 @@ public class AccurevSCM extends SCM {
     }
 
     // -------------------------- INNER CLASSES --------------------------
+
     /**
      * Class responsible for parsing change-logs recorded by the builds. If this
      * is renamed or moved it'll break data-compatibility with old builds.

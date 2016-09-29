@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Password utility class.
- *
+ * <p>
  * Passwords that begin with OBF: are de obfuscated.
  * Passwords can be obfuscated by run org.mortbay.util.Password as a
  * main class.  Obfuscated password are required if a system needs
@@ -33,7 +33,11 @@ import java.nio.charset.StandardCharsets;
  */
 public final class Password {
 
-    /** Do not instantiate Password. */
+    public static final String __OBFUSCATE = "OBF:";
+
+    /**
+     * Do not instantiate Password.
+     */
     private Password() {
     }
 
@@ -69,8 +73,6 @@ public final class Password {
             return buf.toString();
         }
     }
-
-    public static final String __OBFUSCATE = "OBF:";
 
     public static String deobfuscate(String s) {
         if (s.startsWith(__OBFUSCATE))

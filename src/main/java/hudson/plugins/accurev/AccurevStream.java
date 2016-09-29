@@ -14,6 +14,7 @@ import java.util.Set;
  * @since 03-Dec-2007 10:58:32
  */
 public class AccurevStream implements Serializable {
+    private static final long serialVersionUID = 8004696899509026973L;
     private final String name;
     private final Long number;
     private final String depot;
@@ -25,7 +26,6 @@ public class AccurevStream implements Serializable {
     private final Date startTime;
     private transient AccurevStream parent;
     private transient Set<AccurevStream> children = new HashSet<>();
-    private static final long serialVersionUID = 8004696899509026973L;
 
     public AccurevStream(String name, Long number, String depot, String basisName, Long basisNumber, boolean dynamic, StreamType type, Date time, Date startTime) {
         this.name = name;
@@ -36,30 +36,13 @@ public class AccurevStream implements Serializable {
         this.dynamic = dynamic;
         this.type = type;
         this.time = time == null ? null : (Date) time.clone();
-        this.startTime = startTime == null ? null :  (Date) startTime.clone();
+        this.startTime = startTime == null ? null : (Date) startTime.clone();
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
         children = new HashSet<>();
-    }
-
-    /**
-     * Setter for property 'parent'.
-     *
-     * @param parent Value to set for property 'parent'.
-     */
-    public void setParent(AccurevStream parent) {
-        if (this.parent != parent) {
-            if (this.parent != null) {
-                this.parent.getChildren().remove(this);
-            }
-            this.parent = parent;
-            if (this.parent != null) {
-                this.parent.getChildren().add(this);
-            }
-        }
     }
 
     /**
@@ -150,6 +133,23 @@ public class AccurevStream implements Serializable {
      */
     public AccurevStream getParent() {
         return parent;
+    }
+
+    /**
+     * Setter for property 'parent'.
+     *
+     * @param parent Value to set for property 'parent'.
+     */
+    public void setParent(AccurevStream parent) {
+        if (this.parent != parent) {
+            if (this.parent != null) {
+                this.parent.getChildren().remove(this);
+            }
+            this.parent = parent;
+            if (this.parent != null) {
+                this.parent.getChildren().add(this);
+            }
+        }
     }
 
     /**

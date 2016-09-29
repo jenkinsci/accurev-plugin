@@ -1,27 +1,27 @@
 <div>
-	<p>
-		If checked then:
-		<ul>
-			<li>
-				The plugin will (only) run accurev polling operations
-				on the master node.
-			</li>
-			<li>
-				Builds will no longer be triggered just because the
-				slave that did the last build goes offline.
-			</li>
-		</ul>
-		If not checked then:
-		<ul>
-			<li>
-				Polling operations will be run on the slave that did the last build.
-			</li>
-			<li>
-				If that slave does offline, a new build will be triggered,
-				whether or not there are changes.
-			</li>
-		</ul>
-		<br />
-		Do NOT enable this unless accurev is installed on the master node.
-	</p>
+    <p>
+        If checked then:
+    <ul>
+        <li>
+            The plugin will (only) run accurev polling operations
+            on the master node.
+        </li>
+        <li>
+            Builds will no longer be triggered just because the
+            slave that did the last build goes offline.
+        </li>
+    </ul>
+    If not checked then:
+    <ul>
+        <li>
+            Polling operations will be run on the slave that did the last build.
+        </li>
+        <li>
+            If that slave does offline, a new build will be triggered,
+            whether or not there are changes.
+        </li>
+    </ul>
+    <br/>
+    Do NOT enable this unless accurev is installed on the master node.
+    </p>
 </div>
