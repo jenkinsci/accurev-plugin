@@ -15,7 +15,6 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.SequenceInputStream;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
@@ -227,8 +226,7 @@ public final class AccurevLauncher {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.lock();
             }
-            final int commandExitCode = starter.join();
-            return commandExitCode;
+            return starter.join();
         } finally {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.unlock();
@@ -289,22 +287,27 @@ public final class AccurevLauncher {
 
     private static String getCommandErrorOutput(final InputStream commandStdoutOrNull,
                                                 final InputStream commandStderrOrNull) throws IOException {
-        final InputStream commandErrorOutput = new SequenceInputStream(commandStdoutOrNull, commandStderrOrNull);
-        final Integer maxNumberOfLines = 10;
-        final String newLine = System.getProperty("line.separator");
-        final ParseLastFewLines tailParser = new ParseLastFewLines();
         final StringBuilder outputText = new StringBuilder();
-        final List<String> stdoutLines = tailParser.parse(commandErrorOutput, maxNumberOfLines);
-        for (final String line : stdoutLines) {
-            if (outputText.length() > 0) {
-                outputText.append(newLine);
-            }
-            outputText.append(line);
-        }
+        if (commandStdoutOrNull != null) parseCommandOutput(commandStdoutOrNull, 10, outputText);
+        if (commandStderrOrNull != null) parseCommandOutput(commandStderrOrNull, 5, outputText);
         if (outputText.length() > 0) {
             return outputText.toString();
         } else {
             return null;
+        }
+    }
+
+    private static void parseCommandOutput(final InputStream commandOutput,
+                                           final Integer maxNumberOfLines,
+                                           final StringBuilder outputText) throws IOException {
+        final String newLine = System.getProperty("line.separator");
+        final ParseLastFewLines tailParser = new ParseLastFewLines();
+        final List<String> outputLines = tailParser.parse(commandOutput, maxNumberOfLines);
+        for (final String line : outputLines) {
+            if (outputText.length() > 0) {
+                outputText.append(newLine);
+            }
+            outputText.append(line);
         }
     }
 
