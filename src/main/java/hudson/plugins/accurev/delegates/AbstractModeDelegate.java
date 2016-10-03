@@ -50,7 +50,7 @@ public abstract class AbstractModeDelegate {
         this.scm = scm;
     }
 
-    private void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, InterruptedException {
+    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, InterruptedException {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
@@ -98,7 +98,7 @@ public abstract class AbstractModeDelegate {
         return StringUtils.isNotEmpty(str) && str.startsWith("$");
     }
 
-    protected String getPollingStream(Job<?, ?> project) {
+    public String getPollingStream(Job<?, ?> project) {
         String parsedLocalStream;
         if (hasStringVariableReference(scm.getStream())) {
             ParametersDefinitionProperty paramDefProp = project
@@ -273,6 +273,10 @@ public abstract class AbstractModeDelegate {
             stream = stream.getParent();
         } while (stream != null && stream.isReceivingChangesFromParent() && !scm.isIgnoreStreamParent());
         return transaction;
+    }
+
+    public Map<String, String> getAccurevEnv() {
+        return accurevEnv;
     }
 
     protected String getUpdateFileName() {
