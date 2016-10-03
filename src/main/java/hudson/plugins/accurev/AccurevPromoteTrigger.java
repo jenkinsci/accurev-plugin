@@ -1,13 +1,14 @@
 package hudson.plugins.accurev;
 
-import com.google.common.base.Charsets;
-import hudson.*;
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Util;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import hudson.model.listeners.ItemListener;
-import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.cmd.Synctime;
+import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.StreamTaskListener;
@@ -19,6 +20,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -76,31 +78,19 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public String getProjectName() {
-        if (job != null) {
-            return job.getName();
-        }
-        return "";
+        return job == null ? "" : job.getName();
     }
 
     public String getDepot() {
-        if (getScm() != null) {
-            return getScm().getDepot();
-        }
-        return "";
+        return getScm() == null ? "" : getScm().getDepot();
     }
 
     public String getStream() {
-        if (getScm() != null) {
-            return getScm().getStream();
-        }
-        return "";
+        return getScm() == null ? "" : getScm().getStream();
     }
 
     public String getHost() {
-        if (getScm() != null) {
-            return getScm().getServer().getHost();
-        }
-        return "";
+        return getScm() == null ? "" : getScm().getServer().getHost();
     }
 
     public void scheduleBuild(String author, String stream) {
@@ -120,67 +110,48 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public boolean checkForChanges(String promoteDepot, String promoteStream) {
-        try {
-            final Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IOException("Jenkins instance is not ready");
-            }
-            try (StreamTaskListener listener = new StreamTaskListener(getLogFile())) {
-                PrintStream logger = listener.getLogger();
-                AccurevSCM scm = getScm();
-                if (scm == null) {
+        final Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) return false;
+
+        try (StreamTaskListener listener = new StreamTaskListener(getLogFile())) {
+            PrintStream logger = listener.getLogger();
+            AccurevSCM scm = getScm();
+            if (scm == null) return false;
+            if (getStream().equals(promoteStream)) {
+                logger.println("Matching stream: " + promoteStream);
+                return true;
+            } else if (getDepot().equals(promoteDepot)) {
+                AbstractModeDelegate delegate = AccurevMode.findDelegate(scm);
+                FilePath jenkinsWorkspace = new FilePath(job.getRootDir());
+                Launcher launcher = jenkins.createLauncher(listener);
+                AccurevSCM.AccurevServer server = scm.getServer();
+                delegate.setup(launcher, jenkinsWorkspace, listener);
+
+                final Map<String, String> accurevEnv = delegate.getAccurevEnv();
+                String localStream = delegate.getPollingStream(job);
+                String accurevPath = accurevEnv.get("ACCUREV_CLIENT_PATH");
+
+                final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher);
+                if (streams == null) {
+                    listener.fatalError("streams EMPTY");
                     return false;
                 }
-                if (scm.getStream().equals(promoteStream)) {
-                    logger.println("Matching stream");
-                    return true;
-                } else if (scm.getDepot().equals(promoteDepot)) {
-                    final File projectDir = job.getRootDir();
-                    FilePath jenkinsWorkspace = new FilePath(projectDir);
-
-                    String accurevPath = jenkinsWorkspace.act(new FindAccurevClientExe(scm.getServer()));
-                    Launcher launcher = jenkins.createLauncher(listener);
-                    final EnvVars accurevEnv = new EnvVars();
-                    accurevEnv.put("ACCUREV_CLIENT_PATH", accurevPath);
-                    String localStream = scm.getStream();
-                    AccurevSCM.AccurevServer server = scm.getServer();
-
-                    if (!Login.ensureLoggedInToAccurev(server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher)) {
-                        throw new IllegalArgumentException("Authentication failure");
-                    }
-
-                    if (scm.isSynctime()) {
-                        logger.println("Synchronizing clock with the server...");
-                        if (!Synctime.synctime(scm, server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher)) {
-                            throw new IllegalArgumentException("Synchronizing clock failure");
-                        }
-                    }
-
-                    final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher);
-                    if (streams == null) {
-                        listener.fatalError("streams EMPTY");
-                        return false;
-                    }
-                    if (!streams.containsKey(localStream)) {
-                        listener.fatalError("The specified stream, '" + localStream + "' does not appear to exist!");
-                        return false;
-                    }
-                    AccurevStream stream = streams.get(localStream);
-                    do {
-                        if (stream.getName().equals(promoteStream)) {
-                            logger.println("Found matching parent stream: "+ promoteStream);
-                            return true;
-                        }
-                        stream = stream.getParent();
-                    } while (stream != null && stream.isReceivingChangesFromParent());
+                if (!streams.containsKey(localStream)) {
+                    listener.fatalError("The specified stream, '" + localStream + "' does not appear to exist!");
+                    return false;
                 }
+                AccurevStream stream = streams.get(localStream);
+                do {
+                    if (stream.getName().equals(promoteStream)) {
+                        logger.println("Found matching parent stream: " + promoteStream);
+                        return true;
+                    }
+                    stream = stream.getParent();
+                } while (stream != null && stream.isReceivingChangesFromParent());
                 logger.println("No matching parent stream found");
-            } catch (InterruptedException | IllegalArgumentException ex) {
-                LOGGER.warning(ex.getMessage());
             }
-        } catch (IOException ex) {
+        } catch (InterruptedException | IllegalArgumentException | IOException ex) {
             LOGGER.warning(ex.getMessage());
-
         }
         return false;
     }
@@ -258,7 +229,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         }
 
         public void writeLogTo(XMLOutput out) throws IOException {
-            new AnnotatedLargeText<>(getLogFile(), Charsets.UTF_8, true, this)
+            new AnnotatedLargeText<>(getLogFile(), StandardCharsets.UTF_8, true, this)
                     .writeHtmlTo(0, out.asWriter());
         }
     }
