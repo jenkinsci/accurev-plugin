@@ -2,16 +2,17 @@ package hudson.plugins.accurev.cmd;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Launcher.ProcStarter;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -35,7 +36,7 @@ public class Login extends Command {
         cmd.add(accurevPath);
         cmd.add("info");
         addServer(cmd, server);
-        final String username = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, null, accurevEnv,
+        final String username = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
                 workspace, listener, logger, new ParseInfoToLoginName(), null);
         return username;
     }
@@ -84,7 +85,6 @@ public class Login extends Command {
                                         final String accurevPath, //
                                         final Launcher launcher) throws IOException, InterruptedException {
         listener.getLogger().println("Authenticating with Accurev server...");
-        final boolean[] masks;
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add(accurevPath);
         cmd.add("login");
@@ -94,14 +94,11 @@ public class Login extends Command {
         }
         cmd.add(server.getUsername());
         if (StringUtils.isEmpty(server.getPassword())) {
-            cmd.addQuoted("");
-            masks = new boolean[cmd.toCommandArray().length];
+            cmd.add('"' + '"', true);
         } else {
-            cmd.add(server.getPassword());
-            masks = new boolean[cmd.toCommandArray().length];
-            masks[masks.length - 1] = true;
+            cmd.add(server.getPassword(), true);
         }
-        final boolean success = AccurevLauncher.runCommand("login", launcher, cmd, masks, null, accurevEnv, workspace, listener, logger);
+        final boolean success = AccurevLauncher.runCommand("login", launcher, cmd, null, accurevEnv, workspace, listener, logger);
         if (success) {
             listener.getLogger().println("Authentication completed successfully.");
             return true;
@@ -136,35 +133,24 @@ public class Login extends Command {
         cmd.add(server.getUsername());
         // If the password is Empty, "" should be passed
         if (StringUtils.isEmpty(server.getPassword())) {
-            cmd.addQuoted("");
+            cmd.add('"' + '"', true);
         } else {
-            cmd.add(server.getPassword());
+            cmd.add(server.getPassword(), true);
         }
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
-        processBuilder.redirectErrorStream(true);
-
-        Process loginprocess;
-        InputStream stdout = null;
-
         try {
-            loginprocess = processBuilder.start();
-            stdout = loginprocess.getInputStream();
-            String logincmdoutputdata = convertStreamToString(stdout);
-            loginprocess.waitFor();
-            if (loginprocess.exitValue() == 0) {
+            logger.info(cmd.toString());
+            Jenkins jenkins = Jenkins.getActiveInstance();
+            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().cmds(cmd);
+            starter.pwd(jenkins.getRootDir());
+            final int commandExitCode = starter.join();
+            if (commandExitCode == 0) {
                 return true;
             } else {
-                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + logincmdoutputdata);
-                return false;
+                descriptorlogger.warning("Login failed: " + cmd.toString());
             }
-        } finally {
-            try {
-                if (stdout != null) {
-                    stdout.close();
-                }
-            } catch (IOException e) {
-                logger.warning("Failed to close std out");
-            }
+        } catch (IOException ex) {
+            logger.warning("failed to execute login: " + cmd.toString());
         }
+        return false;
     }
 }

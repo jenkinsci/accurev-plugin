@@ -36,8 +36,6 @@ public final class AccurevLauncher {
      *                                                  in the logs if there is a failure.
      * @param launcher                                  Means of executing the command.
      * @param machineReadableCommand                    The command to be executed.
-     * @param masksOrNull                               Argument for {@link ProcStarter#masks(boolean...)}, or
-     *                                                  <code>null</code> if not required.
      * @param synchronizationLockObjectOrNull           The {@link Lock} object to be used to prevent concurrent
      *                                                  execution on the same machine, or <code>null</code> if no
      *                                                  synchronization is required.
@@ -54,7 +52,6 @@ public final class AccurevLauncher {
                                      final String humanReadableCommandName, //
                                      final Launcher launcher, //
                                      final ArgumentListBuilder machineReadableCommand, //
-                                     final boolean[] masksOrNull, //
                                      final Lock synchronizationLockObjectOrNull, //
                                      final Map<String, String> environmentVariables, //
                                      final FilePath directoryToRunCommandFrom, //
@@ -65,12 +62,12 @@ public final class AccurevLauncher {
         final boolean shouldLogEverything = optionalFlagToCopyAllOutputToTaskListener != null
                 && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
         if (shouldLogEverything) {
-            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
+            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseOutputToStream(),
                     listenerToLogFailuresTo.getLogger());
         } else {
-            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
+            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
@@ -80,7 +77,7 @@ public final class AccurevLauncher {
 
     /**
      * As
-     * {@link #runCommand(String, Launcher, ArgumentListBuilder, boolean[], Lock, Map, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
+     * {@link #runCommand(String, Launcher, ArgumentListBuilder, Lock, Map, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
      * but uses an {@link ICmdOutputXmlParser} instead.
      *
      * @param <TResult>                       The type of the result returned by the parser.
@@ -88,7 +85,6 @@ public final class AccurevLauncher {
      * @param humanReadableCommandName        Human readable command
      * @param launcher                        launcher
      * @param machineReadableCommand          Machine readable command
-     * @param masksOrNull                     masks or null
      * @param synchronizationLockObjectOrNull Synchronization lock
      * @param environmentVariables            Environment Variables
      * @param directoryToRunCommandFrom       Where to run commands from
@@ -106,7 +102,7 @@ public final class AccurevLauncher {
                                                          final String humanReadableCommandName, //
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
-                                                         final boolean[] masksOrNull, //
+                                                         //
                                                          final Lock synchronizationLockObjectOrNull, //
                                                          final Map<String, String> environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
@@ -115,7 +111,7 @@ public final class AccurevLauncher {
                                                          final XmlPullParserFactory xmlParserFactory, //
                                                          final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
                                                          final TContext commandOutputParserContext) {
-        return runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
+        return runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                 synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                 listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
                     XmlPullParser parser = null;
@@ -157,8 +153,6 @@ public final class AccurevLauncher {
      *                                        in the logs if there is a failure.
      * @param launcher                        Means of executing the command.
      * @param machineReadableCommand          The command to be executed.
-     * @param masksOrNull                     Argument for {@link ProcStarter#masks(boolean...)}, or
-     *                                        <code>null</code> if not required.
      * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
      *                                        execution on the same machine, or <code>null</code> if no
      *                                        synchronization is required.
@@ -176,7 +170,7 @@ public final class AccurevLauncher {
                                                          final String humanReadableCommandName, //
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
-                                                         final boolean[] masksOrNull, //
+                                                         //
                                                          final Lock synchronizationLockObjectOrNull, //
                                                          final Map<String, String> environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
@@ -189,7 +183,7 @@ public final class AccurevLauncher {
         try {
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
-            final ProcStarter starter = createProcess(launcher, machineReadableCommand, masksOrNull,
+            final ProcStarter starter = createProcess(launcher, machineReadableCommand,
                     environmentVariables, directoryToRunCommandFrom, stdoutStream, stderrStream);
             logCommandExecution(humanReadableCommandName, machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
                     listenerToLogFailuresTo);
@@ -237,15 +231,12 @@ public final class AccurevLauncher {
     private static ProcStarter createProcess(//
                                              final Launcher launcher, //
                                              final ArgumentListBuilder machineReadableCommand, //
-                                             final boolean[] masksOrNull, //
+                                             //
                                              final Map<String, String> environmentVariables, //
                                              final FilePath directoryToRunCommandFrom, //
                                              final OutputStream stdoutStream, //
                                              final OutputStream stderrStream) {
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
-        if (masksOrNull != null) {
-            starter = starter.masks(masksOrNull);
-        }
         starter = starter.envs(environmentVariables);
         starter = starter.stdout(stdoutStream).stderr(stderrStream);
         starter = starter.pwd(directoryToRunCommandFrom);
@@ -261,7 +252,7 @@ public final class AccurevLauncher {
                                           final InputStream commandStderrOrNull, //
                                           final Logger loggerToLogFailuresTo, //
                                           final TaskListener taskListener) {
-        final String msg = commandDescription + " (" + maskCommandForPassword(commandDescription, command) + ")" + " failed with exit code " + commandExitCode;
+        final String msg = commandDescription + " (" + command.toString() + ")" + " failed with exit code " + commandExitCode;
         String stderr = null;
         try {
             stderr = getCommandErrorOutput(commandStdoutOrNull, commandStderrOrNull);
@@ -319,7 +310,7 @@ public final class AccurevLauncher {
                                             final Logger loggerToLogFailuresTo, //
                                             final TaskListener taskListener) {
         final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-        final String msg = hostname + ": " + commandDescription + " (" + maskCommandForPassword(commandDescription, command) + ")"
+        final String msg = hostname + ": " + commandDescription + " (" + command.toString() + ")"
                 + " failed with " + exception.toString();
         logException(msg, exception, loggerToLogFailuresTo, taskListener);
     }
@@ -347,17 +338,9 @@ public final class AccurevLauncher {
                                             final TaskListener taskListener) {
         if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.FINE)) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-            final String msg = hostname + ": " + maskCommandForPassword(commandDescription, command);
+            final String msg = hostname + ": " + command.toString();
             loggerToLogFailuresTo.log(Level.FINE, msg);
         }
-    }
-
-    private static String maskCommandForPassword(String desc, ArgumentListBuilder command) {
-        String cmd = command.toStringWithQuote();
-        if (desc.equalsIgnoreCase("login")) {
-            cmd = cmd.replaceAll("\\w+$", "********");
-        }
-        return cmd;
     }
 
     private static String getRemoteHostname(final FilePath directoryToRunCommandFrom) {

@@ -58,7 +58,7 @@ public class Update extends Command {
 
         List<String> files = new ArrayList<>();
         final ArgumentListBuilder cmd = createCommand(server, accurevPath, true, reftree, false);
-        Boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
+        Boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, XmlParserFactory.getFactory(), new ParseUpdate(), files);
         if (transactionFound != null && transactionFound) {
             String filterForPollSCM = scm.getFilterForPollSCM();
@@ -107,7 +107,7 @@ public class Update extends Command {
                                         File changelogFile) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = createCommand(server, accurevPath, false, reftree, false);
         final Boolean result = AccurevLauncher.runCommand("Update command", launcher,
-                cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
+                cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, new ParseOutputToFile(), changelogFile);
         if (result == null) return false;
         return result;

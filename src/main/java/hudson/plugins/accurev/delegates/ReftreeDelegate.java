@@ -114,7 +114,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         cmd.add("-fx");
         cmd.add("refs");
         final Map<String, AccurevReferenceTree> reftrees = AccurevLauncher.runCommand("Show ref trees command",
-                launcher, cmd, null, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
+                launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
                 XmlParserFactory.getFactory(), new ParseShowReftrees(), null);
         return reftrees;
     }
@@ -166,7 +166,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         }
         relocation.appendCommands(relocateCommand);
 
-        return (AccurevLauncher.runCommand("relocation command", launcher, relocateCommand, null,
+        return (AccurevLauncher.runCommand("relocation command", launcher, relocateCommand,
                 scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true));
     }
 

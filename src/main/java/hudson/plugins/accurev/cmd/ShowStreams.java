@@ -2,15 +2,14 @@ package hudson.plugins.accurev.cmd;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Launcher.ProcStarter;
 import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ComboBoxModel;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -21,10 +20,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +67,7 @@ public class ShowStreams extends Command {
         cmd.add("-p");
         cmd.add(scm.getDepot());
         cmd.add("streams");
-        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv,
+        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", launcher, cmd, scm.getOptionalLock(), accurevEnv,
                 workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), scm.getDepot());
         return streams;
     }
@@ -122,7 +118,7 @@ public class ShowStreams extends Command {
         cmd.add("-s");
         cmd.add(streamName);
         cmd.add("streams");
-        final Map<String, AccurevStream> oneStream = AccurevLauncher.runCommand("Restricted show streams command", launcher, cmd, null, scm.getOptionalLock(),
+        final Map<String, AccurevStream> oneStream = AccurevLauncher.runCommand("Restricted show streams command", launcher, cmd, scm.getOptionalLock(),
                 accurevEnv, workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), scm.getDepot());
         return oneStream;
     }
@@ -159,23 +155,20 @@ public class ShowStreams extends Command {
             return cbm;
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd.toList());
-        processBuilder.redirectErrorStream(true);
-        InputStream stdout = null;
-
-        Process streamprocess;
-
+        final ByteArrayStream bas = new ByteArrayStream();
         try {
-            descriptorlogger.info(cmd.toStringWithQuote());
-            streamprocess = processBuilder.start();
-            stdout = streamprocess.getInputStream();
-            String showcmdoutputdata = convertStreamToString(stdout);
-            streamprocess.waitFor();
-            if (streamprocess.exitValue() == 0) {
+            descriptorlogger.info(cmd.toString());
+            Jenkins jenkins = Jenkins.getActiveInstance();
+            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().cmds(cmd);
+            starter.pwd(jenkins.getRootDir());
+            starter.stdout(bas.getOutput());
+            final int commandExitCode = starter.join();
+
+            if (commandExitCode == 0) {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder parser;
                 parser = factory.newDocumentBuilder();
-                Document doc = parser.parse(new ByteArrayInputStream(showcmdoutputdata.getBytes(Charset.defaultCharset())));
+                Document doc = parser.parse(bas.getInput());
                 doc.getDocumentElement().normalize();
                 NodeList nList = doc.getElementsByTagName("stream");
                 for (int i = 0; i < nList.getLength(); i++) {
@@ -188,19 +181,16 @@ public class ShowStreams extends Command {
                     }
                 }
                 Collections.sort(cbm);
-
             } else {
-                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + showcmdoutputdata);
+                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + cmd.toString());
             }
         } catch (IOException | SAXException | ParserConfigurationException | InterruptedException e) {
             descriptorlogger.log(Level.WARNING, "AccuRev Server: " + server.getName() + ". " + "Could not populate stream list.", e.getCause());
         } finally {
             try {
-                if (stdout != null) {
-                    stdout.close();
-                }
-
+                bas.close();
             } catch (IOException e) {
+                descriptorlogger.warning("Failed to close stream");
             }
         }
 

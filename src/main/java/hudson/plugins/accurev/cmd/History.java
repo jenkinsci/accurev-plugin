@@ -64,7 +64,7 @@ public class History extends Command {
 
         // execute code that extracts the latest transaction
         final List<AccurevTransaction> transaction = new ArrayList<>(1);
-        final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener,
+        final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, XmlParserFactory.getFactory(), new ParseHistory(), transaction);
         if (transactionFound == null) {
             final String msg = "History command failed when trying to get the latest transaction of type " + transactionType;

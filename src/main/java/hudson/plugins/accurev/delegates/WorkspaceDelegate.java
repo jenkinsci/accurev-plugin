@@ -106,7 +106,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("wspaces");
-        final Map<String, AccurevWorkspace> workspaces = AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, null, scm.getOptionalLock(),
+        final Map<String, AccurevWorkspace> workspaces = AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, scm.getOptionalLock(),
                 accurevEnv, jenkinsWorkspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowWorkspaces(), null);
         return workspaces;
     }

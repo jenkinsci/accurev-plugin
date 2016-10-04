@@ -14,7 +14,7 @@ public class ByteArrayStream implements Closeable {
      *
      * @return See above.
      */
-    ByteArrayOutputStream getOutput() {
+    public ByteArrayOutputStream getOutput() {
         return mOutputStream;
     }
 
@@ -28,7 +28,7 @@ public class ByteArrayStream implements Closeable {
      *
      * @return See above.
      */
-    InputStream getInput() {
+    public InputStream getInput() {
         return mOutputStream.toInputStream();
     }
 

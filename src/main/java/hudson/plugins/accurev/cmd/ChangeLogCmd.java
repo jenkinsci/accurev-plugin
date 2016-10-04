@@ -70,7 +70,7 @@ public class ChangeLogCmd {
         }
         cmd.add(dateRange); // if this breaks windows there's going to be fun
         final String commandDescription = "Changelog command";
-        final Boolean success = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, scm.getOptionalLock(),
+        final Boolean success = AccurevLauncher.runCommand(commandDescription, launcher, cmd, scm.getOptionalLock(),
                 accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
         if (success == null || !success) {
             return false;
@@ -121,7 +121,7 @@ public class ChangeLogCmd {
 
         try {
             webURL = AccurevLauncher.runCommand("Get config to fetch webURL",
-                    launcher, getConfigcmd, null, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
+                    launcher, getConfigcmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
                     XmlParserFactory.getFactory(), new ParseGetConfig(), null);
         } catch (Exception e) {
             logger.warning("Error loading settings.xml");

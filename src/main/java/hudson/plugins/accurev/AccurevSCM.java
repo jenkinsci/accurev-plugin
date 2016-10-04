@@ -710,13 +710,13 @@ public class AccurevSCM extends SCM {
         // This method will populate the depots in the select box depending upon the
         // server selected.
         public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
-
+            if (StringUtils.isBlank(serverUUID) && !DESCRIPTOR.getServers().isEmpty()) serverUUID = servers.get(0).getUUID();
             final AccurevServer server = getServerAndPath(serverUUID);
+
             if (server == null) {
                 return new ListBoxModel();
             }
 
-            ListBoxModel d;
             List<String> depots = new ArrayList<>();
 
             // Execute the login command first & upon success of that run show depots
@@ -730,7 +730,7 @@ public class AccurevSCM extends SCM {
                 logger.warning(e.getMessage());
             }
 
-            d = new ListBoxModel();
+            ListBoxModel d = new ListBoxModel();
             for (String dname : depots) {
                 d.add(dname, dname);
             }
@@ -742,15 +742,17 @@ public class AccurevSCM extends SCM {
 
         // Populating the streams
         public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
-            ComboBoxModel cbm = new ComboBoxModel();
+            if (StringUtils.isBlank(serverUUID) && !DESCRIPTOR.getServers().isEmpty()) serverUUID = servers.get(0).getUUID();
             final AccurevServer server = getServerAndPath(serverUUID);
-            if (server == null) {
+
+            if (server == null && StringUtils.isBlank(depot)) {
                 //descriptorlogger.warning("Failed to find server.");
                 return new ComboBoxModel();
             }
             // Execute the login command first & upon success of that run show streams
             // command. If any of the command's exitvalue is 1 proper error message is
             // logged
+            ComboBoxModel cbm = new ComboBoxModel();
             try {
                 if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
                     cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm, descriptorlogger);

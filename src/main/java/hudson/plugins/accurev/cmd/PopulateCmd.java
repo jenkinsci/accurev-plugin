@@ -74,7 +74,7 @@ public class PopulateCmd extends Command {
             }
         }
         _startDateOfPopulate = new Date();
-        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
+        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, scm.getOptionalLock(), accurevEnv,
                 accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger());
         if (success == null || !success) {
             return false;
