@@ -168,8 +168,12 @@ public class AccurevSCM extends SCM {
         serverUUID = uuid;
     }
 
+    /**
+     * Getter for Accurev server
+     * @return AccurevServer based on serverUUID
+     */
     public AccurevServer getServer() {
-        return ((AccurevSCMDescriptor) getDescriptor()).getServer(serverName);
+        return DESCRIPTOR.getServer(serverUUID);
     }
 
     /**
@@ -405,7 +409,7 @@ public class AccurevSCM extends SCM {
      * @return See above.
      */
     public Lock getOptionalLock() {
-        final AccurevServer server = DESCRIPTOR.getServer(serverName);
+        final AccurevServer server = getServer();
         final boolean shouldLock = server.isSyncOperations();
         if (shouldLock) {
             return getMandatoryLock();
