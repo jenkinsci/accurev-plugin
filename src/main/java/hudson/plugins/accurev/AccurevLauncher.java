@@ -226,8 +226,7 @@ public final class AccurevLauncher {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.lock();
             }
-            final int commandExitCode = starter.join();
-            return commandExitCode;
+            return starter.join(); // Exit Code from Command
         } finally {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.unlock();
@@ -288,33 +287,27 @@ public final class AccurevLauncher {
 
     private static String getCommandErrorOutput(final InputStream commandStdoutOrNull,
                                                 final InputStream commandStderrOrNull) throws IOException {
-        final Integer maxNumberOfStderrLines = 10;
-        final Integer maxNumberOfStdoutLines = 5;
-        final String newLine = System.getProperty("line.separator");
-        final ParseLastFewLines tailParser = new ParseLastFewLines();
         final StringBuilder outputText = new StringBuilder();
-        if (commandStdoutOrNull != null) {
-            final List<String> stdoutLines = tailParser.parse(commandStdoutOrNull, maxNumberOfStdoutLines);
-            for (final String line : stdoutLines) {
-                if (outputText.length() > 0) {
-                    outputText.append(newLine);
-                }
-                outputText.append(line);
-            }
-        }
-        if (commandStderrOrNull != null) {
-            final List<String> stderrLines = tailParser.parse(commandStderrOrNull, maxNumberOfStderrLines);
-            for (final String line : stderrLines) {
-                if (outputText.length() > 0) {
-                    outputText.append(newLine);
-                }
-                outputText.append(line);
-            }
-        }
+        if (commandStdoutOrNull != null) parseCommandOutput(commandStdoutOrNull, 10, outputText);
+        if (commandStderrOrNull != null) parseCommandOutput(commandStderrOrNull, 5, outputText);
         if (outputText.length() > 0) {
             return outputText.toString();
         } else {
             return null;
+        }
+    }
+
+    private static void parseCommandOutput(final InputStream commandOutput,
+                                           final Integer maxNumberOfLines,
+                                           final StringBuilder outputText) throws IOException {
+        final String newLine = System.getProperty("line.separator");
+        final ParseLastFewLines tailParser = new ParseLastFewLines();
+        final List<String> outputLines = tailParser.parse(commandOutput, maxNumberOfLines);
+        for (final String line : outputLines) {
+            if (outputText.length() > 0) {
+                outputText.append(newLine);
+            }
+            outputText.append(line);
         }
     }
 
