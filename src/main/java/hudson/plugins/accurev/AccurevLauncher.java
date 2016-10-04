@@ -226,7 +226,7 @@ public final class AccurevLauncher {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.lock();
             }
-            return starter.join();
+            return starter.join(); // Exit Code from Command
         } finally {
             if (synchronizationLockObjectOrNull != null) {
                 synchronizationLockObjectOrNull.unlock();
