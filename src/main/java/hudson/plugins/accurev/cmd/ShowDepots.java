@@ -1,6 +1,7 @@
 package hudson.plugins.accurev.cmd;
 
 import hudson.Launcher.ProcStarter;
+import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.ByteArrayStream;
@@ -16,6 +17,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -38,20 +40,19 @@ public class ShowDepots extends Command {
         cmd.add("-fx");
         cmd.add("depots");
 
-        final ByteArrayStream bas = new ByteArrayStream();
         try {
             descriptorlogger.info(cmd.toString());
             Jenkins jenkins = Jenkins.getActiveInstance();
-            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().cmds(cmd);
+            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().readStdout().cmds(cmd);
             starter.pwd(jenkins.getRootDir());
-            starter.stdout(bas.getOutput());
-            final int commandExitCode = starter.join();
+            Proc proc = starter.start();
+            final int commandExitCode = proc.join();
 
             if (commandExitCode == 0) {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder parser;
                 parser = factory.newDocumentBuilder();
-                Document doc = parser.parse(bas.getInput());
+                Document doc = parser.parse(proc.getStdout());
                 doc.getDocumentElement().normalize();
                 NodeList nList = doc.getElementsByTagName("Element");
                 for (int i = 0; i < nList.getLength(); i++) {
@@ -64,19 +65,13 @@ public class ShowDepots extends Command {
                 }
 
             } else {
-                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + cmd.toString());
+                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + convertStreamToString(proc.getStdout()));
             }
         } catch (IOException | ParserConfigurationException | InterruptedException e) {
             descriptorlogger.log(Level.WARNING, "AccuRev Server: " + server.getName() + ". " + "Could not populate depot list.", e.getCause());
             e.printStackTrace();
         } catch (SAXException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                bas.close();
-            } catch (IOException e) {
-                descriptorlogger.warning("Failed to close stream");
-            }
         }
 
         return depots;

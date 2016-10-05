@@ -3,6 +3,7 @@ package hudson.plugins.accurev.cmd;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
+import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
@@ -155,20 +156,19 @@ public class ShowStreams extends Command {
             return cbm;
         }
 
-        final ByteArrayStream bas = new ByteArrayStream();
         try {
             descriptorlogger.info(cmd.toString());
             Jenkins jenkins = Jenkins.getActiveInstance();
-            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().cmds(cmd);
+            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().readStdout().cmds(cmd);
             starter.pwd(jenkins.getRootDir());
-            starter.stdout(bas.getOutput());
-            final int commandExitCode = starter.join();
+            Proc proc = starter.start();
+            final int commandExitCode = proc.join();
 
             if (commandExitCode == 0) {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder parser;
                 parser = factory.newDocumentBuilder();
-                Document doc = parser.parse(bas.getInput());
+                Document doc = parser.parse(proc.getStdout());
                 doc.getDocumentElement().normalize();
                 NodeList nList = doc.getElementsByTagName("stream");
                 for (int i = 0; i < nList.getLength(); i++) {
@@ -182,16 +182,10 @@ public class ShowStreams extends Command {
                 }
                 Collections.sort(cbm);
             } else {
-                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + cmd.toString());
+                descriptorlogger.warning("AccuRev Server: " + server.getName() + ". " + convertStreamToString(proc.getStdout()));
             }
         } catch (IOException | SAXException | ParserConfigurationException | InterruptedException e) {
             descriptorlogger.log(Level.WARNING, "AccuRev Server: " + server.getName() + ". " + "Could not populate stream list.", e.getCause());
-        } finally {
-            try {
-                bas.close();
-            } catch (IOException e) {
-                descriptorlogger.warning("Failed to close stream");
-            }
         }
 
         return cbm;
