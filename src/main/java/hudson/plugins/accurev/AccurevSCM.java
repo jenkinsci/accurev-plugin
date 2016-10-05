@@ -745,7 +745,7 @@ public class AccurevSCM extends SCM {
             if (StringUtils.isBlank(serverUUID) && !DESCRIPTOR.getServers().isEmpty()) serverUUID = servers.get(0).getUUID();
             final AccurevServer server = getServerAndPath(serverUUID);
 
-            if (server == null && StringUtils.isBlank(depot)) {
+            if (server == null || StringUtils.isBlank(depot)) {
                 //descriptorlogger.warning("Failed to find server.");
                 return new ComboBoxModel();
             }
