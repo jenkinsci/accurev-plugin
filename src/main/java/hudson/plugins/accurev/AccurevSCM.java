@@ -170,6 +170,7 @@ public class AccurevSCM extends SCM {
 
     /**
      * Getter for Accurev server
+     *
      * @return AccurevServer based on serverUUID
      */
     public AccurevServer getServer() {
@@ -723,7 +724,7 @@ public class AccurevSCM extends SCM {
             // command. If any of the command's exitvalue is 1 proper error message is
             // logged
             try {
-                if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
+                if (Login.accurevLoginFromGlobalConfig(server, accurevPath)) {
                     depots = ShowDepots.getDepots(server, accurevPath, descriptorlogger);
                 }
             } catch (IOException | InterruptedException e) {
@@ -754,8 +755,8 @@ public class AccurevSCM extends SCM {
             // logged
             ComboBoxModel cbm = new ComboBoxModel();
             try {
-                if (Login.accurevLoginfromGlobalConfig(server, accurevPath, descriptorlogger)) {
-                    cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm, descriptorlogger);
+                if (Login.accurevLoginFromGlobalConfig(server, accurevPath)) {
+                    cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm);
                 }
 
             } catch (IOException | InterruptedException e) {

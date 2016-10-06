@@ -237,7 +237,7 @@ public final class AccurevLauncher {
                                              final OutputStream stdoutStream, //
                                              final OutputStream stderrStream) {
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
-        starter = starter.envs(environmentVariables);
+        if (environmentVariables != null) starter = starter.envs(environmentVariables);
         starter = starter.stdout(stdoutStream).stderr(stderrStream);
         starter = starter.pwd(directoryToRunCommandFrom);
         return starter;

@@ -2,13 +2,13 @@ package hudson.plugins.accurev.cmd;
 
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Launcher.ProcStarter;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
+import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
@@ -109,48 +109,22 @@ public class Login extends Command {
 
 
     /**
-     * @param server           Accurev Server
-     * @param accurevPath      Accurev Path
-     * @param descriptorlogger logger
+     * @param server      Accurev Server
+     * @param accurevPath Accurev Path
      * @return boolean whether am successful
      * @throws IOException          failing IO
      * @throws InterruptedException failing interrupt
      *                              This method is called from dofillstreams and dofilldepots while configuring the job
      */
-    public static boolean accurevLoginfromGlobalConfig(//
+    public static boolean accurevLoginFromGlobalConfig(//
                                                        final AccurevServer server,
-                                                       final String accurevPath,
-                                                       final Logger descriptorlogger) throws IOException, InterruptedException {
+                                                       final String accurevPath) throws IOException, InterruptedException {
 
-        final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
-        cmd.add("login");
-        addServer(cmd, server);
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) return false;
+        StreamTaskListener listener = StreamTaskListener.fromStdout();
+        Launcher launcher = jenkins.createLauncher(listener);
 
-        if (server.isUseNonexpiringLogin()) {
-            cmd.add("-n");
-        }
-        cmd.add(server.getUsername());
-        // If the password is Empty, "" should be passed
-        if (StringUtils.isEmpty(server.getPassword())) {
-            cmd.add('"' + '"', true);
-        } else {
-            cmd.add(server.getPassword(), true);
-        }
-        try {
-            logger.info(cmd.toString());
-            Jenkins jenkins = Jenkins.getActiveInstance();
-            ProcStarter starter = Jenkins.getActiveInstance().createLauncher(TaskListener.NULL).launch().cmds(cmd);
-            starter.pwd(jenkins.getRootDir());
-            final int commandExitCode = starter.join();
-            if (commandExitCode == 0) {
-                return true;
-            } else {
-                descriptorlogger.warning("Login failed: " + cmd.toString());
-            }
-        } catch (IOException ex) {
-            logger.warning("failed to execute login: " + cmd.toString());
-        }
-        return false;
+        return ensureLoggedInToAccurev(server, null, jenkins.getRootPath(), listener, accurevPath, launcher);
     }
 }

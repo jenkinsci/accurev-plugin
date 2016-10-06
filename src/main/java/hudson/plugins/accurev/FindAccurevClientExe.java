@@ -83,7 +83,7 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
             }
         }
 
-        logger.info("Path to the AccuRev client: " + accurevPath);
+        //logger.info("Path to the AccuRev client: " + accurevPath); this log seems excessive
         return accurevPath;
     }
 
