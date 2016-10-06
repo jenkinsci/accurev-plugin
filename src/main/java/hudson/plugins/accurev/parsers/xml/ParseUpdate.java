@@ -14,14 +14,12 @@ public class ParseUpdate implements AccurevLauncher.ICmdOutputXmlParser<Boolean,
 
     public Boolean parse(XmlPullParser parser, List<String> context) throws AccurevLauncher.UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
-            if (parser.getEventType() == XmlPullParser.START_TAG) {
-                if (parser.getName().equalsIgnoreCase("element")) {
-                    String path = parser.getAttributeValue("", "location");
-                    if (path != null) {
-                        path = path.replace("\\", "/");
-                        if (path.startsWith("/./")) {
-                            path = path.substring(3);
-                        }
+            if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {
+                String path = parser.getAttributeValue("", "location");
+                if (path != null) {
+                    path = path.replace("\\", "/");
+                    if (path.startsWith("/./")) {
+                        path = path.substring(3);
                     }
                     context.add(path);
                 }

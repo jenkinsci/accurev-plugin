@@ -18,25 +18,12 @@ public final class ParseShowDepots implements ICmdOutputXmlParser<List<String>, 
             IOException, XmlPullParserException {
 
         final List<String> depots = new ArrayList<>();
-        while (true) {
-            switch (parser.next()) {
-                case XmlPullParser.START_DOCUMENT:
-                    break;
-                case XmlPullParser.END_DOCUMENT:
-                    return depots;
-                case XmlPullParser.START_TAG:
-                    final String tagName = parser.getName();
-
-                    if ("element".equalsIgnoreCase(tagName)) {
-                        final String name = parser.getAttributeValue("", "Name");
-                        if (name != null) depots.add(name);
-                    }
-                    break;
-                case XmlPullParser.END_TAG:
-                    break;
-                case XmlPullParser.TEXT:
-                    break;
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {
+                final String name = parser.getAttributeValue("", "Name");
+                if (name != null) depots.add(name);
             }
         }
+        return depots;
     }
 }
