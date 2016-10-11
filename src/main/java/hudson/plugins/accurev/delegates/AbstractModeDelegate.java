@@ -108,7 +108,7 @@ public abstract class AbstractModeDelegate {
     protected abstract PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException;
 
     private boolean hasStringVariableReference(final String str) {
-        return str != null && str.contains("${");
+        return StringUtils.isNotEmpty(str) && str.startsWith("$");
     }
 
     protected String getPollingStream(Job<?, ?> project) {
