@@ -15,10 +15,8 @@ import java.util.logging.Logger;
 public final class FindAccurevClientExe implements FilePath.FileCallable<String> {
 
     private static final Logger logger = Logger.getLogger(FindAccurevClientExe.class.getName());
-    private final AccurevServer server;
 
-    public FindAccurevClientExe(AccurevServer server) {
-        this.server = server;
+    public FindAccurevClientExe() {
     }
 
     private static String getExistingPath(String[] paths) {
@@ -41,7 +39,7 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
         if (System.getenv("ACCUREV_BIN") != null) {
             accurevBin = System.getenv("ACCUREV_BIN");
             if (new File(accurevBin).exists() && new File(accurevBin).isDirectory()) {
-                logger.info("The ACCUREV_BIN environment variable was set to: " + accurevBin);
+                logger.fine("The ACCUREV_BIN environment variable was set to: " + accurevBin);
             } else {
                 throw new FileNotFoundException("The ACCUREV_BIN environment variable was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the variable. ACCUREV_BIN was set to: " + accurevBin);
             }
@@ -50,7 +48,7 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
         if (System.getProperty("accurev.bin") != null) {
             accurevBin = System.getProperty("accurev.bin");
             if (new File(accurevBin).exists() && new File(accurevBin).isDirectory()) {
-                logger.info("The accurev.bin system property was set to: " + accurevBin);
+                logger.fine("The accurev.bin system property was set to: " + accurevBin);
             } else {
                 throw new FileNotFoundException("The accurev.bin system property was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the property. 'accurev.bin' was set to: " + accurevBin);
             }
@@ -60,14 +58,14 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
             // we are running on windows
             accurevBinName = "accurev.exe";
             if (!JustAccurev.justAccuRev(accurevBin + File.separator + accurevBinName)) {
-                accurevPath = getExistingPath(server.getWinCmdLocations());
+                accurevPath = getExistingPath(AccurevSCM.DESCRIPTOR.getWinCmdLocations());
             } else {
                 accurevPath = accurevBin + File.separator + accurevBinName;
             }
         } else {
             // we are running on *nix
             if (!JustAccurev.justAccuRev(accurevBin + File.separator + accurevBinName)) {
-                accurevPath = getExistingPath(server.getNixCmdLocations());
+                accurevPath = getExistingPath(AccurevSCM.DESCRIPTOR.getNixCmdLocations());
             } else {
                 accurevPath = accurevBin + File.separator + accurevBinName;
             }
@@ -76,14 +74,14 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
         if (accurevPath.isEmpty()) {
             // if we still don't have a path to the accurev client let's try the system path
             if (JustAccurev.justAccuRev(accurevBinName)) {
-                logger.info("Using the AccuRev client we found on the system path.");
+                logger.fine("Using the AccuRev client we found on the system path.");
                 accurevPath = accurevBinName;
             } else {
                 throw new RuntimeException("AccuRev binary is not found or not set in the environment's path.");
             }
         }
 
-        //logger.info("Path to the AccuRev client: " + accurevPath); this log seems excessive
+        logger.fine("Path to the AccuRev client: " + accurevPath);
         return accurevPath;
     }
 

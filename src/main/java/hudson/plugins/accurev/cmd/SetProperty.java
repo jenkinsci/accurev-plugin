@@ -19,7 +19,6 @@ public class SetProperty extends Command {
             final AccurevSCM scm,
             final FilePath accurevWorkingSpace, //
             final TaskListener listener, //
-            final String accurevClientExePath, //
             final Launcher launcher,
             final Map<String, String> accurevEnv,
             final AccurevServer server,
@@ -31,7 +30,6 @@ public class SetProperty extends Command {
         String propertyValue = "<style><color><background-color>" + colorCode + "</background-color></color></style>";
 
         final ArgumentListBuilder bgColorStyleCmd = new ArgumentListBuilder();
-        bgColorStyleCmd.add(accurevClientExePath);
         bgColorStyleCmd.add("setproperty");
         Command.addServer(bgColorStyleCmd, server);
         bgColorStyleCmd.add("-s");

@@ -8,11 +8,11 @@ import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
-import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -29,11 +29,10 @@ public class Login extends Command {
                                               final Map<String, String> accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
-                                              final String accurevPath, //
+                                              //
                                               final Launcher launcher) {
         final String commandDescription = "info command";
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("info");
         addServer(cmd, server);
         final String username = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
@@ -42,7 +41,7 @@ public class Login extends Command {
     }
 
     public static boolean ensureLoggedInToAccurev(AccurevServer server, Map<String, String> accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
-                                                  String accurevPath, Launcher launcher) throws IOException, InterruptedException {
+                                                  Launcher launcher) throws IOException, InterruptedException {
 
         if (server == null) {
             return false;
@@ -56,7 +55,7 @@ public class Login extends Command {
         try {
             final boolean loginRequired;
             if (server.isMinimiseLogins()) {
-                final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, accurevPath, launcher);
+                final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
                 if (currentUsername == null) {
                     loginRequired = true;
                     listener.getLogger().println("Not currently authenticated with Accurev server");
@@ -69,7 +68,7 @@ public class Login extends Command {
                 loginRequired = true;
             }
             if (loginRequired) {
-                return accurevLogin(server, accurevEnv, pathToRunCommandsIn, listener, accurevPath, launcher);
+                return accurevLogin(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
             }
         } finally {
             AccurevSCMDescriptor.unlock();
@@ -82,11 +81,10 @@ public class Login extends Command {
                                         final Map<String, String> accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
-                                        final String accurevPath, //
+                                        //
                                         final Launcher launcher) throws IOException, InterruptedException {
         listener.getLogger().println("Authenticating with Accurev server...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("login");
         addServer(cmd, server);
         if (server.isUseNonexpiringLogin()) {
@@ -110,21 +108,19 @@ public class Login extends Command {
 
     /**
      * @param server      Accurev Server
-     * @param accurevPath Accurev Path
      * @return boolean whether am successful
      * @throws IOException          failing IO
      * @throws InterruptedException failing interrupt
      *                              This method is called from dofillstreams and dofilldepots while configuring the job
      */
     public static boolean accurevLoginFromGlobalConfig(//
-                                                       final AccurevServer server,
-                                                       final String accurevPath) throws IOException, InterruptedException {
+                                                       final AccurevServer server) throws IOException, InterruptedException {
 
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) return false;
-        StreamTaskListener listener = StreamTaskListener.fromStdout();
+        Jenkins jenkins = Jenkins.getActiveInstance();
+        TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
+        Map<String, String> accurevEnv = new HashMap<>();
 
-        return ensureLoggedInToAccurev(server, null, jenkins.getRootPath(), listener, accurevPath, launcher);
+        return ensureLoggedInToAccurev(server, accurevEnv, jenkins.getRootPath(), listener, launcher);
     }
 }

@@ -4,7 +4,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
-import hudson.plugins.accurev.cmd.JustAccurev;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.ShowDepots;
 import hudson.plugins.accurev.cmd.ShowStreams;
@@ -25,13 +24,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.servlet.ServletException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -463,12 +460,28 @@ public class AccurevSCM extends SCM {
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
         private static final Logger descriptorlogger = Logger.getLogger(AccurevSCMDescriptor.class.getName());
+        /**
+         * The default search paths for Windows clients.
+         */
+        private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(//
+                "C:\\opt\\accurev\\bin\\accurev.exe", //
+                "C:\\Program Files\\AccuRev\\bin\\accurev.exe", //
+                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
+        /**
+         * The default search paths for *nix clients
+         */
+        private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(//
+                "/usr/local/bin/accurev", //
+                "/usr/bin/accurev", //
+                "/bin/accurev", //
+                "/local/bin/accurev",
+                "/opt/accurev/bin/accurev",
+                "/Applications/AccuRev/bin/accurev");
         private List<AccurevServer> _servers;
         // The servers field is here for backwards compatibility.
         // The transient modifier means it won't be written to the config file
         private transient List<AccurevServer> servers;
         private boolean pollOnMaster;
-        private String accurevPath;
 
         /**
          * Constructs a new AccurevSCMDescriptor.
@@ -476,16 +489,6 @@ public class AccurevSCM extends SCM {
         public AccurevSCMDescriptor() {
             super(AccurevSCM.class, null);
             load();
-        }
-
-        private static String getExistingPath(String[] paths) {
-            for (final String path : paths) {
-                if (new File(path).exists()) {
-                    return path;
-                }
-            }
-            return "";
-
         }
 
         public static void lock() {
@@ -629,90 +632,11 @@ public class AccurevSCM extends SCM {
             return s;
         }
 
-        private AccurevServer getServerAndPath(String serverUUID) {
-            final AccurevServer server = getServer(serverUUID);
-            String accurevBinName = "accurev";
-
-            if (server == null) {
-                return null;
-            }
-
-            String accurevBinDir = getEnvBinDir();
-
-            if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-                // we are running on windows
-                accurevBinName = "accurev.exe";
-                if (!JustAccurev.justAccuRev(accurevBinDir + File.separator + accurevBinName)) {
-                    this.accurevPath = getExistingPath(server.getWinCmdLocations());
-                } else {
-                    this.accurevPath = accurevBinDir + File.separator + accurevBinName;
-                }
-            } else {
-                // we are running on *nix
-                if (!JustAccurev.justAccuRev(accurevBinDir + File.separator + accurevBinName)) {
-                    this.accurevPath = getExistingPath(server.getNixCmdLocations());
-                } else {
-                    this.accurevPath = accurevBinDir + File.separator + accurevBinName;
-                }
-            }
-
-            if (this.accurevPath.isEmpty()) {
-                // if we still don't have a path to the accurev client let's try the
-                // system path
-                if (JustAccurev.justAccuRev(accurevBinName)) {
-                    logger.info("Using the AccuRev client we found on the system path.");
-                    this.accurevPath = accurevBinName;
-                } else {
-                    throw new RuntimeException("AccuRev binary is not found or not set in the environment's path.");
-                }
-            }
-
-            return server;
-        }
-
-        private String getEnvBinDir() {
-            String accurevBinDir = "";
-
-            if (System.getenv("ACCUREV_BIN") != null) {
-                accurevBinDir = System.getenv("ACCUREV_BIN");
-                if (new File(accurevBinDir).exists() && new File(accurevBinDir).isDirectory()) {
-                    logger.log(Level.INFO, "The ACCUREV_BIN environment variable was set to: {0}", accurevBinDir);
-                    return accurevBinDir;
-                } else {
-                    try {
-                        throw new FileNotFoundException(
-                                "The ACCUREV_BIN environment variable was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the variable. ACCUREV_BIN was set to: "
-                                        + accurevBinDir);
-                    } catch (FileNotFoundException e) {
-                        logger.log(Level.SEVERE, "getEnvBinDir", e);
-                    }
-                }
-            }
-
-            if (System.getProperty("accurev.bin") != null) {
-                accurevBinDir = System.getProperty("accurev.bin");
-                if (new File(accurevBinDir).exists() && new File(accurevBinDir).isDirectory()) {
-                    logger.log(Level.INFO, "The accurev.bin system property was set to: {0}", accurevBinDir);
-                    return accurevBinDir;
-                } else {
-                    try {
-                        throw new FileNotFoundException(
-                                "The accurev.bin system property was set but the path it was set to does not exist OR it is not a directory. Please correct the path or unset the property. 'accurev.bin' was set to: "
-                                        + accurevBinDir);
-                    } catch (FileNotFoundException e) {
-                        logger.log(Level.SEVERE, "getEnvBinDir", e);
-                    }
-                }
-            }
-
-            return accurevBinDir;
-        }
-
         // This method will populate the depots in the select box depending upon the
         // server selected.
         public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
-            if (StringUtils.isBlank(serverUUID) && !DESCRIPTOR.getServers().isEmpty()) serverUUID = servers.get(0).getUUID();
-            final AccurevServer server = getServerAndPath(serverUUID);
+            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
+            final AccurevServer server = getServer(serverUUID);
 
             if (server == null) {
                 return new ListBoxModel();
@@ -724,8 +648,8 @@ public class AccurevSCM extends SCM {
             // command. If any of the command's exitvalue is 1 proper error message is
             // logged
             try {
-                if (Login.accurevLoginFromGlobalConfig(server, accurevPath)) {
-                    depots = ShowDepots.getDepots(server, accurevPath, descriptorlogger);
+                if (Login.accurevLoginFromGlobalConfig(server)) {
+                    depots = ShowDepots.getDepots(server, descriptorlogger);
                 }
             } catch (IOException | InterruptedException e) {
                 logger.warning(e.getMessage());
@@ -743,8 +667,8 @@ public class AccurevSCM extends SCM {
 
         // Populating the streams
         public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
-            if (StringUtils.isBlank(serverUUID) && !DESCRIPTOR.getServers().isEmpty()) serverUUID = servers.get(0).getUUID();
-            final AccurevServer server = getServerAndPath(serverUUID);
+            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
+            final AccurevServer server = getServer(serverUUID);
 
             if (server == null || StringUtils.isBlank(depot)) {
                 //descriptorlogger.warning("Failed to find server.");
@@ -755,14 +679,33 @@ public class AccurevSCM extends SCM {
             // logged
             ComboBoxModel cbm = new ComboBoxModel();
             try {
-                if (Login.accurevLoginFromGlobalConfig(server, accurevPath)) {
-                    cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, accurevPath, cbm);
+                if (Login.accurevLoginFromGlobalConfig(server)) {
+                    cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
                 }
 
             } catch (IOException | InterruptedException e) {
                 logger.warning(e.getMessage());
             }
             return cbm;
+        }
+
+
+        /**
+         * Getter for property 'nixCmdLocations'.
+         *
+         * @return Value for property 'nixCmdLocations'.
+         */
+        public String[] getNixCmdLocations() {
+            return DEFAULT_NIX_CMD_LOCATIONS.toArray(new String[DEFAULT_NIX_CMD_LOCATIONS.size()]);
+        }
+
+        /**
+         * Getter for property 'winCmdLocations'.
+         *
+         * @return Value for property 'winCmdLocations'.
+         */
+        public String[] getWinCmdLocations() {
+            return DEFAULT_WIN_CMD_LOCATIONS.toArray(new String[DEFAULT_WIN_CMD_LOCATIONS.size()]);
         }
     }
 
@@ -774,23 +717,6 @@ public class AccurevSCM extends SCM {
         public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
         public static final String DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         private static final long serialVersionUID = 3270850408409304611L;
-        /**
-         * The default search paths for Windows clients.
-         */
-        private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(//
-                "C:\\opt\\accurev\\bin\\accurev.exe", //
-                "C:\\Program Files\\AccuRev\\bin\\accurev.exe", //
-                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
-        /**
-         * The default search paths for *nix clients
-         */
-        private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(//
-                "/usr/local/bin/accurev", //
-                "/usr/bin/accurev", //
-                "/bin/accurev", //
-                "/local/bin/accurev",
-                "/opt/accurev/bin/accurev",
-                "/Applications/AccuRev/bin/accurev");
         // keep all transaction types in a set for validation
         private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
@@ -801,22 +727,12 @@ public class AccurevSCM extends SCM {
         private int port;
         private String username;
         private String password;
-        private transient List<String> winCmdLocations;
-        private transient List<String> nixCmdLocations;
         private String validTransactionTypes;
         private boolean syncOperations;
         private boolean minimiseLogins;
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
         private boolean useColor;
-
-        /**
-         * Constructs a new AccurevServer.
-         */
-        public AccurevServer() {
-            this.winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
-            this.nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
-        }
 
         @DataBoundConstructor
         public AccurevServer(//
@@ -832,7 +748,6 @@ public class AccurevSCM extends SCM {
                              boolean useNonexpiringLogin, //
                              boolean useRestrictedShowStreams,
                              boolean useColor) {
-            this();
             if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
             else this.uuid = UUID.fromString(uuid);
             this.name = name;
@@ -856,12 +771,6 @@ public class AccurevSCM extends SCM {
          * @return This.
          */
         private Object readResolve() {
-            if (winCmdLocations == null) {
-                winCmdLocations = new ArrayList<>(DEFAULT_WIN_CMD_LOCATIONS);
-            }
-            if (nixCmdLocations == null) {
-                nixCmdLocations = new ArrayList<>(DEFAULT_NIX_CMD_LOCATIONS);
-            }
             if (uuid == null) {
                 uuid = UUID.randomUUID();
             }
@@ -918,24 +827,6 @@ public class AccurevSCM extends SCM {
          */
         public String getPassword() {
             return Password.deobfuscate(password);
-        }
-
-        /**
-         * Getter for property 'nixCmdLocations'.
-         *
-         * @return Value for property 'nixCmdLocations'.
-         */
-        public String[] getNixCmdLocations() {
-            return nixCmdLocations.toArray(new String[nixCmdLocations.size()]);
-        }
-
-        /**
-         * Getter for property 'winCmdLocations'.
-         *
-         * @return Value for property 'winCmdLocations'.
-         */
-        public String[] getWinCmdLocations() {
-            return winCmdLocations.toArray(new String[winCmdLocations.size()]);
         }
 
         /**

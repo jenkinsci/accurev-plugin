@@ -20,7 +20,6 @@ public class CheckForChanges {
      * @param accurevEnv  Accurev Environment
      * @param workspace   workspace
      * @param listener    listener
-     * @param accurevPath accurev path
      * @param launcher    launcher
      * @param stream      stream
      * @param buildDate   build date
@@ -35,7 +34,6 @@ public class CheckForChanges {
                                                 Map<String, String> accurevEnv,
                                                 FilePath workspace,
                                                 TaskListener listener,
-                                                String accurevPath,
                                                 Launcher launcher,
                                                 String stream,
                                                 Date buildDate,
@@ -77,7 +75,7 @@ public class CheckForChanges {
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = History.getLatestTransaction(scm, server, accurevEnv, workspace,
-                        listener, accurevPath, launcher, stream, transactionType);
+                        listener, launcher, stream, transactionType);
                 if (tempTransaction != null) {
                     listener.getLogger().println(
                             "Last transaction of type [" + transactionType + "] is " + tempTransaction);
@@ -162,7 +160,6 @@ public class CheckForChanges {
      * @param accurevEnv  accurev environment
      * @param workspace   workspace
      * @param listener    listener
-     * @param accurevPath accurev path
      * @param launcher    launcher
      * @param stream      stream
      * @param buildDate   build Date
@@ -177,7 +174,6 @@ public class CheckForChanges {
                                                 Map<String, String> accurevEnv,
                                                 FilePath workspace,
                                                 TaskListener listener,
-                                                String accurevPath,
                                                 Launcher launcher,
                                                 AccurevStream stream,
                                                 Date buildDate,
@@ -227,7 +223,7 @@ public class CheckForChanges {
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = History.getLatestTransaction(scm, server, accurevEnv, workspace,
-                        listener, accurevPath, launcher, stream.getName(), transactionType);
+                        listener, launcher, stream.getName(), transactionType);
                 if (tempTransaction != null) {
                     listener.getLogger().println(
                             "Last transaction of type [" + transactionType + "] is " + tempTransaction);

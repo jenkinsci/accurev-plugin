@@ -39,7 +39,6 @@ public class SnapshotDelegate extends StreamDelegate {
         build.getEnvironment(listener).put("ACCUREV_SNAPSHOT", snapshotName);
         // snapshot command: accurev mksnap -H <server> -s <snapshotName> -b <backing_stream> -t now
         final ArgumentListBuilder mksnapcmd = new ArgumentListBuilder();
-        mksnapcmd.add(accurevPath);
         mksnapcmd.add("mksnap");
         Command.addServer(mksnapcmd, server);
         mksnapcmd.add("-s");

@@ -30,27 +30,25 @@ public class PopulateCmd extends Command {
     }
 
     /**
+     * @param scm                  Accurev SCm
      * @param launcher             launcher
      * @param listener             listener
      * @param server               server
-     * @param accurevClientExePath Accurev Client Executable Path
      * @param streamName           stream Name
+     * @param overwrite            overwrite
      * @param fromMessage          from Messge
      * @param accurevWorkingSpace  Accurev Workspace
      * @param accurevEnv           Accurev Environment
-     * @param scm                  Accurev SCm
-     * @param overwrite            overwrite
      * @return boolean
      */
     public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener,
-                            AccurevServer server, String accurevClientExePath,
+                            AccurevServer server,
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
                             FilePath accurevWorkingSpace, Map<String, String> accurevEnv) {
         listener.getLogger().println("Populating " + fromMessage + "...");
         final ArgumentListBuilder popcmd = new ArgumentListBuilder();
-        popcmd.add(accurevClientExePath);
         popcmd.add("pop");
         addServer(popcmd, server);
 

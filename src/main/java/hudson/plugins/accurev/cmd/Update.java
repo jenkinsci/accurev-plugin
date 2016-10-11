@@ -24,12 +24,11 @@ public class Update extends Command {
     private static final String FFPSCM_DELIM = ",";
 
     private static ArgumentListBuilder createCommand(final AccurevSCM.AccurevServer server, //
-                                                     final String accurevPath, //
+                                                     //
                                                      final boolean preview,
                                                      final String reftree,
                                                      final boolean minus9) {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("update");
         addServer(cmd, server);
         cmd.add("-fx");
@@ -52,12 +51,11 @@ public class Update extends Command {
                                      Map<String, String> accurevEnv, //
                                      FilePath workspace, //
                                      TaskListener listener, //
-                                     String accurevPath, //
                                      Launcher launcher, //
                                      String reftree) throws IOException, InterruptedException {
 
         List<String> files = new ArrayList<>();
-        final ArgumentListBuilder cmd = createCommand(server, accurevPath, true, reftree, false);
+        final ArgumentListBuilder cmd = createCommand(server, true, reftree, false);
         Boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, XmlParserFactory.getFactory(), new ParseUpdate(), files);
         if (transactionFound != null && transactionFound) {
@@ -101,11 +99,10 @@ public class Update extends Command {
                                         final Map<String, String> accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
-                                        final String accurevPath, //
                                         final Launcher launcher, //
                                         final String reftree,
                                         File changelogFile) throws IOException, InterruptedException {
-        final ArgumentListBuilder cmd = createCommand(server, accurevPath, false, reftree, false);
+        final ArgumentListBuilder cmd = createCommand(server, false, reftree, false);
         final Boolean result = AccurevLauncher.runCommand("Update command", launcher,
                 cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, new ParseOutputToFile(), changelogFile);

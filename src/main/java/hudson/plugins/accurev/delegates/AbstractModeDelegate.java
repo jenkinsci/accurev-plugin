@@ -44,7 +44,6 @@ public abstract class AbstractModeDelegate {
     protected Map<String, String> accurevEnv;
     protected FilePath jenkinsWorkspace;
     protected TaskListener listener;
-    protected String accurevPath;
     protected FilePath accurevWorkingSpace;
     protected String localStream;
     protected Date startDateOfPopulate;
@@ -60,15 +59,14 @@ public abstract class AbstractModeDelegate {
         server = DESCRIPTOR.getServer(scm.getServerUUID());
         accurevEnv = new HashMap<>();
         if (jenkinsWorkspace != null) {
-            accurevPath = jenkinsWorkspace.act(new FindAccurevClientExe(server));
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
-            if (!Login.ensureLoggedInToAccurev(server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher)) {
+            if (!Login.ensureLoggedInToAccurev(server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
             }
 
             if (scm.isSynctime()) {
                 listener.getLogger().println("Synchronizing clock with the server...");
-                if (!Synctime.synctime(scm, server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher)) {
+                if (!Synctime.synctime(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                     throw new IllegalArgumentException("Synchronizing clock failure");
                 }
             }
@@ -76,10 +74,6 @@ public abstract class AbstractModeDelegate {
     }
 
     public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
-        final Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IOException("Jenkins instance is not ready");
-        }
         if (project.isInQueue()) {
             listener.getLogger().println("Project build is currently in queue.");
             return PollingResult.NO_CHANGES;
@@ -92,7 +86,7 @@ public abstract class AbstractModeDelegate {
             // from the project folder on the master.
             final File projectDir = project.getRootDir();
             jenkinsWorkspace = new FilePath(projectDir);
-            launcher = jenkins.createLauncher(listener);
+            launcher = Jenkins.getActiveInstance().createLauncher(listener);
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
         try {
@@ -174,12 +168,11 @@ public abstract class AbstractModeDelegate {
         }
 
         final EnvVars environment = build.getEnvironment(listener);
-        environment.put("ACCUREV_CLIENT_PATH", accurevPath);
 
         localStream = environment.expand(scm.getStream());
 
         listener.getLogger().println("Getting a list of streams...");
-        final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
+        final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener,
                 launcher);
 
         if (streams != null && !streams.containsKey(localStream)) {
@@ -187,7 +180,6 @@ public abstract class AbstractModeDelegate {
             return false;
         }
 
-        //Disable for now until toggle is available. Also do not fail if admin privileges is not provided.
         if (server.isUseColor()) {
             setStreamColor();
         }
@@ -208,7 +200,7 @@ public abstract class AbstractModeDelegate {
             String changeLogStream = getChangeLogStream();
 
             AccurevTransaction latestTransaction = History.getLatestTransaction(scm,
-                    server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, changeLogStream, null);
+                    server, accurevEnv, accurevWorkingSpace, listener, launcher, changeLogStream, null);
             if (latestTransaction == null) {
                 throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
             }
@@ -243,17 +235,17 @@ public abstract class AbstractModeDelegate {
             startTime = c;
         }
 
-        Map<String, GetConfigWebURL> webURL = ChangeLogCmd.retrieveWebURL(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, logger, scm);
+        Map<String, GetConfigWebURL> webURL = ChangeLogCmd.retrieveWebURL(server, accurevEnv, accurevWorkingSpace, listener, launcher, logger, scm);
         AccurevStream stream = streams == null ? null : streams.get(localStream);
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
-            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
+            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher,
                     startDateOfPopulate, startTime.getTime(),
                     localStream, changelogFile, logger, scm, webURL);
         }
 
         if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
-            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, startDateOfPopulate,
+            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher, startDateOfPopulate,
                     startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
         }
         return true;
@@ -269,7 +261,7 @@ public abstract class AbstractModeDelegate {
         boolean capturedChangelog;
         do {
             File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
-            capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
+            capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher,
                     startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog, logger, scm, webURL);
             if (capturedChangelog) {
                 changedStreams.add(streamChangeLog.getName());
@@ -310,17 +302,17 @@ public abstract class AbstractModeDelegate {
     private void setStreamColor() {
         if (isSteamColorEnabled()) {
             //For AccuRev 6.0.x versions
-            SetProperty.setproperty(scm, accurevWorkingSpace, listener, accurevPath, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "style");
+            SetProperty.setproperty(scm, accurevWorkingSpace, listener, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "style");
 
             //For AccuRev 6.1.x onwards
-            SetProperty.setproperty(scm, accurevWorkingSpace, listener, accurevPath, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "streamStyle");
+            SetProperty.setproperty(scm, accurevWorkingSpace, listener, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "streamStyle");
         }
     }
 
     protected boolean populate(boolean populateRequired) {
         if (populateRequired) {
             PopulateCmd pop = new PopulateCmd();
-            if (pop.populate(scm, launcher, listener, server, accurevPath, getPopulateStream(), true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
+            if (pop.populate(scm, launcher, listener, server, getPopulateStream(), true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
                 startDateOfPopulate = pop.get_startDateOfPopulate();
             } else {
                 return false;

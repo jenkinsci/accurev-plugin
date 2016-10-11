@@ -37,7 +37,6 @@ public class ChangeLogCmd {
                                            Map<String, String> accurevEnv,
                                            FilePath workspace,
                                            TaskListener listener,
-                                           String accurevPath,
                                            Launcher launcher,
                                            Date buildDate,
                                            Date startDate,
@@ -46,7 +45,6 @@ public class ChangeLogCmd {
                                            Logger logger,
                                            AccurevSCM scm,
                                            Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
-
         final String accurevACSYNCEnvVar = "AC_SYNC";
         if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
             final String accurevACSYNC = "IGNORE";
@@ -54,7 +52,6 @@ public class ChangeLogCmd {
             listener.getLogger().println("Setting " + accurevACSYNCEnvVar + " to \"" + accurevACSYNC + '"');
         }
         ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("hist");
         Command.addServer(cmd, server);
         cmd.add("-fx");
@@ -88,28 +85,26 @@ public class ChangeLogCmd {
     }
 
     /**
-     * Parse the settings.xml file to get the webui url and apply it to the changelog.
+     * Retrieve the settings.xml file to get the webURL.
      *
      * @param server        Server
-     * @param accurevEnv    Accurev Enviroment
+     * @param accurevEnv    Accurev Environment
      * @param workspace     Workspace
      * @param listener      listener
-     * @param accurevPath   AccurevPath
      * @param launcher      Launcher
      * @param logger        logger
      * @param scm           Accurev SCM
+     * @return webURL
      */
 
     public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServer server,
                                                               Map<String, String> accurevEnv,
                                                               FilePath workspace,
                                                               TaskListener listener,
-                                                              String accurevPath,
                                                               Launcher launcher,
                                                               Logger logger,
                                                               AccurevSCM scm) {
         final ArgumentListBuilder getConfigCmd = new ArgumentListBuilder();
-        getConfigCmd.add(accurevPath);
         getConfigCmd.add("getconfig");
         Command.addServer(getConfigCmd, server);
         getConfigCmd.add("-s");
@@ -128,6 +123,13 @@ public class ChangeLogCmd {
 
     }
 
+    /**
+     * Parses changelog to apply the given webURL
+     *
+     * @param webURL        webURL
+     * @param changelogFile changeLogFile
+     * @param scm           Accurev SCM
+     */
     private static void applyWebURL(Map<String, GetConfigWebURL> webURL,
                                     File changelogFile,
                                     AccurevSCM scm) {

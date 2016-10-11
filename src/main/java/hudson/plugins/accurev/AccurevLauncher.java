@@ -3,11 +3,14 @@ package hudson.plugins.accurev;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
+import hudson.model.Computer;
+import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
 import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
 import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
 import hudson.util.ArgumentListBuilder;
+import jenkins.model.Jenkins;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -16,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -27,7 +31,7 @@ import java.util.logging.Logger;
  * something parse their output.
  */
 public final class AccurevLauncher {
-
+    private static final Logger LOGGER = Logger.getLogger(FindAccurevClientExe.class.getName());
     /**
      * Runs a command and returns <code>true</code> if it passed,
      * <code>false</code> if it failed, and logs the errors.
@@ -202,6 +206,9 @@ public final class AccurevLauncher {
                         loggerToLogFailuresTo, listenerToLogFailuresTo);
                 return null;
             }
+        } catch (InterruptedException | IOException ex) {
+            logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+            return null;
         } finally {
             try {
                 stdout.close();
@@ -235,9 +242,14 @@ public final class AccurevLauncher {
                                              final Map<String, String> environmentVariables, //
                                              final FilePath directoryToRunCommandFrom, //
                                              final OutputStream stdoutStream, //
-                                             final OutputStream stderrStream) {
+                                             final OutputStream stderrStream) throws IOException, InterruptedException {
+        String accurevPath = directoryToRunCommandFrom.act(new FindAccurevClientExe());
+        if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
-        if (environmentVariables != null) starter = starter.envs(environmentVariables);
+        Computer c = Computer.currentComputer();
+        Node n = c==null ? Jenkins.getActiveInstance() : c.getNode();
+        environmentVariables.putIfAbsent("ACCUREV_HOME", n.getRootPath().getRemote());
+        starter = starter.envs(environmentVariables);
         starter = starter.stdout(stdoutStream).stderr(stderrStream);
         starter = starter.pwd(directoryToRunCommandFrom);
         return starter;

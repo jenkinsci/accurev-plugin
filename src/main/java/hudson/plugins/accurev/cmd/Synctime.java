@@ -22,10 +22,9 @@ public class Synctime extends Command {
                                    final Map<String, String> accurevEnv, //
                                    final FilePath workspace, //
                                    final TaskListener listener, //
-                                   final String accurevPath, //
+                                   //
                                    final Launcher launcher) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("synctime");
         addServer(cmd, server);
         final boolean success = AccurevLauncher.runCommand("Synctime command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger);

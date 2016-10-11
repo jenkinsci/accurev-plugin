@@ -34,15 +34,15 @@ public class ShowStreams extends Command {
                                                         final Map<String, String> accurevEnv, //
                                                         final FilePath workspace, //
                                                         final TaskListener listener, //
-                                                        final String accurevPath, //
+                                                        //
                                                         final Launcher launcher) throws IOException, InterruptedException {
         final Map<String, AccurevStream> streams;
         if (scm.isIgnoreStreamParent()) {
-            streams = getOneStream(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, accurevPath, launcher);
+            streams = getOneStream(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
         } else if (server.isUseRestrictedShowStreams()) {
-            streams = getAllAncestorStreams(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, accurevPath, launcher);
+            streams = getAllAncestorStreams(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
         } else {
-            streams = getAllStreams(server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, accurevPath, launcher);
+            streams = getAllStreams(server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
         }
         setParents(streams);
         return streams;
@@ -55,10 +55,9 @@ public class ShowStreams extends Command {
                                                             final Map<String, String> accurevEnv, //
                                                             final FilePath workspace, //
                                                             final TaskListener listener, //
-                                                            final String accurevPath, //
+                                                            //
                                                             final Launcher launcher) {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("show");
         addServer(cmd, server);
         cmd.add("-fx");
@@ -77,12 +76,12 @@ public class ShowStreams extends Command {
                                                                     final Map<String, String> accurevEnv, //
                                                                     final FilePath workspace, //
                                                                     final TaskListener listener, //
-                                                                    final String accurevPath, //
+                                                                    //
                                                                     final Launcher launcher) {
         final Map<String, AccurevStream> streams = new HashMap<>();
         String streamName = nameOfStreamRequired;
         while (streamName != null && !streamName.isEmpty()) {
-            final Map<String, AccurevStream> oneStream = getOneStream(streamName, server, depot, lock, accurevEnv, workspace, listener, accurevPath, launcher);
+            final Map<String, AccurevStream> oneStream = getOneStream(streamName, server, depot, lock, accurevEnv, workspace, listener, launcher);
             final AccurevStream theStream = oneStream == null ? null : oneStream.get(streamName);
             streamName = null;
             if (theStream != null) {
@@ -105,10 +104,8 @@ public class ShowStreams extends Command {
                                                            final Map<String, String> accurevEnv, //
                                                            final FilePath workspace, //
                                                            final TaskListener listener, //
-                                                           final String accurevPath, //
                                                            final Launcher launcher) {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("show");
         addServer(cmd, server);
         cmd.add("-fx");
@@ -134,19 +131,16 @@ public class ShowStreams extends Command {
     public static ComboBoxModel getStreamsForGlobalConfig(//
                                                           final AccurevServer server,
                                                           final String depot,
-                                                          final String accurevPath,
                                                           final ComboBoxModel cbm
     ) {
 
         if (StringUtils.isEmpty(depot)) return cbm;
 
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) return cbm;
-
+        Jenkins jenkins = Jenkins.getActiveInstance();
         StreamTaskListener listener = StreamTaskListener.fromStdout();
         Launcher launcher = jenkins.createLauncher(listener);
-
-        List<String> streamNames = getAllStreams(server, depot, null, null, jenkins.getRootPath(), listener, accurevPath, launcher)
+        Map<String, String> accurevEnv = new HashMap<>();
+        List<String> streamNames = getAllStreams(server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher)
                 .values()
                 .stream()
                 .filter(stream -> stream.getType() != AccurevStream.StreamType.WORKSPACE)

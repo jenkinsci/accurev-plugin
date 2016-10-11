@@ -46,7 +46,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         String depot = scm.getDepot();
         String _accurevWorkspace = scm.getWorkspace();
         Map<String, AccurevWorkspace> workspaces = getWorkspaces();
-        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
+        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener,
                 launcher);
 
         if (workspaces == null) {
@@ -68,7 +68,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
                 if (streams.containsKey(workspaceBasisStream)) {
                     workspaceStream.setParent(streams.get(workspaceBasisStream));
                 } else {
-                    Map<String, AccurevStream> workspaceBasis = ShowStreams.getStreams(scm, workspaceBasisStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath,
+                    Map<String, AccurevStream> workspaceBasis = ShowStreams.getStreams(scm, workspaceBasisStream, server, accurevEnv, jenkinsWorkspace, listener,
                             launcher);
                     workspaceStream.setParent(workspaceBasis.get(workspaceBasisStream));
                 }
@@ -99,7 +99,6 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         listener.getLogger().println("Getting a list of workspaces...");
         String depot = scm.getDepot();
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("show");
         Command.addServer(cmd, server);
         cmd.add("-fx");
@@ -129,7 +128,6 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     @Override
     protected ArgumentListBuilder getRelocateCommand() {
         ArgumentListBuilder chwscmd = new ArgumentListBuilder();
-        chwscmd.add(accurevPath);
         chwscmd.add("chws");
         Command.addServer(chwscmd, server);
         chwscmd.add("-w");
