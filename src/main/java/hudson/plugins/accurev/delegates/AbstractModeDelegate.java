@@ -243,17 +243,18 @@ public abstract class AbstractModeDelegate {
             startTime = c;
         }
 
+        Map<String, GetConfigWebURL> webURL = ChangeLogCmd.retrieveWebURL(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, logger, scm);
         AccurevStream stream = streams == null ? null : streams.get(localStream);
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
                     startDateOfPopulate, startTime.getTime(),
-                    localStream, changelogFile, logger, scm);
+                    localStream, changelogFile, logger, scm, webURL);
         }
 
-        if (!getChangesFromStreams(startTime, stream, changelogFile)) {
+        if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, startDateOfPopulate,
-                    startTime.getTime(), localStream, changelogFile, logger, scm);
+                    startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
         }
         return true;
     }
@@ -262,14 +263,14 @@ public abstract class AbstractModeDelegate {
         return localStream;
     }
 
-    private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile) throws IOException, InterruptedException {
+    private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile, Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
         List<String> changedStreams = new ArrayList<>();
         // Capture changes in all streams and parents
         boolean capturedChangelog;
         do {
             File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
             capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher,
-                    startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog, logger, scm);
+                    startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog, logger, scm, webURL);
             if (capturedChangelog) {
                 changedStreams.add(streamChangeLog.getName());
             }

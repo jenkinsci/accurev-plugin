@@ -44,7 +44,8 @@ public class ChangeLogCmd {
                                            String stream,
                                            File changelogFile,
                                            Logger logger,
-                                           AccurevSCM scm) throws IOException, InterruptedException {
+                                           AccurevSCM scm,
+                                           Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
 
         final String accurevACSYNCEnvVar = "AC_SYNC";
         if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
@@ -79,7 +80,7 @@ public class ChangeLogCmd {
         //See the content of changelogfile
 
         if (changelogFile != null) {
-            applyWebURL(server, accurevEnv, workspace, listener, accurevPath, launcher, changelogFile, logger, scm);
+            applyWebURL(webURL, changelogFile, scm);
         }
         //=============================================================================================
         listener.getLogger().println("Changelog calculated successfully.");
@@ -95,44 +96,47 @@ public class ChangeLogCmd {
      * @param listener      listener
      * @param accurevPath   AccurevPath
      * @param launcher      Launcher
-     * @param changelogFile Change log file
      * @param logger        logger
      * @param scm           Accurev SCM
      */
-    private static void applyWebURL(AccurevServer server,
-                                    Map<String, String> accurevEnv,
-                                    FilePath workspace,
-                                    TaskListener listener,
-                                    String accurevPath,
-                                    Launcher launcher,
-                                    File changelogFile,
-                                    Logger logger,
-                                    AccurevSCM scm) {
 
-        final ArgumentListBuilder getConfigcmd = new ArgumentListBuilder();
-        getConfigcmd.add(accurevPath);
-        getConfigcmd.add("getconfig");
-        Command.addServer(getConfigcmd, server);
-        getConfigcmd.add("-s");
-        getConfigcmd.add("-r");
-        getConfigcmd.add("settings.xml");
-        GetConfigWebURL webuiURL;
-        Map<String, GetConfigWebURL> webURL = null;
+    public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServer server,
+                                                              Map<String, String> accurevEnv,
+                                                              FilePath workspace,
+                                                              TaskListener listener,
+                                                              String accurevPath,
+                                                              Launcher launcher,
+                                                              Logger logger,
+                                                              AccurevSCM scm) {
+        final ArgumentListBuilder getConfigCmd = new ArgumentListBuilder();
+        getConfigCmd.add(accurevPath);
+        getConfigCmd.add("getconfig");
+        Command.addServer(getConfigCmd, server);
+        getConfigCmd.add("-s");
+        getConfigCmd.add("-r");
+        getConfigCmd.add("settings.xml");
 
         try {
-            webURL = AccurevLauncher.runCommand("Get config to fetch webURL",
-                    launcher, getConfigcmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
+            return AccurevLauncher.runCommand("Get config to fetch webURL",
+                    launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
                     XmlParserFactory.getFactory(), new ParseGetConfig(), null);
         } catch (Exception e) {
             logger.warning("Error loading settings.xml");
             // Error getting settings.xml file.
         }
+        return null;
+
+    }
+
+    private static void applyWebURL(Map<String, GetConfigWebURL> webURL,
+                                    File changelogFile,
+                                    AccurevSCM scm) {
 
         if (webURL == null || webURL.isEmpty()) {
             return;
         }
 
-        webuiURL = webURL.get("webuiURL");
+        GetConfigWebURL webuiURL = webURL.get("webuiURL");
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder;
         try {
