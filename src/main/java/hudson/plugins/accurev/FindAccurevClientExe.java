@@ -1,7 +1,6 @@
 package hudson.plugins.accurev;
 
 import hudson.FilePath;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.JustAccurev;
 import hudson.remoting.VirtualChannel;
 import org.jenkinsci.remoting.RoleChecker;

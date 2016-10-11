@@ -16,7 +16,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
         AccurevTransaction resultTransaction = null;
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG) {
-                if ("transaction".equalsIgnoreCase(parser.getName())){
+                if ("transaction".equalsIgnoreCase(parser.getName())) {
                     resultTransaction = new AccurevTransaction();
                     // parse transaction-values
                     resultTransaction.setId((parser.getAttributeValue("", "id")));

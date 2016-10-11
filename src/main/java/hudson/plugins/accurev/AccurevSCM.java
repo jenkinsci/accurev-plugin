@@ -689,7 +689,6 @@ public class AccurevSCM extends SCM {
             return cbm;
         }
 
-
         /**
          * Getter for property 'nixCmdLocations'.
          *

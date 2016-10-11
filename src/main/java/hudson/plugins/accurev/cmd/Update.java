@@ -24,7 +24,6 @@ public class Update extends Command {
     private static final String FFPSCM_DELIM = ",";
 
     private static ArgumentListBuilder createCommand(final AccurevSCM.AccurevServer server, //
-                                                     //
                                                      final boolean preview,
                                                      final String reftree,
                                                      final boolean minus9) {

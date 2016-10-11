@@ -29,7 +29,6 @@ public class Login extends Command {
                                               final Map<String, String> accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
-                                              //
                                               final Launcher launcher) {
         final String commandDescription = "info command";
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
@@ -81,7 +80,6 @@ public class Login extends Command {
                                         final Map<String, String> accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
-                                        //
                                         final Launcher launcher) throws IOException, InterruptedException {
         listener.getLogger().println("Authenticating with Accurev server...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
@@ -107,7 +105,7 @@ public class Login extends Command {
 
 
     /**
-     * @param server      Accurev Server
+     * @param server Accurev Server
      * @return boolean whether am successful
      * @throws IOException          failing IO
      * @throws InterruptedException failing interrupt

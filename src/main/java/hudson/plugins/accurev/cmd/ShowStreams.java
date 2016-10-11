@@ -34,7 +34,6 @@ public class ShowStreams extends Command {
                                                         final Map<String, String> accurevEnv, //
                                                         final FilePath workspace, //
                                                         final TaskListener listener, //
-                                                        //
                                                         final Launcher launcher) throws IOException, InterruptedException {
         final Map<String, AccurevStream> streams;
         if (scm.isIgnoreStreamParent()) {
@@ -55,7 +54,6 @@ public class ShowStreams extends Command {
                                                             final Map<String, String> accurevEnv, //
                                                             final FilePath workspace, //
                                                             final TaskListener listener, //
-                                                            //
                                                             final Launcher launcher) {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("show");
@@ -76,7 +74,6 @@ public class ShowStreams extends Command {
                                                                     final Map<String, String> accurevEnv, //
                                                                     final FilePath workspace, //
                                                                     final TaskListener listener, //
-                                                                    //
                                                                     final Launcher launcher) {
         final Map<String, AccurevStream> streams = new HashMap<>();
         String streamName = nameOfStreamRequired;

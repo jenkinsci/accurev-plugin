@@ -22,7 +22,6 @@ public class Synctime extends Command {
                                    final Map<String, String> accurevEnv, //
                                    final FilePath workspace, //
                                    final TaskListener listener, //
-                                   //
                                    final Launcher launcher) throws IOException, InterruptedException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("synctime");

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -32,6 +31,7 @@ import java.util.logging.Logger;
  */
 public final class AccurevLauncher {
     private static final Logger LOGGER = Logger.getLogger(FindAccurevClientExe.class.getName());
+
     /**
      * Runs a command and returns <code>true</code> if it passed,
      * <code>false</code> if it failed, and logs the errors.
@@ -106,7 +106,6 @@ public final class AccurevLauncher {
                                                          final String humanReadableCommandName, //
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
-                                                         //
                                                          final Lock synchronizationLockObjectOrNull, //
                                                          final Map<String, String> environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
@@ -174,7 +173,6 @@ public final class AccurevLauncher {
                                                          final String humanReadableCommandName, //
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
-                                                         //
                                                          final Lock synchronizationLockObjectOrNull, //
                                                          final Map<String, String> environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
@@ -238,7 +236,6 @@ public final class AccurevLauncher {
     private static ProcStarter createProcess(//
                                              final Launcher launcher, //
                                              final ArgumentListBuilder machineReadableCommand, //
-                                             //
                                              final Map<String, String> environmentVariables, //
                                              final FilePath directoryToRunCommandFrom, //
                                              final OutputStream stdoutStream, //
@@ -247,7 +244,7 @@ public final class AccurevLauncher {
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Computer c = Computer.currentComputer();
-        Node n = c==null ? Jenkins.getActiveInstance() : c.getNode();
+        Node n = c == null ? Jenkins.getActiveInstance() : c.getNode();
         environmentVariables.putIfAbsent("ACCUREV_HOME", n.getRootPath().getRemote());
         starter = starter.envs(environmentVariables);
         starter = starter.stdout(stdoutStream).stderr(stderrStream);

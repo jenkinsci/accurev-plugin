@@ -87,13 +87,13 @@ public class ChangeLogCmd {
     /**
      * Retrieve the settings.xml file to get the webURL.
      *
-     * @param server        Server
-     * @param accurevEnv    Accurev Environment
-     * @param workspace     Workspace
-     * @param listener      listener
-     * @param launcher      Launcher
-     * @param logger        logger
-     * @param scm           Accurev SCM
+     * @param server     Server
+     * @param accurevEnv Accurev Environment
+     * @param workspace  Workspace
+     * @param listener   listener
+     * @param launcher   Launcher
+     * @param logger     logger
+     * @param scm        Accurev SCM
      * @return webURL
      */
 

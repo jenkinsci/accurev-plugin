@@ -16,15 +16,15 @@ public class CheckForChanges {
     //checkStreamForChanges is overloaded method
 
     /**
-     * @param server      Server
-     * @param accurevEnv  Accurev Environment
-     * @param workspace   workspace
-     * @param listener    listener
-     * @param launcher    launcher
-     * @param stream      stream
-     * @param buildDate   build date
-     * @param logger      Logger
-     * @param scm         Accurev SCM
+     * @param server     Server
+     * @param accurevEnv Accurev Environment
+     * @param workspace  workspace
+     * @param listener   listener
+     * @param launcher   launcher
+     * @param stream     stream
+     * @param buildDate  build date
+     * @param logger     Logger
+     * @param scm        Accurev SCM
      * @return if there are any new transactions in the stream since the last build was done
      * @throws IOException          if there is issues with files
      * @throws InterruptedException if failed to interrupt properly
@@ -156,15 +156,15 @@ public class CheckForChanges {
     }
 
     /**
-     * @param server      server
-     * @param accurevEnv  accurev environment
-     * @param workspace   workspace
-     * @param listener    listener
-     * @param launcher    launcher
-     * @param stream      stream
-     * @param buildDate   build Date
-     * @param logger      logger
-     * @param scm         Accurev SCm
+     * @param server     server
+     * @param accurevEnv accurev environment
+     * @param workspace  workspace
+     * @param listener   listener
+     * @param launcher   launcher
+     * @param stream     stream
+     * @param buildDate  build Date
+     * @param logger     logger
+     * @param scm        Accurev SCm
      * @return if there are any new transactions in the stream since the last build was done
      * @throws IOException          if there is issues with files
      * @throws InterruptedException if failed to interrupt properly
