@@ -459,24 +459,7 @@ public class AccurevSCM extends SCM {
          * logged in if another client on the same machine logs in again.
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
-        private static final Logger descriptorlogger = Logger.getLogger(AccurevSCMDescriptor.class.getName());
-        /**
-         * The default search paths for Windows clients.
-         */
-        private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(//
-                "C:\\opt\\accurev\\bin\\accurev.exe", //
-                "C:\\Program Files\\AccuRev\\bin\\accurev.exe", //
-                "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
-        /**
-         * The default search paths for *nix clients
-         */
-        private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(//
-                "/usr/local/bin/accurev", //
-                "/usr/bin/accurev", //
-                "/bin/accurev", //
-                "/local/bin/accurev",
-                "/opt/accurev/bin/accurev",
-                "/Applications/AccuRev/bin/accurev");
+        private static final Logger DESCRIPTORLOGGER = Logger.getLogger(AccurevSCMDescriptor.class.getName());
         private List<AccurevServer> _servers;
         // The servers field is here for backwards compatibility.
         // The transient modifier means it won't be written to the config file
@@ -622,7 +605,7 @@ public class AccurevSCM extends SCM {
         public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
-                descriptorlogger.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
+                DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
                 return s;
             }
             for (AccurevServer server : this._servers) {
@@ -649,7 +632,7 @@ public class AccurevSCM extends SCM {
             // logged
             try {
                 if (Login.accurevLoginFromGlobalConfig(server)) {
-                    depots = ShowDepots.getDepots(server, descriptorlogger);
+                    depots = ShowDepots.getDepots(server, DESCRIPTORLOGGER);
                 }
             } catch (IOException | InterruptedException e) {
                 logger.warning(e.getMessage());
@@ -671,7 +654,7 @@ public class AccurevSCM extends SCM {
             final AccurevServer server = getServer(serverUUID);
 
             if (server == null || StringUtils.isBlank(depot)) {
-                //descriptorlogger.warning("Failed to find server.");
+                //DESCRIPTORLOGGER.warning("Failed to find server.");
                 return new ComboBoxModel();
             }
             // Execute the login command first & upon success of that run show streams
@@ -687,24 +670,6 @@ public class AccurevSCM extends SCM {
                 logger.warning(e.getMessage());
             }
             return cbm;
-        }
-
-        /**
-         * Getter for property 'nixCmdLocations'.
-         *
-         * @return Value for property 'nixCmdLocations'.
-         */
-        public String[] getNixCmdLocations() {
-            return DEFAULT_NIX_CMD_LOCATIONS.toArray(new String[DEFAULT_NIX_CMD_LOCATIONS.size()]);
-        }
-
-        /**
-         * Getter for property 'winCmdLocations'.
-         *
-         * @return Value for property 'winCmdLocations'.
-         */
-        public String[] getWinCmdLocations() {
-            return DEFAULT_WIN_CMD_LOCATIONS.toArray(new String[DEFAULT_WIN_CMD_LOCATIONS.size()]);
         }
     }
 

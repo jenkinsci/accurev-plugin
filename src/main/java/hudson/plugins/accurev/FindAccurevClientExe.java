@@ -8,6 +8,8 @@ import org.jenkinsci.remoting.RoleChecker;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 @SuppressWarnings("serial")
@@ -15,9 +17,27 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
 
     private static final Logger logger = Logger.getLogger(FindAccurevClientExe.class.getName());
 
+    /**
+     * The default search paths for Windows clients.
+     */
+    private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(
+            "C:\\opt\\accurev\\bin\\accurev.exe",
+            "C:\\Program Files\\AccuRev\\bin\\accurev.exe",
+            "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
+    /**
+     * The default search paths for *nix clients
+     */
+    private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(
+            "/usr/local/bin/accurev",
+            "/usr/bin/accurev",
+            "/bin/accurev",
+            "/local/bin/accurev",
+            "/opt/accurev/bin/accurev",
+            "/Applications/AccuRev/bin/accurev");
+
     public FindAccurevClientExe() {}
 
-    private static String getExistingPath(String[] paths) {
+    private static String getExistingPath(List<String> paths) {
         for (final String path : paths) {
             if (new File(path).exists()) {
                 return path;
@@ -56,14 +76,14 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
             // we are running on windows
             accurevBinName = "accurev.exe";
             if (!JustAccurev.justAccuRev(accurevBin + File.separator + accurevBinName)) {
-                accurevPath = getExistingPath(AccurevSCM.DESCRIPTOR.getWinCmdLocations());
+                accurevPath = getExistingPath(DEFAULT_WIN_CMD_LOCATIONS);
             } else {
                 accurevPath = accurevBin + File.separator + accurevBinName;
             }
         } else {
             // we are running on *nix
             if (!JustAccurev.justAccuRev(accurevBin + File.separator + accurevBinName)) {
-                accurevPath = getExistingPath(AccurevSCM.DESCRIPTOR.getNixCmdLocations());
+                accurevPath = getExistingPath(DEFAULT_NIX_CMD_LOCATIONS);
             } else {
                 accurevPath = accurevBin + File.separator + accurevBinName;
             }
