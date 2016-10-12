@@ -25,7 +25,11 @@ public class XmlParserFactory {
      * @throws XmlPullParserException when things go wrong/
      */
     static XmlPullParser newParser() throws XmlPullParserException {
-        return getFactory().newPullParser();
+        XmlPullParserFactory factory = null;
+        XmlPullParser parser = null;
+        if (null != getFactory()) factory = getFactory();
+        if (null != factory) parser = factory.newPullParser();
+        return parser;
     }
 
     /**

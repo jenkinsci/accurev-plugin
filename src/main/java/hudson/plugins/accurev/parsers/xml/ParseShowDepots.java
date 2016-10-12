@@ -12,11 +12,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public final class ParseShowDepots implements ICmdOutputXmlParser<List<String>, Void> {
-    private static final Logger logger = Logger.getLogger(ParseShowStreams.class.getName());
-
     public List<String> parse(XmlPullParser parser, Void context) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
-
         final List<String> depots = new ArrayList<>();
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {

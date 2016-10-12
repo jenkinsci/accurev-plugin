@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 public class CheckForChanges {
 
     //checkStreamForChanges is overloaded method
+    //TODO: Reduce Complexity/Duplication.
 
     /**
      * @param server     Server

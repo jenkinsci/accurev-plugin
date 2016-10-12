@@ -24,7 +24,7 @@ public class AccurevPlugin extends Plugin {
      * @throws Exception Exceptions?
      * @see #initializers()
      */
-    public static void runMigrator() throws Exception {
+    public static void runMigration() throws Exception {
         final Jenkins jenkins = Jenkins.getInstance();
         if (jenkins == null) {
             throw new IOException("Jenkins instance is not ready");
@@ -59,6 +59,6 @@ public class AccurevPlugin extends Plugin {
      */
     @Initializer(after = JOB_LOADED, before = COMPLETED)
     public static void initializers() throws Exception {
-        runMigrator();
+        runMigration();
     }
 }

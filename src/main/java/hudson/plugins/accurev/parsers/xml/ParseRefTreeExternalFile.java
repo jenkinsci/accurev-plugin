@@ -14,7 +14,6 @@ public class ParseRefTreeExternalFile implements ICmdOutputXmlParser<Map<String,
     public Map<String, RefTreeExternalFile> parse(XmlPullParser parser, Void context)
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         final Map<String, RefTreeExternalFile> externalFiles = new HashMap<>();
-
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "Element".equalsIgnoreCase(parser.getName())) {
                 final String location = parser.getAttributeValue("", "location");

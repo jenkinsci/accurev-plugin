@@ -26,7 +26,6 @@ public class Synctime extends Command {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("synctime");
         addServer(cmd, server);
-        final boolean success = AccurevLauncher.runCommand("Synctime command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger);
-        return success;
+        return AccurevLauncher.runCommand("Synctime command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger);
     }
 }

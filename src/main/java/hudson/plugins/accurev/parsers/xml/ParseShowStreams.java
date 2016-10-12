@@ -16,11 +16,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
-    private static final Logger logger = Logger.getLogger(ParseShowStreams.class.getName());
-
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
-
         final Map<String, AccurevStream> streams = new HashMap<>();
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "stream".equalsIgnoreCase(parser.getName())) {
@@ -40,7 +37,6 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                     final Long basisStreamNumber = basisStreamNumberStr == null ? null : Long.valueOf(basisStreamNumberStr);
                     final StreamType streamType = AccurevStream.StreamType.parseStreamType(streamTypeStr);
                     final boolean isDynamic = streamIsDynamic != null && Boolean.parseBoolean(streamIsDynamic);
-
                     final AccurevStream stream = new AccurevStream(//
                             streamName, //
                             streamNumber, //

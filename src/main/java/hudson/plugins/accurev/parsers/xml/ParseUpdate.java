@@ -11,7 +11,6 @@ import java.util.List;
  * @author raymond
  */
 public class ParseUpdate implements AccurevLauncher.ICmdOutputXmlParser<Boolean, List<String>> {
-
     public Boolean parse(XmlPullParser parser, List<String> context) throws AccurevLauncher.UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {

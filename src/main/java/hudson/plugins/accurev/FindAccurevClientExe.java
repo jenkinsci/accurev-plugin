@@ -15,8 +15,7 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
 
     private static final Logger logger = Logger.getLogger(FindAccurevClientExe.class.getName());
 
-    public FindAccurevClientExe() {
-    }
+    public FindAccurevClientExe() {}
 
     private static String getExistingPath(String[] paths) {
         for (final String path : paths) {

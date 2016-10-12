@@ -15,7 +15,6 @@ final class ParseLsRules implements ICmdOutputXmlParser<HashMap<String, String>,
         // include/exclude rules map
         final HashMap<String, String> locationToKindMap = new HashMap<>();
         // key: String location, val: String kind (incl / excl / incldo)
-
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {
                 String kind = parser.getAttributeValue("", "kind");

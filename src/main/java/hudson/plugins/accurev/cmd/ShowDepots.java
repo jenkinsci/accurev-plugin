@@ -22,7 +22,6 @@ public class ShowDepots extends Command {
                                          final Logger descriptorLogger
     ) {
 
-        final List<String> depots = new ArrayList<>();
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
 
         cmd.add("show");
@@ -34,8 +33,7 @@ public class ShowDepots extends Command {
         StreamTaskListener listener = StreamTaskListener.fromStdout();
         Launcher launcher = jenkins.createLauncher(listener);
         Map<String, String> accurevEnv = new HashMap<>();
-        depots.addAll(AccurevLauncher.runCommand("show depots command", launcher, cmd, null,
-                accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, XmlParserFactory.getFactory(), new ParseShowDepots(), null));
-        return depots;
+        return AccurevLauncher.runCommand("show depots command", launcher, cmd, null,
+                accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, XmlParserFactory.getFactory(), new ParseShowDepots(), null);
     }
 }

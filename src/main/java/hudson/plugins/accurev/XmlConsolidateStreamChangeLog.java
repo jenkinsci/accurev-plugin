@@ -35,14 +35,12 @@ public class XmlConsolidateStreamChangeLog {
 
     public static File getStreamChangeLogFile(File changelogFile, AccurevStream stream) {
         File dir = changelogFile.getParentFile();
-        File retVal = new File(dir, stream.getName() + "_" + changelogFile.getName());
-        return retVal;
+        return new File(dir, stream.getName() + "_" + changelogFile.getName());
     }
 
     public static File getUpdateChangeLogFile(File changelogFile) {
         File dir = changelogFile.getParentFile();
-        File retVal = new File(dir, "update_" + changelogFile.getName());
-        return retVal;
+        return new File(dir, "update_" + changelogFile.getName());
     }
 
     public static void createChangeLog(List<String> streamFiles, File changeLogFile, String updateFile) {
