@@ -20,10 +20,9 @@ public final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStre
         final Reader stringReader = new InputStreamReader(cmdOutput, Charset.defaultCharset());
         final Writer stringWriter = new OutputStreamWriter(streamToCopyOutputTo, Charset.defaultCharset());
         final BufferedWriter lineWriter = new BufferedWriter(stringWriter);
-        String line;
-        try (BufferedReader lineReader = new BufferedReader(stringReader)) {
-            line = lineReader.readLine();
-            while (line != null) {
+        try (BufferedReader reader = new BufferedReader(stringReader)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
                 if (line.startsWith(lineStartElement)) {
                     countOfElements++;
                 } else if (line.startsWith(lineStartDirectory)) {
@@ -32,7 +31,6 @@ public final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStre
                     lineWriter.write(line);
                     lineWriter.newLine();
                 }
-                line = lineReader.readLine();
             }
             final String msg = "Populated " + countOfElements + " elements and " + countOfDirectories + " directories.";
             streamToCopyOutputTo.write(msg.getBytes(Charset.defaultCharset()));

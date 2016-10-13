@@ -69,12 +69,12 @@ public class StreamDelegate extends AbstractModeDelegate {
             return PollingResult.NO_CHANGES;
         }
         final Map<String, AccurevStream> streams = scm.isIgnoreStreamParent() ? null : ShowStreams.getStreams(scm, localStream, server,
-                accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher);
+                accurevEnv, jenkinsWorkspace, listener, launcher);
         AccurevStream stream = streams == null ? null : streams.get(localStream);
 
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
-            if (CheckForChanges.checkStreamForChanges(server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher, localStream,
+            if (CheckForChanges.checkStreamForChanges(server, accurevEnv, jenkinsWorkspace, listener, launcher, localStream,
                     buildDate, logger, scm)) {
                 return PollingResult.BUILD_NOW;
             } else {
@@ -83,7 +83,7 @@ public class StreamDelegate extends AbstractModeDelegate {
         }
         // There may be changes in a parent stream that we need to factor in.
         do {
-            if (CheckForChanges.checkStreamForChanges(server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher, stream,
+            if (CheckForChanges.checkStreamForChanges(server, accurevEnv, jenkinsWorkspace, listener, launcher, stream,
                     buildDate, logger, scm)) {
                 return PollingResult.BUILD_NOW;
             }

@@ -44,7 +44,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
                 listener.getLogger().println("Relocation required triggering build");
                 return PollingResult.BUILD_NOW;
             } else {
-                if (Update.hasChanges(scm, server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, getRefTree())) {
+                if (Update.hasChanges(scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, getRefTree())) {
                     return PollingResult.BUILD_NOW;
                 } else {
                     return PollingResult.NO_CHANGES;
@@ -108,13 +108,12 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             throws IOException, InterruptedException {
         listener.getLogger().println("Getting a list of reference trees...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add(accurevPath);
         cmd.add("show");
         Command.addServer(cmd, server);
         cmd.add("-fx");
         cmd.add("refs");
         final Map<String, AccurevReferenceTree> reftrees = AccurevLauncher.runCommand("Show ref trees command",
-                launcher, cmd, null, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
+                launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
                 XmlParserFactory.getFactory(), new ParseShowReftrees(), null);
         return reftrees;
     }
@@ -140,7 +139,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
 
     private boolean doUpdate(File changeLogFile) throws IOException, InterruptedException {
         updateLogFile = XmlConsolidateStreamChangeLog.getUpdateChangeLogFile(changeLogFile);
-        return Update.performUpdate(scm, server, accurevEnv, accurevWorkingSpace, listener, accurevPath, launcher, getRefTree(), updateLogFile);
+        return Update.performUpdate(scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, getRefTree(), updateLogFile);
     }
 
     @Override
@@ -166,13 +165,12 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         }
         relocation.appendCommands(relocateCommand);
 
-        return (AccurevLauncher.runCommand("relocation command", launcher, relocateCommand, null,
+        return (AccurevLauncher.runCommand("relocation command", launcher, relocateCommand,
                 scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true));
     }
 
     protected ArgumentListBuilder getRelocateCommand() {
         ArgumentListBuilder chrefcmd = new ArgumentListBuilder();
-        chrefcmd.add(accurevPath);
         chrefcmd.add("chref");
         Command.addServer(chrefcmd, server);
         chrefcmd.add("-r");

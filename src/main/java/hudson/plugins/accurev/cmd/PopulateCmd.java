@@ -10,6 +10,7 @@ import hudson.plugins.accurev.parsers.output.ParsePopulate;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -30,27 +31,26 @@ public class PopulateCmd extends Command {
     }
 
     /**
-     * @param launcher             launcher
-     * @param listener             listener
-     * @param server               server
-     * @param accurevClientExePath Accurev Client Executable Path
-     * @param streamName           stream Name
-     * @param fromMessage          from Messge
-     * @param accurevWorkingSpace  Accurev Workspace
-     * @param accurevEnv           Accurev Environment
-     * @param scm                  Accurev SCm
-     * @param overwrite            overwrite
+     * @param scm                 Accurev SCm
+     * @param launcher            launcher
+     * @param listener            listener
+     * @param server              server
+     * @param streamName          stream Name
+     * @param overwrite           overwrite
+     * @param fromMessage         from Messge
+     * @param accurevWorkingSpace Accurev Workspace
+     * @param accurevEnv          Accurev Environment
      * @return boolean
+     * @throws IOException Handle it above
      */
     public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener,
-                            AccurevServer server, String accurevClientExePath,
+                            AccurevServer server,
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
-                            FilePath accurevWorkingSpace, Map<String, String> accurevEnv) {
+                            FilePath accurevWorkingSpace, Map<String, String> accurevEnv) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
         final ArgumentListBuilder popcmd = new ArgumentListBuilder();
-        popcmd.add(accurevClientExePath);
         popcmd.add("pop");
         addServer(popcmd, server);
 
@@ -74,7 +74,7 @@ public class PopulateCmd extends Command {
             }
         }
         _startDateOfPopulate = new Date();
-        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, null, scm.getOptionalLock(), accurevEnv,
+        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, scm.getOptionalLock(), accurevEnv,
                 accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger());
         if (success == null || !success) {
             return false;

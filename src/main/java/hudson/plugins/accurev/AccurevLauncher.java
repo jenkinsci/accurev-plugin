@@ -1,13 +1,18 @@
 package hudson.plugins.accurev;
 
+import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
+import hudson.model.Computer;
+import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
 import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
 import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
 import hudson.util.ArgumentListBuilder;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -27,6 +32,7 @@ import java.util.logging.Logger;
  * something parse their output.
  */
 public final class AccurevLauncher {
+    private static final Logger LOGGER = Logger.getLogger(FindAccurevClientExe.class.getName());
 
     /**
      * Runs a command and returns <code>true</code> if it passed,
@@ -36,8 +42,6 @@ public final class AccurevLauncher {
      *                                                  in the logs if there is a failure.
      * @param launcher                                  Means of executing the command.
      * @param machineReadableCommand                    The command to be executed.
-     * @param masksOrNull                               Argument for {@link ProcStarter#masks(boolean...)}, or
-     *                                                  <code>null</code> if not required.
      * @param synchronizationLockObjectOrNull           The {@link Lock} object to be used to prevent concurrent
      *                                                  execution on the same machine, or <code>null</code> if no
      *                                                  synchronization is required.
@@ -49,28 +53,28 @@ public final class AccurevLauncher {
      *                                                  will also be copied to the listener if the command is
      *                                                  successful.
      * @return <code>true</code> if the command succeeded.
+     * @throws IOException handle it above
      */
     public static boolean runCommand(//
                                      final String humanReadableCommandName, //
                                      final Launcher launcher, //
                                      final ArgumentListBuilder machineReadableCommand, //
-                                     final boolean[] masksOrNull, //
                                      final Lock synchronizationLockObjectOrNull, //
                                      final Map<String, String> environmentVariables, //
                                      final FilePath directoryToRunCommandFrom, //
                                      final TaskListener listenerToLogFailuresTo, //
                                      final Logger loggerToLogFailuresTo, //
-                                     final boolean... optionalFlagToCopyAllOutputToTaskListener) {
+                                     final boolean... optionalFlagToCopyAllOutputToTaskListener) throws IOException {
         final Boolean result;
         final boolean shouldLogEverything = optionalFlagToCopyAllOutputToTaskListener != null
                 && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
         if (shouldLogEverything) {
-            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
+            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseOutputToStream(),
                     listenerToLogFailuresTo.getLogger());
         } else {
-            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
+            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                     synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                     listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
@@ -80,7 +84,7 @@ public final class AccurevLauncher {
 
     /**
      * As
-     * {@link #runCommand(String, Launcher, ArgumentListBuilder, boolean[], Lock, Map, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
+     * {@link #runCommand(String, Launcher, ArgumentListBuilder, Lock, Map, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
      * but uses an {@link ICmdOutputXmlParser} instead.
      *
      * @param <TResult>                       The type of the result returned by the parser.
@@ -88,7 +92,6 @@ public final class AccurevLauncher {
      * @param humanReadableCommandName        Human readable command
      * @param launcher                        launcher
      * @param machineReadableCommand          Machine readable command
-     * @param masksOrNull                     masks or null
      * @param synchronizationLockObjectOrNull Synchronization lock
      * @param environmentVariables            Environment Variables
      * @param directoryToRunCommandFrom       Where to run commands from
@@ -101,12 +104,12 @@ public final class AccurevLauncher {
      * @param commandOutputParser             Command output parser
      * @param commandOutputParserContext      Context of Command output parser
      * @return See above.
+     * @throws IOException handle it above
      */
     public static <TResult, TContext> TResult runCommand(//
                                                          final String humanReadableCommandName, //
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
-                                                         final boolean[] masksOrNull, //
                                                          final Lock synchronizationLockObjectOrNull, //
                                                          final Map<String, String> environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
@@ -114,8 +117,8 @@ public final class AccurevLauncher {
                                                          final Logger loggerToLogFailuresTo, //
                                                          final XmlPullParserFactory xmlParserFactory, //
                                                          final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
-                                                         final TContext commandOutputParserContext) {
-        return runCommand(humanReadableCommandName, launcher, machineReadableCommand, masksOrNull,
+                                                         final TContext commandOutputParserContext) throws IOException {
+        return runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                 synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                 listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
                     XmlPullParser parser = null;
@@ -157,8 +160,6 @@ public final class AccurevLauncher {
      *                                        in the logs if there is a failure.
      * @param launcher                        Means of executing the command.
      * @param machineReadableCommand          The command to be executed.
-     * @param masksOrNull                     Argument for {@link ProcStarter#masks(boolean...)}, or
-     *                                        <code>null</code> if not required.
      * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
      *                                        execution on the same machine, or <code>null</code> if no
      *                                        synchronization is required.
@@ -171,25 +172,25 @@ public final class AccurevLauncher {
      * @param commandOutputParserContext      Data to be passed to the parser.
      * @return The data returned by the {@link ICmdOutputParser}, or
      * <code>null</code> if an error occurred.
+     * @throws IOException handle it above
      */
     public static <TResult, TContext> TResult runCommand(//
                                                          final String humanReadableCommandName, //
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
-                                                         final boolean[] masksOrNull, //
                                                          final Lock synchronizationLockObjectOrNull, //
                                                          final Map<String, String> environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
                                                          final TaskListener listenerToLogFailuresTo, //
                                                          final Logger loggerToLogFailuresTo, //
                                                          final ICmdOutputParser<TResult, TContext> commandOutputParser, //
-                                                         final TContext commandOutputParserContext) {
+                                                         final TContext commandOutputParserContext) throws IOException {
         final ByteArrayStream stdout = new ByteArrayStream();
         final ByteArrayStream stderr = new ByteArrayStream();
         try {
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
-            final ProcStarter starter = createProcess(launcher, machineReadableCommand, masksOrNull,
+            final ProcStarter starter = createProcess(launcher, machineReadableCommand,
                     environmentVariables, directoryToRunCommandFrom, stdoutStream, stderrStream);
             logCommandExecution(humanReadableCommandName, machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
                     listenerToLogFailuresTo);
@@ -208,6 +209,9 @@ public final class AccurevLauncher {
                         loggerToLogFailuresTo, listenerToLogFailuresTo);
                 return null;
             }
+        } catch (InterruptedException | IOException ex) {
+            logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+            return null;
         } finally {
             try {
                 stdout.close();
@@ -237,15 +241,20 @@ public final class AccurevLauncher {
     private static ProcStarter createProcess(//
                                              final Launcher launcher, //
                                              final ArgumentListBuilder machineReadableCommand, //
-                                             final boolean[] masksOrNull, //
                                              final Map<String, String> environmentVariables, //
                                              final FilePath directoryToRunCommandFrom, //
                                              final OutputStream stdoutStream, //
-                                             final OutputStream stderrStream) {
+                                             final OutputStream stderrStream) throws IOException, InterruptedException {
+        String accurevPath = directoryToRunCommandFrom.act(new FindAccurevClientExe());
+        if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
-        if (masksOrNull != null) {
-            starter = starter.masks(masksOrNull);
-        }
+        Computer c = Computer.currentComputer();
+        Node n = c == null ? Jenkins.getInstance() : c.getNode();
+        String path = null;
+        FilePath filePath = null;
+        if (n != null) filePath = n.getRootPath();
+        if (filePath != null) path = filePath.getRemote();
+        if (StringUtils.isNotBlank(path)) environmentVariables.putIfAbsent("ACCUREV_HOME", path);
         starter = starter.envs(environmentVariables);
         starter = starter.stdout(stdoutStream).stderr(stderrStream);
         starter = starter.pwd(directoryToRunCommandFrom);
@@ -260,8 +269,8 @@ public final class AccurevLauncher {
                                           final InputStream commandStdoutOrNull, //
                                           final InputStream commandStderrOrNull, //
                                           final Logger loggerToLogFailuresTo, //
-                                          final TaskListener taskListener) {
-        final String msg = commandDescription + " (" + maskCommandForPassword(commandDescription, command) + ")" + " failed with exit code " + commandExitCode;
+                                          final TaskListener taskListener) throws IOException {
+        final String msg = commandDescription + " (" + command.toString() + ")" + " failed with exit code " + commandExitCode;
         String stderr = null;
         try {
             stderr = getCommandErrorOutput(commandStdoutOrNull, commandStderrOrNull);
@@ -317,9 +326,9 @@ public final class AccurevLauncher {
                                             final String commandDescription, //
                                             final Throwable exception, //
                                             final Logger loggerToLogFailuresTo, //
-                                            final TaskListener taskListener) {
+                                            final TaskListener taskListener) throws IOException {
         final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-        final String msg = hostname + ": " + commandDescription + " (" + maskCommandForPassword(commandDescription, command) + ")"
+        final String msg = hostname + ": " + commandDescription + " (" + command.toString() + ")"
                 + " failed with " + exception.toString();
         logException(msg, exception, loggerToLogFailuresTo, taskListener);
     }
@@ -328,7 +337,7 @@ public final class AccurevLauncher {
                              final String summary, //
                              final Throwable exception, //
                              final Logger logger, //
-                             final TaskListener taskListener) {
+                             final TaskListener taskListener) throws IOException {
         if (logger != null) {
             // TODO: Log the machine name to the Logger as well.
             logger.log(Level.SEVERE, exception.getMessage(), exception);
@@ -336,6 +345,7 @@ public final class AccurevLauncher {
         if (taskListener != null) {
             taskListener.fatalError(summary);
             exception.printStackTrace(taskListener.getLogger());
+            throw new AbortException(exception.getMessage());
         }
     }
 
@@ -347,17 +357,9 @@ public final class AccurevLauncher {
                                             final TaskListener taskListener) {
         if (loggerToLogFailuresTo != null && loggerToLogFailuresTo.isLoggable(Level.FINE)) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
-            final String msg = hostname + ": " + maskCommandForPassword(commandDescription, command);
+            final String msg = hostname + ": " + command.toString();
             loggerToLogFailuresTo.log(Level.FINE, msg);
         }
-    }
-
-    private static String maskCommandForPassword(String desc, ArgumentListBuilder command) {
-        String cmd = command.toStringWithQuote();
-        if (desc.equalsIgnoreCase("login")) {
-            cmd = cmd.replaceAll("\\w+$", "********");
-        }
-        return cmd;
     }
 
     private static String getRemoteHostname(final FilePath directoryToRunCommandFrom) {
