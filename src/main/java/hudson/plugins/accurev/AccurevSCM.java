@@ -519,7 +519,7 @@ public class AccurevSCM extends SCM {
          * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          */
         @Override
-        public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+        public SCM newInstance(@Nonnull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
             String serverUUID = req.getParameter("_.serverUUID");
             String serverName = getServer(serverUUID).getName();
             return new AccurevSCM( //
