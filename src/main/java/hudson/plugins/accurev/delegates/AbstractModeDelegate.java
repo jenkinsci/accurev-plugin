@@ -189,10 +189,7 @@ public abstract class AbstractModeDelegate {
 
     private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
         try {
-            String changeLogStream = getChangeLogStream();
-
-            AccurevTransaction latestTransaction = History.getLatestTransaction(scm,
-                    server, accurevEnv, accurevWorkingSpace, listener, launcher, changeLogStream, null);
+            AccurevTransaction latestTransaction = getLatestTransactionFromStreams(streams);
             if (latestTransaction == null) {
                 throw new NullPointerException("The 'hist' command did not return a transaction. Does this stream have any history yet?");
             }
@@ -263,6 +260,21 @@ public abstract class AbstractModeDelegate {
 
         XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile, getUpdateFileName());
         return capturedChangelog;
+    }
+
+    private AccurevTransaction getLatestTransactionFromStreams(Map<String, AccurevStream> streams) throws Exception {
+        AccurevTransaction transaction = null;
+        AccurevStream stream = streams.get(getChangeLogStream());
+        do {
+            AccurevTransaction other = History.getLatestTransaction(scm,
+                    server, accurevEnv, accurevWorkingSpace, listener, launcher, stream.getName(), null);
+            if (null == transaction && null != other) transaction = other;
+            else if ((null != transaction && null != other) && Integer.parseInt(other.getId()) > Integer.parseInt(transaction.getId())) {
+                transaction = other;
+            }
+            stream = stream.getParent();
+        } while (stream != null && stream.isReceivingChangesFromParent() && !scm.isIgnoreStreamParent());
+        return transaction;
     }
 
     protected String getUpdateFileName() {
