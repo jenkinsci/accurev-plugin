@@ -35,7 +35,8 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
             "/opt/accurev/bin/accurev",
             "/Applications/AccuRev/bin/accurev");
 
-    public FindAccurevClientExe() {}
+    public FindAccurevClientExe() {
+    }
 
     private static String getExistingPath(List<String> paths) {
         for (final String path : paths) {

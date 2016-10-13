@@ -1,11 +1,9 @@
 package hudson.plugins.accurev;
 
-import hudson.Plugin;
 import hudson.init.Initializer;
 import hudson.model.Project;
 import jenkins.model.Jenkins;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 import static hudson.init.InitMilestone.COMPLETED;
@@ -14,21 +12,19 @@ import static hudson.init.InitMilestone.JOB_LOADED;
 /**
  * Created by josp on 21/09/16.
  */
-public class AccurevPlugin extends Plugin {
+public class AccurevPlugin {
     private static final Logger LOGGER = Logger.getLogger(AccurevPlugin.class.getName());
 
     /**
+     * We need ensure that migrator will run after jobs are loaded
      * Launches migration after plugin and jobs already initialized.
      * Expected milestone: @Initializer(after = JOB_LOADED)
      *
-     * @throws Exception Exceptions?
-     * @see #initializers()
+     * @throws Exception Exceptions
      */
-    public static void runMigration() throws Exception {
+    @Initializer(after = JOB_LOADED, before = COMPLETED)
+    public static void initializers() throws Exception {
         final Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IOException("Jenkins instance is not ready");
-        }
         boolean changed = false;
         AccurevSCM.AccurevSCMDescriptor descriptor = jenkins.getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
         for (Project<?, ?> p : jenkins.getAllItems(Project.class)) {
@@ -49,16 +45,5 @@ public class AccurevPlugin extends Plugin {
             }
         }
         if (changed) descriptor.save();
-
-    }
-
-    /**
-     * We need ensure that migrator will run after jobs are loaded
-     *
-     * @throws Exception Exceptions?
-     */
-    @Initializer(after = JOB_LOADED, before = COMPLETED)
-    public static void initializers() throws Exception {
-        runMigration();
     }
 }

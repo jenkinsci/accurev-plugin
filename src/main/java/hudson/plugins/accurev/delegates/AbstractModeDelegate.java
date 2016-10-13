@@ -86,7 +86,7 @@ public abstract class AbstractModeDelegate {
             // from the project folder on the master.
             final File projectDir = project.getRootDir();
             jenkinsWorkspace = new FilePath(projectDir);
-            launcher = Jenkins.getActiveInstance().createLauncher(listener);
+            launcher = Jenkins.getInstance().createLauncher(listener);
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
         try {

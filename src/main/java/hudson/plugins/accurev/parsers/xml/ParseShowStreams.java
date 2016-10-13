@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,

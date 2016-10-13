@@ -4,8 +4,6 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
 
-import java.nio.charset.Charset;
-
 public class Command {
     /**
      * Adds the server reference to the Arguments list.

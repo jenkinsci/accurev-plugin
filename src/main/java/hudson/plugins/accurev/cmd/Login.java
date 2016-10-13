@@ -114,7 +114,7 @@ public class Login extends Command {
     public static boolean accurevLoginFromGlobalConfig(//
                                                        final AccurevServer server) throws IOException, InterruptedException {
 
-        Jenkins jenkins = Jenkins.getActiveInstance();
+        Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         Map<String, String> accurevEnv = new HashMap<>();

@@ -133,7 +133,7 @@ public class ShowStreams extends Command {
 
         if (StringUtils.isEmpty(depot)) return cbm;
 
-        Jenkins jenkins = Jenkins.getActiveInstance();
+        Jenkins jenkins = Jenkins.getInstance();
         StreamTaskListener listener = StreamTaskListener.fromStdout();
         Launcher launcher = jenkins.createLauncher(listener);
         Map<String, String> accurevEnv = new HashMap<>();

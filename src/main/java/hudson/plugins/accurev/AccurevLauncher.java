@@ -245,7 +245,7 @@ public final class AccurevLauncher {
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Computer c = Computer.currentComputer();
-        Node n = c == null ? Jenkins.getActiveInstance() : c.getNode();
+        Node n = c == null ? Jenkins.getInstance() : c.getNode();
         String path = null;
         FilePath filePath = null;
         if (n != null) filePath = n.getRootPath();

@@ -29,7 +29,7 @@ public class ShowDepots extends Command {
         cmd.add("-fx");
         cmd.add("depots");
 
-        Jenkins jenkins = Jenkins.getActiveInstance();
+        Jenkins jenkins = Jenkins.getInstance();
         StreamTaskListener listener = StreamTaskListener.fromStdout();
         Launcher launcher = jenkins.createLauncher(listener);
         Map<String, String> accurevEnv = new HashMap<>();
