@@ -540,6 +540,8 @@ public class AccurevSCM extends SCM {
                         req.getParameter("accurev.snapshotNameFormat"), //
                         req.getParameter("accurev.directoryOffset"), //
                         req.getParameter("accurev.ignoreStreamParent") != null);
+            } else {
+                throw new FormException("Null Request", "accurev");
             }
         }
 
