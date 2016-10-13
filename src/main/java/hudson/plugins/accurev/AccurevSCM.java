@@ -519,26 +519,28 @@ public class AccurevSCM extends SCM {
          * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          */
         @Override
-        public SCM newInstance(@Nonnull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
-            String serverUUID = req.getParameter("_.serverUUID");
-            String serverName = getServer(serverUUID).getName();
-            return new AccurevSCM( //
-                    serverUUID, //
-                    serverName, //
-                    req.getParameter("_.depot"), //
-                    req.getParameter("_.stream"), //
-                    req.getParameter("accurev.wspaceORreftree"),//
-                    req.getParameter("accurev.workspace"),//
-                    req.getParameter("accurev.reftree"), //
-                    req.getParameter("accurev.subPath"), //
-                    req.getParameter("accurev.filterForPollSCM"), //
-                    req.getParameter("accurev.synctime") != null, //
-                    req.getParameter("accurev.cleanreftree") != null, //
-                    req.getParameter("accurev.useSnapshot") != null, //
-                    req.getParameter("accurev.dontPopContent") != null,
-                    req.getParameter("accurev.snapshotNameFormat"), //
-                    req.getParameter("accurev.directoryOffset"), //
-                    req.getParameter("accurev.ignoreStreamParent") != null);
+        public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
+            if (null != req) {
+                String serverUUID = req.getParameter("_.serverUUID");
+                String serverName = getServer(serverUUID).getName();
+                return new AccurevSCM( //
+                        serverUUID, //
+                        serverName, //
+                        req.getParameter("_.depot"), //
+                        req.getParameter("_.stream"), //
+                        req.getParameter("accurev.wspaceORreftree"),//
+                        req.getParameter("accurev.workspace"),//
+                        req.getParameter("accurev.reftree"), //
+                        req.getParameter("accurev.subPath"), //
+                        req.getParameter("accurev.filterForPollSCM"), //
+                        req.getParameter("accurev.synctime") != null, //
+                        req.getParameter("accurev.cleanreftree") != null, //
+                        req.getParameter("accurev.useSnapshot") != null, //
+                        req.getParameter("accurev.dontPopContent") != null,
+                        req.getParameter("accurev.snapshotNameFormat"), //
+                        req.getParameter("accurev.directoryOffset"), //
+                        req.getParameter("accurev.ignoreStreamParent") != null);
+            }
         }
 
         /**
