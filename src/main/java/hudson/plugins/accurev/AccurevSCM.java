@@ -617,7 +617,7 @@ public class AccurevSCM extends SCM {
 
         // This method will populate the depots in the select box depending upon the
         // server selected.
-        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
+        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
 
@@ -630,12 +630,8 @@ public class AccurevSCM extends SCM {
             // Execute the login command first & upon success of that run show depots
             // command. If any of the command's exitvalue is 1 proper error message is
             // logged
-            try {
-                if (Login.accurevLoginFromGlobalConfig(server)) {
-                    depots = ShowDepots.getDepots(server, DESCRIPTORLOGGER);
-                }
-            } catch (IOException | InterruptedException e) {
-                logger.warning(e.getMessage());
+            if (Login.accurevLoginFromGlobalConfig(server)) {
+                depots = ShowDepots.getDepots(server, DESCRIPTORLOGGER);
             }
 
             ListBoxModel d = new ListBoxModel();
@@ -649,7 +645,7 @@ public class AccurevSCM extends SCM {
         }
 
         // Populating the streams
-        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) {
+        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
 
@@ -661,13 +657,8 @@ public class AccurevSCM extends SCM {
             // command. If any of the command's exitvalue is 1 proper error message is
             // logged
             ComboBoxModel cbm = new ComboBoxModel();
-            try {
-                if (Login.accurevLoginFromGlobalConfig(server)) {
-                    cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
-                }
-
-            } catch (IOException | InterruptedException e) {
-                logger.warning(e.getMessage());
+            if (Login.accurevLoginFromGlobalConfig(server)) {
+                cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
             }
             return cbm;
         }

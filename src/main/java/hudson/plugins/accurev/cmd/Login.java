@@ -29,7 +29,7 @@ public class Login extends Command {
                                               final Map<String, String> accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
-                                              final Launcher launcher) {
+                                              final Launcher launcher) throws IOException {
         final String commandDescription = "info command";
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("info");

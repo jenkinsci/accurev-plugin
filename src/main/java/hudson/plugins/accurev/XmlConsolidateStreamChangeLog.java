@@ -43,7 +43,7 @@ public class XmlConsolidateStreamChangeLog {
         return new File(dir, "update_" + changelogFile.getName());
     }
 
-    public static void createChangeLog(List<String> streamFiles, File changeLogFile, String updateFile) {
+    public static void createChangeLog(List<String> streamFiles, File changeLogFile, String updateFile) throws IOException {
         FileOutputStream changeLogStream = null;
         try {
             changeLogStream = new FileOutputStream(changeLogFile);

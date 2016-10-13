@@ -4,6 +4,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
@@ -23,8 +24,9 @@ public class XmlParserFactory {
      * @return a new {@link XmlPullParser} configured for parsing Accurev XML
      * files.
      * @throws XmlPullParserException when things go wrong/
+     * @throws IOException            Handle it above
      */
-    static XmlPullParser newParser() throws XmlPullParserException {
+    static XmlPullParser newParser() throws XmlPullParserException, IOException {
         XmlPullParserFactory factory = null;
         XmlPullParser parser = null;
         if (null != getFactory()) factory = getFactory();
@@ -38,8 +40,9 @@ public class XmlParserFactory {
      *
      * @return a new {@link XmlPullParserFactory} configured for parsing Accurev
      * XML files, or <code>null</code> if things go wrong.
+     * @throws IOException Handle it above
      */
-    public static XmlPullParserFactory getFactory() {
+    public static XmlPullParserFactory getFactory() throws IOException {
         synchronized (PARSER_FACTORY_CACHE) {
             final XmlPullParserFactory existingFactory = PARSER_FACTORY_CACHE.get(XmlPullParserFactory.class);
             if (existingFactory != null) {

@@ -10,6 +10,7 @@ import hudson.plugins.accurev.parsers.output.ParsePopulate;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -40,13 +41,14 @@ public class PopulateCmd extends Command {
      * @param accurevWorkingSpace Accurev Workspace
      * @param accurevEnv          Accurev Environment
      * @return boolean
+     * @throws IOException Handle it above
      */
     public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener,
                             AccurevServer server,
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
-                            FilePath accurevWorkingSpace, Map<String, String> accurevEnv) {
+                            FilePath accurevWorkingSpace, Map<String, String> accurevEnv) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
         final ArgumentListBuilder popcmd = new ArgumentListBuilder();
         popcmd.add("pop");

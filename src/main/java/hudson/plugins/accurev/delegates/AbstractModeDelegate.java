@@ -89,12 +89,7 @@ public abstract class AbstractModeDelegate {
             launcher = Jenkins.getInstance().createLauncher(listener);
         }
         listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
-        try {
-            setup(launcher, jenkinsWorkspace, listener);
-        } catch (IllegalArgumentException ex) {
-            listener.fatalError(ex.getMessage());
-            return PollingResult.NO_CHANGES;
-        }
+        setup(launcher, jenkinsWorkspace, listener);
 
         return checkForChanges(project);
     }
@@ -149,7 +144,7 @@ public abstract class AbstractModeDelegate {
         try {
             setup(launcher, jenkinsWorkspace, listener);
         } catch (IllegalArgumentException ex) {
-            listener.fatalError(ex.getMessage());
+            build.setResult(Result.FAILURE);
             return false;
         }
 
@@ -174,8 +169,12 @@ public abstract class AbstractModeDelegate {
         listener.getLogger().println("Getting a list of streams...");
         final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener,
                 launcher);
+        if (streams == null) {
+            build.setResult(Result.FAILURE);
+            return false;
+        }
 
-        if (streams != null && !streams.containsKey(localStream)) {
+        if (!streams.containsKey(localStream)) {
             listener.fatalError("The specified stream, '" + localStream + "' does not appear to exist!");
             return false;
         }
@@ -184,15 +183,8 @@ public abstract class AbstractModeDelegate {
             setStreamColor();
         }
 
-        if (!checkout(build, changelogFile)) {
-            return false;
-        }
+        return checkout(build, changelogFile) && populate() && captureChangeLog(build, changelogFile, streams, environment);
 
-        if (!populate()) {
-            return false;
-        }
-
-        return captureChangeLog(build, changelogFile, streams, environment);
     }
 
     private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
@@ -299,7 +291,7 @@ public abstract class AbstractModeDelegate {
         return null;
     }
 
-    private void setStreamColor() {
+    private void setStreamColor() throws IOException {
         if (isSteamColorEnabled()) {
             //For AccuRev 6.0.x versions
             SetProperty.setproperty(scm, accurevWorkingSpace, listener, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "style");
@@ -309,7 +301,7 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    protected boolean populate(boolean populateRequired) {
+    protected boolean populate(boolean populateRequired) throws IOException {
         if (populateRequired) {
             PopulateCmd pop = new PopulateCmd();
             if (pop.populate(scm, launcher, listener, server, getPopulateStream(), true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
@@ -324,7 +316,7 @@ public abstract class AbstractModeDelegate {
 
     }
 
-    protected boolean populate() {
+    protected boolean populate() throws IOException {
         return populate(isPopulateRequired());
     }
 

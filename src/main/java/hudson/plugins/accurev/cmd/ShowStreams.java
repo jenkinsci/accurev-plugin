@@ -54,7 +54,7 @@ public class ShowStreams extends Command {
                                                             final Map<String, String> accurevEnv, //
                                                             final FilePath workspace, //
                                                             final TaskListener listener, //
-                                                            final Launcher launcher) {
+                                                            final Launcher launcher) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("show");
         addServer(cmd, server);
@@ -74,7 +74,7 @@ public class ShowStreams extends Command {
                                                                     final Map<String, String> accurevEnv, //
                                                                     final FilePath workspace, //
                                                                     final TaskListener listener, //
-                                                                    final Launcher launcher) {
+                                                                    final Launcher launcher) throws IOException {
         final Map<String, AccurevStream> streams = new HashMap<>();
         String streamName = nameOfStreamRequired;
         while (streamName != null && !streamName.isEmpty()) {
@@ -101,7 +101,7 @@ public class ShowStreams extends Command {
                                                            final Map<String, String> accurevEnv, //
                                                            final FilePath workspace, //
                                                            final TaskListener listener, //
-                                                           final Launcher launcher) {
+                                                           final Launcher launcher) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("show");
         addServer(cmd, server);
@@ -117,10 +117,11 @@ public class ShowStreams extends Command {
 
     private static void setParents(Map<String, AccurevStream> streams) {
         //build the tree
-        streams.values()
-                .stream()
-                .filter(stream -> stream.getBasisName() != null)
-                .forEach(stream -> stream.setParent(streams.get(stream.getBasisName())));
+        if (streams != null && streams.size() > 1)
+            streams.values()
+                    .stream()
+                    .filter(stream -> stream.getBasisName() != null)
+                    .forEach(stream -> stream.setParent(streams.get(stream.getBasisName())));
     }
 
     //Populating streams dynamically in the global config page
@@ -129,7 +130,7 @@ public class ShowStreams extends Command {
                                                           final AccurevServer server,
                                                           final String depot,
                                                           final ComboBoxModel cbm
-    ) {
+    ) throws IOException {
 
         if (StringUtils.isEmpty(depot)) return cbm;
 

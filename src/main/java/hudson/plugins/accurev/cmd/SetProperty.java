@@ -8,6 +8,7 @@ import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -25,7 +26,7 @@ public class SetProperty extends Command {
             final String streamOrWorkspaceName,
             final String colorCode,
             final String propertyName
-    ) {
+    ) throws IOException {
 
         String propertyValue = "<style><color><background-color>" + colorCode + "</background-color></color></style>";
 

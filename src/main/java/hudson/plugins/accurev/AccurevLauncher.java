@@ -1,5 +1,6 @@
 package hudson.plugins.accurev;
 
+import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
@@ -52,6 +53,7 @@ public final class AccurevLauncher {
      *                                                  will also be copied to the listener if the command is
      *                                                  successful.
      * @return <code>true</code> if the command succeeded.
+     * @throws IOException handle it above
      */
     public static boolean runCommand(//
                                      final String humanReadableCommandName, //
@@ -62,7 +64,7 @@ public final class AccurevLauncher {
                                      final FilePath directoryToRunCommandFrom, //
                                      final TaskListener listenerToLogFailuresTo, //
                                      final Logger loggerToLogFailuresTo, //
-                                     final boolean... optionalFlagToCopyAllOutputToTaskListener) {
+                                     final boolean... optionalFlagToCopyAllOutputToTaskListener) throws IOException {
         final Boolean result;
         final boolean shouldLogEverything = optionalFlagToCopyAllOutputToTaskListener != null
                 && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
@@ -102,6 +104,7 @@ public final class AccurevLauncher {
      * @param commandOutputParser             Command output parser
      * @param commandOutputParserContext      Context of Command output parser
      * @return See above.
+     * @throws IOException handle it above
      */
     public static <TResult, TContext> TResult runCommand(//
                                                          final String humanReadableCommandName, //
@@ -114,7 +117,7 @@ public final class AccurevLauncher {
                                                          final Logger loggerToLogFailuresTo, //
                                                          final XmlPullParserFactory xmlParserFactory, //
                                                          final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
-                                                         final TContext commandOutputParserContext) {
+                                                         final TContext commandOutputParserContext) throws IOException {
         return runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                 synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                 listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
@@ -169,6 +172,7 @@ public final class AccurevLauncher {
      * @param commandOutputParserContext      Data to be passed to the parser.
      * @return The data returned by the {@link ICmdOutputParser}, or
      * <code>null</code> if an error occurred.
+     * @throws IOException handle it above
      */
     public static <TResult, TContext> TResult runCommand(//
                                                          final String humanReadableCommandName, //
@@ -180,7 +184,7 @@ public final class AccurevLauncher {
                                                          final TaskListener listenerToLogFailuresTo, //
                                                          final Logger loggerToLogFailuresTo, //
                                                          final ICmdOutputParser<TResult, TContext> commandOutputParser, //
-                                                         final TContext commandOutputParserContext) {
+                                                         final TContext commandOutputParserContext) throws IOException {
         final ByteArrayStream stdout = new ByteArrayStream();
         final ByteArrayStream stderr = new ByteArrayStream();
         try {
@@ -265,7 +269,7 @@ public final class AccurevLauncher {
                                           final InputStream commandStdoutOrNull, //
                                           final InputStream commandStderrOrNull, //
                                           final Logger loggerToLogFailuresTo, //
-                                          final TaskListener taskListener) {
+                                          final TaskListener taskListener) throws IOException {
         final String msg = commandDescription + " (" + command.toString() + ")" + " failed with exit code " + commandExitCode;
         String stderr = null;
         try {
@@ -322,7 +326,7 @@ public final class AccurevLauncher {
                                             final String commandDescription, //
                                             final Throwable exception, //
                                             final Logger loggerToLogFailuresTo, //
-                                            final TaskListener taskListener) {
+                                            final TaskListener taskListener) throws IOException {
         final String hostname = getRemoteHostname(directoryToRunCommandFrom);
         final String msg = hostname + ": " + commandDescription + " (" + command.toString() + ")"
                 + " failed with " + exception.toString();
@@ -333,7 +337,7 @@ public final class AccurevLauncher {
                              final String summary, //
                              final Throwable exception, //
                              final Logger logger, //
-                             final TaskListener taskListener) {
+                             final TaskListener taskListener) throws IOException {
         if (logger != null) {
             // TODO: Log the machine name to the Logger as well.
             logger.log(Level.SEVERE, exception.getMessage(), exception);
@@ -341,6 +345,7 @@ public final class AccurevLauncher {
         if (taskListener != null) {
             taskListener.fatalError(summary);
             exception.printStackTrace(taskListener.getLogger());
+            throw new AbortException(exception.getMessage());
         }
     }
 

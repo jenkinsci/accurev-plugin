@@ -9,7 +9,7 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class ShowDepots extends Command {
     public static List<String> getDepots(//
                                          final AccurevServer server,
                                          final Logger descriptorLogger
-    ) {
+    ) throws IOException {
 
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
 

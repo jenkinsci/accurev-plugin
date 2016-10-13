@@ -95,6 +95,7 @@ public class ChangeLogCmd {
      * @param logger     logger
      * @param scm        Accurev SCM
      * @return webURL
+     * @throws IOException Handle it above
      */
 
     public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServer server,
@@ -103,7 +104,7 @@ public class ChangeLogCmd {
                                                               TaskListener listener,
                                                               Launcher launcher,
                                                               Logger logger,
-                                                              AccurevSCM scm) {
+                                                              AccurevSCM scm) throws IOException {
         final ArgumentListBuilder getConfigCmd = new ArgumentListBuilder();
         getConfigCmd.add("getconfig");
         Command.addServer(getConfigCmd, server);
@@ -111,15 +112,9 @@ public class ChangeLogCmd {
         getConfigCmd.add("-r");
         getConfigCmd.add("settings.xml");
 
-        try {
-            return AccurevLauncher.runCommand("Get config to fetch webURL",
-                    launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
-                    XmlParserFactory.getFactory(), new ParseGetConfig(), null);
-        } catch (Exception e) {
-            logger.warning("Error loading settings.xml");
-            // Error getting settings.xml file.
-        }
-        return null;
+        return AccurevLauncher.runCommand("Get config to fetch webURL",
+                launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
+                XmlParserFactory.getFactory(), new ParseGetConfig(), null);
 
     }
 
@@ -168,7 +163,7 @@ public class ChangeLogCmd {
             Transformer transformer = transformerFactory.newTransformer();
             StreamResult result = new StreamResult(changelogFile);
             transformer.transform(source, result);
-        } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
+        } catch (ParserConfigurationException | IOException | SAXException | TransformerException ignored) {
 
         }
     }
