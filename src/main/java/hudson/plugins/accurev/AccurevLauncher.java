@@ -187,9 +187,10 @@ public final class AccurevLauncher {
                                                          final Logger loggerToLogFailuresTo, //
                                                          final ICmdOutputParser<TResult, TContext> commandOutputParser, //
                                                          final TContext commandOutputParserContext) throws IOException {
-        final ByteArrayStream stdout = new ByteArrayStream();
-        final ByteArrayStream stderr = new ByteArrayStream();
-        try {
+
+
+        try (final ByteArrayStream stdout = new ByteArrayStream();
+             final ByteArrayStream stderr = new ByteArrayStream()){
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
             final ProcStarter starter = createProcess(launcher, machineReadableCommand,
@@ -214,14 +215,6 @@ public final class AccurevLauncher {
         } catch (InterruptedException | IOException ex) {
             logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
             return null;
-        } finally {
-            try {
-                stdout.close();
-                stderr.close();
-            } catch (IOException ex) {
-                logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex,
-                        loggerToLogFailuresTo, listenerToLogFailuresTo);
-            }
         }
     }
 

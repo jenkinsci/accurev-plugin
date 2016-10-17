@@ -44,9 +44,7 @@ public class XmlConsolidateStreamChangeLog {
     }
 
     public static void createChangeLog(List<String> streamFiles, File changeLogFile, String updateFile) throws IOException {
-        FileOutputStream changeLogStream = null;
-        try {
-            changeLogStream = new FileOutputStream(changeLogFile);
+        try (FileOutputStream changeLogStream = new FileOutputStream(changeLogFile)) {
             XMLOutputFactory outputFactory = getFactory();
             XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(changeLogStream);
             streamWriter.writeStartDocument();
@@ -66,15 +64,6 @@ public class XmlConsolidateStreamChangeLog {
         } catch (FileNotFoundException | XMLStreamException ex) {
             AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
                     logger, null);
-        } finally {
-            try {
-                if (changeLogStream != null) {
-                    changeLogStream.close();
-                }
-            } catch (IOException ex) {
-                AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
-                        logger, null);
-            }
         }
 
     }
