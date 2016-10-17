@@ -43,6 +43,9 @@ public final class Password {
 
     @SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
     public static String obfuscate(String s) {
+        if (StringUtils.isEmpty(s)) {
+            return "";
+        }
         StringBuffer buf = new StringBuffer();
         byte[] b = new byte[0];
         try {
@@ -76,7 +79,7 @@ public final class Password {
 
     public static String deobfuscate(String s) {
         if (s.startsWith(__OBFUSCATE))
-            s = s.substring(4);
+            s = s.substring(__OBFUSCATE.length());
         if (StringUtils.isEmpty(s)) return "";
         byte[] b = new byte[s.length() / 2];
         int l = 0;
