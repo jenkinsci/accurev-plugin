@@ -16,11 +16,15 @@ public class ParseGetConfig implements ICmdOutputXmlParser<Map<String, GetConfig
             throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         final Map<String, GetConfigWebURL> getConfig = new HashMap<>();
         getConfig.put("webuiURL", new GetConfigWebURL(""));
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
-            if (parser.getEventType() == XmlPullParser.START_TAG && "webui".equalsIgnoreCase(parser.getName())) {
-                final String webURL = parser.getAttributeValue("", "url");
-                if (webURL != null) getConfig.put("webuiURL", new GetConfigWebURL(webURL));
+        try {
+            while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                if (parser.getEventType() == XmlPullParser.START_TAG && "webui".equalsIgnoreCase(parser.getName())) {
+                    final String webURL = parser.getAttributeValue("", "url");
+                    if (webURL != null) getConfig.put("webuiURL", new GetConfigWebURL(webURL));
+                }
             }
+        } catch (EOFException ignored) {
+            //file not found
         }
         return getConfig;
     }
