@@ -17,6 +17,8 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import javax.annotation.CheckForNull;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -248,12 +250,11 @@ public final class AccurevLauncher {
         String accurevPath = directoryToRunCommandFrom.act(new FindAccurevClientExe());
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
-        Computer c = Computer.currentComputer();
-        Node n = c == null ? Jenkins.getInstance() : c.getNode();
+        Node n = workspaceToNode(directoryToRunCommandFrom);
         String path = null;
         FilePath filePath = null;
-        if (n != null) filePath = n.getRootPath();
-        if (filePath != null) path = filePath.getRemote();
+        if (null != n) filePath = n.getRootPath();
+        if (null != filePath) path = filePath.getRemote();
         if (StringUtils.isNotBlank(path)) environmentVariables.putIfAbsent("ACCUREV_HOME", path);
         starter = starter.envs(environmentVariables);
         starter = starter.stdout(stdoutStream).stderr(stderrStream);
@@ -373,6 +374,46 @@ public final class AccurevLauncher {
         } catch (InterruptedException e) {
             return e.toString();
         }
+    }
+
+    @CheckForNull
+    public static Computer workspaceToComputer(FilePath workspace) {
+        Jenkins j = Jenkins.getInstance();
+        if (workspace.isRemote()) {
+            for (Computer c : j.getComputers()) {
+                if (c.getChannel() == workspace.getChannel()) {
+                    return c;
+                }
+            }
+        }
+        return j.getComputer("");
+    }
+
+    @CheckForNull
+    public static Node workspaceToNode(FilePath workspace) {
+        Computer c = workspaceToComputer(workspace);
+        Node n = null;
+        if (null != c) n = c.getNode();
+        if (null != n) return n;
+        return Jenkins.getInstance();
+    }
+
+    public static boolean isUnix(FilePath workspace) {
+        // if the path represents a local path, there' no need to guess.
+        if (!workspace.isRemote())
+            return File.pathSeparatorChar != ';';
+
+        String remote = workspace.getRemote();
+
+        // note that we can't use the usual File.pathSeparator and etc., as the OS of
+        // the machine where this code runs and the OS that this FilePath refers to may be different.
+
+        // Windows absolute path is 'X:\...', so this is usually a good indication of Windows path
+        if (remote.length() > 3 && remote.charAt(1) == ':' && remote.charAt(2) == '\\')
+            return false;
+        // Windows can handle '\' as a path separator but Unix can't,
+        // so err on Unix side
+        return !remote.contains("\\");
     }
 
     /**
