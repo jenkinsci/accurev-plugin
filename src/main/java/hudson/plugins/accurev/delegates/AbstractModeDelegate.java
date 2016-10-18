@@ -139,12 +139,7 @@ public abstract class AbstractModeDelegate {
     public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
                             File changelogFile) throws IOException, InterruptedException {
 
-        try {
-            setup(launcher, jenkinsWorkspace, listener);
-        } catch (IllegalArgumentException ex) {
-            build.setResult(Result.FAILURE);
-            return false;
-        }
+        setup(launcher, jenkinsWorkspace, listener);
 
         if (!accurevWorkingSpace.exists()) {
             accurevWorkingSpace.mkdirs();
@@ -168,13 +163,12 @@ public abstract class AbstractModeDelegate {
         final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener,
                 launcher);
         if (streams == null) {
-            build.setResult(Result.FAILURE);
-            return false;
+            throw new IllegalStateException("Stream(s) not found");
         }
 
         if (!streams.containsKey(localStream)) {
             listener.fatalError("The specified stream, '" + localStream + "' does not appear to exist!");
-            return false;
+            throw new IllegalStateException("Specified stream not found");
         }
 
         if (server.isUseColor()) {

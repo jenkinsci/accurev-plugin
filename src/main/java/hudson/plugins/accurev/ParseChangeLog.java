@@ -121,6 +121,7 @@ public class ParseChangeLog extends ChangeLogParser {
         return transactions;
     }
 
+    // TODO: Reduce complexity
     @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT")
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile, UpdateLog updateLog) throws IOException, XmlPullParserException {
         List<AccurevTransaction> transactions = new ArrayList<>();

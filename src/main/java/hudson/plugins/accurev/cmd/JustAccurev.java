@@ -1,17 +1,9 @@
 package hudson.plugins.accurev.cmd;
 
-import hudson.Launcher;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevLauncher;
 import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class JustAccurev {
@@ -31,12 +23,10 @@ public class JustAccurev {
         } catch (IOException e) {
             return false;
         }
-        try (InputStream stdout = accurevprocess.getInputStream()){
+        try (InputStream stdout = accurevprocess.getInputStream()) {
             accurevprocess.waitFor();
             return accurevprocess.exitValue() == 0;
-        } catch (InterruptedException e) {
-            return false;
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             return false;
         }
 

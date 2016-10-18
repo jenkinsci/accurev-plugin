@@ -17,6 +17,7 @@ import org.apache.commons.jelly.XMLOutput;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -111,7 +112,6 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public boolean checkForChanges(String promoteDepot, String promoteStream) {
         final Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) return false;
 
         try (StreamTaskListener listener = new StreamTaskListener(getLogFile())) {
             PrintStream logger = listener.getLogger();
@@ -129,9 +129,8 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
                 final Map<String, String> accurevEnv = delegate.getAccurevEnv();
                 String localStream = delegate.getPollingStream(job);
-                String accurevPath = accurevEnv.get("ACCUREV_CLIENT_PATH");
 
-                final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, accurevPath, launcher);
+                final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, launcher);
                 if (streams == null) {
                     listener.fatalError("streams EMPTY");
                     return false;
@@ -175,6 +174,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             return true;
         }
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Build when a change is promoted to AccuRev";

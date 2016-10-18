@@ -190,7 +190,7 @@ public final class AccurevLauncher {
 
 
         try (final ByteArrayStream stdout = new ByteArrayStream();
-             final ByteArrayStream stderr = new ByteArrayStream()){
+             final ByteArrayStream stderr = new ByteArrayStream()) {
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
             final ProcStarter starter = createProcess(launcher, machineReadableCommand,
@@ -333,8 +333,7 @@ public final class AccurevLauncher {
                              final Logger logger, //
                              final TaskListener taskListener) throws IOException {
         if (logger != null) {
-            // TODO: Log the machine name to the Logger as well.
-            logger.log(Level.SEVERE, exception.getMessage(), exception);
+            logger.log(Level.SEVERE, summary, exception);
         }
         if (taskListener != null) {
             taskListener.fatalError(summary);

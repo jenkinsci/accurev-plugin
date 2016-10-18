@@ -686,15 +686,13 @@ public class AccurevSCM extends SCM {
     // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer implements Serializable {
 
-        public static final String VTT_DELIM = ",";
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
-        public static final String DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
+        public static final String[] DEFAULT_VALID_STREAM_TRANSACTION_TYPES = {"chstream", "defcomp", "mkstream", "promote"};
+        public static final String[] DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = {"add", "chstream", "co", "defcomp", "defunct", "keep", "mkstream", "move", "promote", "purge", "dispatch"};
         private static final long serialVersionUID = 3270850408409304611L;
         // keep all transaction types in a set for validation
-        private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
-                .split(VTT_DELIM)));
+        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
+        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
         private UUID uuid;
         private String name;
         private String host;
@@ -800,7 +798,7 @@ public class AccurevSCM extends SCM {
          * @return Value for property 'password'.
          */
         public String getPassword() {
-            return Password.deobfuscate(password);
+            return Password.deobfuscate(password); //TODO: Use Credentials plugin
         }
 
         /**
@@ -863,10 +861,10 @@ public class AccurevSCM extends SCM {
 
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
                 throws IOException, ServletException {
-            final String[] formValidTypes = value.split(VTT_DELIM);
+            final String[] formValidTypes = value.split(",");
             for (final String formValidType : formValidTypes) {
                 if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {
-                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + VTT_LIST);
+                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + Arrays.toString(VTT_LIST));
                 }
             }
             return FormValidation.ok();
