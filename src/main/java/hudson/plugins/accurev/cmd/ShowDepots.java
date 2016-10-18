@@ -1,12 +1,12 @@
 package hudson.plugins.accurev.cmd;
 
 import hudson.Launcher;
+import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowDepots;
 import hudson.util.ArgumentListBuilder;
-import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class ShowDepots extends Command {
         cmd.add("depots");
 
         Jenkins jenkins = Jenkins.getInstance();
-        StreamTaskListener listener = StreamTaskListener.fromStdout();
+        TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         Map<String, String> accurevEnv = new HashMap<>();
         return AccurevLauncher.runCommand("show depots command", launcher, cmd, null,

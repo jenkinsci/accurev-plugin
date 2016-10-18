@@ -11,7 +11,6 @@ import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ComboBoxModel;
-import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
@@ -135,7 +134,7 @@ public class ShowStreams extends Command {
         if (StringUtils.isEmpty(depot)) return cbm;
 
         Jenkins jenkins = Jenkins.getInstance();
-        StreamTaskListener listener = StreamTaskListener.fromStdout();
+        TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         Map<String, String> accurevEnv = new HashMap<>();
         List<String> streamNames = getAllStreams(server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher)
