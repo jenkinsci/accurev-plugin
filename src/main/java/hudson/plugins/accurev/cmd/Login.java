@@ -90,7 +90,7 @@ public class Login extends Command {
         }
         cmd.add(server.getUsername());
         if (StringUtils.isEmpty(server.getPassword())) {
-            cmd.add('"' + '"', true);
+            cmd.addQuoted("", true);
         } else {
             cmd.add(server.getPassword(), true);
         }
