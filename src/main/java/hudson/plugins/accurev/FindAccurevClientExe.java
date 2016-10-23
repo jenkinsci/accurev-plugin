@@ -1,7 +1,7 @@
 package hudson.plugins.accurev;
 
 import hudson.FilePath;
-import hudson.plugins.accurev.cmd.JustAccurev;
+import hudson.Launcher;
 import hudson.remoting.VirtualChannel;
 import org.jenkinsci.remoting.RoleChecker;
 
@@ -34,8 +34,10 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
             "/local/bin/accurev",
             "/opt/accurev/bin/accurev",
             "/Applications/AccuRev/bin/accurev");
+    private Launcher launcher;
 
-    public FindAccurevClientExe() {
+    public FindAccurevClientExe(Launcher launcher) {
+        this.launcher = launcher;
     }
 
     private static String getExistingPath(List<String> paths) {
@@ -45,6 +47,14 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
             }
         }
         return "";
+    }
+
+    private static boolean justAccuRev(Launcher launcher, String osSpecificValue) {
+        try {
+            return launcher.launch().cmdAsSingleString(osSpecificValue).join() == 0;
+        } catch (IOException | InterruptedException e) {
+            return false;
+        }
     }
 
     /**
@@ -76,14 +86,14 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
         if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
             // we are running on windows
             accurevBinName = "accurev.exe";
-            if (!JustAccurev.justAccuRev(accurevBin + File.separator + accurevBinName)) {
+            if (!justAccuRev(launcher, accurevBin + File.separator + accurevBinName)) {
                 accurevPath = getExistingPath(DEFAULT_WIN_CMD_LOCATIONS);
             } else {
                 accurevPath = accurevBin + File.separator + accurevBinName;
             }
         } else {
             // we are running on *nix
-            if (!JustAccurev.justAccuRev(accurevBin + File.separator + accurevBinName)) {
+            if (!justAccuRev(launcher, accurevBin + File.separator + accurevBinName)) {
                 accurevPath = getExistingPath(DEFAULT_NIX_CMD_LOCATIONS);
             } else {
                 accurevPath = accurevBin + File.separator + accurevBinName;
@@ -92,7 +102,7 @@ public final class FindAccurevClientExe implements FilePath.FileCallable<String>
 
         if (accurevPath.isEmpty()) {
             // if we still don't have a path to the accurev client let's try the system path
-            if (JustAccurev.justAccuRev(accurevBinName)) {
+            if (justAccuRev(launcher, accurevBinName)) {
                 logger.fine("Using the AccuRev client we found on the system path.");
                 accurevPath = accurevBinName;
             } else {

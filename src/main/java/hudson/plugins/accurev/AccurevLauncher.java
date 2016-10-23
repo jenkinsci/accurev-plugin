@@ -187,8 +187,6 @@ public final class AccurevLauncher {
                                                          final Logger loggerToLogFailuresTo, //
                                                          final ICmdOutputParser<TResult, TContext> commandOutputParser, //
                                                          final TContext commandOutputParserContext) throws IOException {
-
-
         try (final ByteArrayStream stdout = new ByteArrayStream();
              final ByteArrayStream stderr = new ByteArrayStream()) {
             final OutputStream stdoutStream = stdout.getOutput();
@@ -240,7 +238,7 @@ public final class AccurevLauncher {
                                              final FilePath directoryToRunCommandFrom, //
                                              final OutputStream stdoutStream, //
                                              final OutputStream stderrStream) throws IOException, InterruptedException {
-        String accurevPath = directoryToRunCommandFrom.act(new FindAccurevClientExe());
+        String accurevPath = directoryToRunCommandFrom.act(new FindAccurevClientExe(launcher));
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
