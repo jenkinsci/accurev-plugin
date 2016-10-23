@@ -1,6 +1,7 @@
 package hudson.plugins.accurev;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
@@ -23,8 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +35,24 @@ import java.util.logging.Logger;
  * something parse their output.
  */
 public final class AccurevLauncher {
-    private static final Logger LOGGER = Logger.getLogger(FindAccurevClientExe.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
+    /**
+     * The default search paths for Windows clients.
+     */
+    private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(
+            "C:\\opt\\accurev\\bin\\accurev.exe",
+            "C:\\Program Files\\AccuRev\\bin\\accurev.exe",
+            "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
+    /**
+     * The default search paths for *nix clients
+     */
+    private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(
+            "/usr/local/bin/accurev",
+            "/usr/bin/accurev",
+            "/bin/accurev",
+            "/local/bin/accurev",
+            "/opt/accurev/bin/accurev",
+            "/Applications/AccuRev/bin/accurev");
 
     /**
      * Runs a command and returns <code>true</code> if it passed,
@@ -62,7 +80,7 @@ public final class AccurevLauncher {
                                      final Launcher launcher, //
                                      final ArgumentListBuilder machineReadableCommand, //
                                      final Lock synchronizationLockObjectOrNull, //
-                                     final Map<String, String> environmentVariables, //
+                                     final EnvVars environmentVariables, //
                                      final FilePath directoryToRunCommandFrom, //
                                      final TaskListener listenerToLogFailuresTo, //
                                      final Logger loggerToLogFailuresTo, //
@@ -86,7 +104,7 @@ public final class AccurevLauncher {
 
     /**
      * As
-     * {@link #runCommand(String, Launcher, ArgumentListBuilder, Lock, Map, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
+     * {@link #runCommand(String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
      * but uses an {@link ICmdOutputXmlParser} instead.
      *
      * @param <TResult>                       The type of the result returned by the parser.
@@ -113,7 +131,7 @@ public final class AccurevLauncher {
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
                                                          final Lock synchronizationLockObjectOrNull, //
-                                                         final Map<String, String> environmentVariables, //
+                                                         final EnvVars environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
                                                          final TaskListener listenerToLogFailuresTo, //
                                                          final Logger loggerToLogFailuresTo, //
@@ -181,7 +199,7 @@ public final class AccurevLauncher {
                                                          final Launcher launcher, //
                                                          final ArgumentListBuilder machineReadableCommand, //
                                                          final Lock synchronizationLockObjectOrNull, //
-                                                         final Map<String, String> environmentVariables, //
+                                                         final EnvVars environmentVariables, //
                                                          final FilePath directoryToRunCommandFrom, //
                                                          final TaskListener listenerToLogFailuresTo, //
                                                          final Logger loggerToLogFailuresTo, //
@@ -192,7 +210,7 @@ public final class AccurevLauncher {
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
             final ProcStarter starter = createProcess(launcher, machineReadableCommand,
-                    environmentVariables, directoryToRunCommandFrom, stdoutStream, stderrStream);
+                    environmentVariables, directoryToRunCommandFrom, listenerToLogFailuresTo, stdoutStream, stderrStream);
             logCommandExecution(humanReadableCommandName, machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
                     listenerToLogFailuresTo);
             try {
@@ -234,14 +252,15 @@ public final class AccurevLauncher {
     private static ProcStarter createProcess(//
                                              final Launcher launcher, //
                                              final ArgumentListBuilder machineReadableCommand, //
-                                             final Map<String, String> environmentVariables, //
+                                             final EnvVars environmentVariables, //
                                              final FilePath directoryToRunCommandFrom, //
-                                             final OutputStream stdoutStream, //
+                                             TaskListener listener, final OutputStream stdoutStream, //
                                              final OutputStream stderrStream) throws IOException, InterruptedException {
-        String accurevPath = directoryToRunCommandFrom.act(new FindAccurevClientExe(launcher));
+        String accurevPath = findAccurevExe(directoryToRunCommandFrom);
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
+        if (environmentVariables.isEmpty()) environmentVariables.putAll(fetchEnvVars(n, listener));
         String path = null;
         FilePath filePath = null;
         if (null != n) filePath = n.getRootPath();
@@ -366,26 +385,51 @@ public final class AccurevLauncher {
         }
     }
 
-    @CheckForNull
-    public static Computer workspaceToComputer(FilePath workspace) {
-        Jenkins j = Jenkins.getInstance();
-        if (workspace.isRemote()) {
-            for (Computer c : j.getComputers()) {
-                if (c.getChannel() == workspace.getChannel()) {
-                    return c;
-                }
-            }
+    public static EnvVars fetchEnvVars(Node node, TaskListener listener) throws IOException, InterruptedException {
+        EnvVars env;
+
+        if (node!=null) {
+            final Computer computer = node.toComputer();
+            env = (computer != null) ? computer.buildEnvironment(listener) : new EnvVars();
+        } else {
+            env = new EnvVars();
         }
-        return j.getComputer("");
+
+        // servlet container may have set CLASSPATH in its launch script,
+        // so don't let that inherit to the new child process.
+        // see http://www.nabble.com/Run-Job-with-JDK-1.4.2-tf4468601.html
+        env.put("CLASSPATH","");
+
+        return env;
+    }
+
+    public static String findAccurevExe(FilePath p) {
+        String exe;
+        if (isUnix(p)) {
+            exe = getExistingPath(p, DEFAULT_NIX_CMD_LOCATIONS);
+        } else {
+            exe = getExistingPath(p, DEFAULT_WIN_CMD_LOCATIONS);
+        }
+        return exe;
+    }
+
+    private static String getExistingPath(FilePath p, List<String> paths) {
+        for (final String path : paths) {
+            try {
+                if (new FilePath(p.getChannel(), path).exists()) {
+                    return path;
+                }
+            } catch (IOException | InterruptedException ignored) {}
+        }
+        return "";
     }
 
     @CheckForNull
     public static Node workspaceToNode(FilePath workspace) {
-        Computer c = workspaceToComputer(workspace);
-        Node n = null;
-        if (null != c) n = c.getNode();
-        if (null != n) return n;
-        return Jenkins.getInstance();
+        Computer computer = workspace.toComputer();
+        Node node = null;
+        if (null != computer) node = computer.getNode();
+        return null != node ? node : Jenkins.getInstance();
     }
 
     public static boolean isUnix(FilePath workspace) {

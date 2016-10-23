@@ -39,7 +39,7 @@ public abstract class AbstractModeDelegate {
     protected final AccurevSCM scm;
     protected Launcher launcher;
     protected AccurevSCM.AccurevServer server;
-    protected Map<String, String> accurevEnv;
+    protected EnvVars accurevEnv;
     protected FilePath jenkinsWorkspace;
     protected TaskListener listener;
     protected FilePath accurevWorkingSpace;
@@ -55,7 +55,7 @@ public abstract class AbstractModeDelegate {
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
         server = scm.getServer();
-        accurevEnv = new HashMap<>();
+        accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
             if (!Login.ensureLoggedInToAccurev(server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
@@ -156,6 +156,7 @@ public abstract class AbstractModeDelegate {
         }
 
         final EnvVars environment = build.getEnvironment(listener);
+        //accurevEnv.putAll(environment);
 
         localStream = environment.expand(scm.getStream());
 
@@ -269,7 +270,7 @@ public abstract class AbstractModeDelegate {
         return transaction;
     }
 
-    public Map<String, String> getAccurevEnv() {
+    public EnvVars getAccurevEnv() {
         return accurevEnv;
     }
 

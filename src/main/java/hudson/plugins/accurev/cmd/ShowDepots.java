@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
@@ -32,7 +33,7 @@ public class ShowDepots extends Command {
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
-        Map<String, String> accurevEnv = new HashMap<>();
+        EnvVars accurevEnv = new EnvVars();
         return AccurevLauncher.runCommand("show depots command", launcher, cmd, null,
                 accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, XmlParserFactory.getFactory(), new ParseShowDepots(), null);
     }

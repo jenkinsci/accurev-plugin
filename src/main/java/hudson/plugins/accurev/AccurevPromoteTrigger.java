@@ -1,9 +1,6 @@
 package hudson.plugins.accurev;
 
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.Util;
+import hudson.*;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import hudson.model.listeners.ItemListener;
@@ -127,7 +124,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
                 AccurevSCM.AccurevServer server = scm.getServer();
                 delegate.setup(launcher, jenkinsWorkspace, listener);
 
-                final Map<String, String> accurevEnv = delegate.getAccurevEnv();
+                final EnvVars accurevEnv = delegate.getAccurevEnv();
                 String localStream = delegate.getPollingStream(job);
 
                 final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, launcher);

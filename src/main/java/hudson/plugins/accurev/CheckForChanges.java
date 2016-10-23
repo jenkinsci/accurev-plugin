@@ -1,5 +1,6 @@
 package hudson.plugins.accurev;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -30,7 +31,7 @@ public class CheckForChanges {
      */
     //stream param is of type AccurevStream
     public static boolean checkStreamForChanges(AccurevServer server,
-                                                Map<String, String> accurevEnv,
+                                                EnvVars accurevEnv,
                                                 FilePath workspace,
                                                 TaskListener listener,
                                                 Launcher launcher,

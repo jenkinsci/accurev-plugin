@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
 public class ChangeLogCmd {
 
     public static boolean captureChangelog(AccurevServer server,
-                                           Map<String, String> accurevEnv,
+                                           EnvVars accurevEnv,
                                            FilePath workspace,
                                            TaskListener listener,
                                            Launcher launcher,
@@ -99,7 +100,7 @@ public class ChangeLogCmd {
      */
 
     public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServer server,
-                                                              Map<String, String> accurevEnv,
+                                                              EnvVars accurevEnv,
                                                               FilePath workspace,
                                                               TaskListener listener,
                                                               Launcher launcher,

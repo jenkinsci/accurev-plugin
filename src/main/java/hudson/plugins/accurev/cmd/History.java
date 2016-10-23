@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -13,7 +14,6 @@ import hudson.util.ArgumentListBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class History extends Command {
@@ -36,7 +36,7 @@ public class History extends Command {
     public static AccurevTransaction getLatestTransaction(//
                                                           final AccurevSCM scm, //
                                                           final AccurevServer server, //
-                                                          final Map<String, String> accurevEnv, //
+                                                          final EnvVars accurevEnv, //
                                                           final FilePath workspace, //
                                                           final TaskListener listener, //
                                                           final Launcher launcher, //

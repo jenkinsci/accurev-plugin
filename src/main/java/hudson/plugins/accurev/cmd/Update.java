@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -47,7 +48,7 @@ public class Update extends Command {
 
     public static Boolean hasChanges(AccurevSCM scm, //
                                      AccurevSCM.AccurevServer server, //
-                                     Map<String, String> accurevEnv, //
+                                     EnvVars accurevEnv, //
                                      FilePath workspace, //
                                      TaskListener listener, //
                                      Launcher launcher, //
@@ -95,7 +96,7 @@ public class Update extends Command {
 
     public static boolean performUpdate(final AccurevSCM scm, //
                                         final AccurevSCM.AccurevServer server, //
-                                        final Map<String, String> accurevEnv, //
+                                        final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
                                         final Launcher launcher, //

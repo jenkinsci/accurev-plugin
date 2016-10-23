@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -30,7 +31,7 @@ public class ShowStreams extends Command {
                                                         final AccurevSCM scm, //
                                                         final String nameOfStreamRequired, //
                                                         final AccurevServer server, //
-                                                        final Map<String, String> accurevEnv, //
+                                                        final EnvVars accurevEnv, //
                                                         final FilePath workspace, //
                                                         final TaskListener listener, //
                                                         final Launcher launcher) throws IOException, InterruptedException {
@@ -50,7 +51,7 @@ public class ShowStreams extends Command {
                                                             final AccurevServer server, //
                                                             final String depot, //
                                                             final Lock lock, //
-                                                            final Map<String, String> accurevEnv, //
+                                                            final EnvVars accurevEnv, //
                                                             final FilePath workspace, //
                                                             final TaskListener listener, //
                                                             final Launcher launcher) throws IOException {
@@ -70,7 +71,7 @@ public class ShowStreams extends Command {
                                                                     final AccurevServer server, //
                                                                     final String depot, //
                                                                     final Lock lock, //
-                                                                    final Map<String, String> accurevEnv, //
+                                                                    final EnvVars accurevEnv, //
                                                                     final FilePath workspace, //
                                                                     final TaskListener listener, //
                                                                     final Launcher launcher) throws IOException {
@@ -97,7 +98,7 @@ public class ShowStreams extends Command {
                                                            final AccurevServer server, //
                                                            final String depot, //
                                                            final Lock lock, //
-                                                           final Map<String, String> accurevEnv, //
+                                                           final EnvVars accurevEnv, //
                                                            final FilePath workspace, //
                                                            final TaskListener listener, //
                                                            final Launcher launcher) throws IOException {
@@ -136,7 +137,7 @@ public class ShowStreams extends Command {
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
-        Map<String, String> accurevEnv = new HashMap<>();
+        EnvVars accurevEnv = new EnvVars();
         List<String> streamNames = getAllStreams(server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher)
                 .values()
                 .stream()

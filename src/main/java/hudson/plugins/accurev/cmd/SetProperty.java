@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -9,7 +10,6 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class SetProperty extends Command {
@@ -21,7 +21,7 @@ public class SetProperty extends Command {
             final FilePath accurevWorkingSpace, //
             final TaskListener listener, //
             final Launcher launcher,
-            final Map<String, String> accurevEnv,
+            final EnvVars accurevEnv,
             final AccurevServer server,
             final String streamOrWorkspaceName,
             final String colorCode,

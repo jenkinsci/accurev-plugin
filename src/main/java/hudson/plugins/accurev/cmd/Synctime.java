@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -19,7 +20,7 @@ public class Synctime extends Command {
     public static boolean synctime(//
                                    final AccurevSCM scm,
                                    final AccurevServer server, //
-                                   final Map<String, String> accurevEnv, //
+                                   final EnvVars accurevEnv, //
                                    final FilePath workspace, //
                                    final TaskListener listener, //
                                    final Launcher launcher) throws IOException, InterruptedException {
