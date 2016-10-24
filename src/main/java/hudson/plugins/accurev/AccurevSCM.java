@@ -169,10 +169,26 @@ public class AccurevSCM extends SCM {
     /**
      * Getter for Accurev server
      *
-     * @return AccurevServer based on serverUUID
+     * @return AccurevServer based on serverUUID (or serverName if serverUUID is null)
      */
     public AccurevServer getServer() {
-        return DESCRIPTOR.getServer(serverUUID);
+        AccurevServer server;
+        if (serverUUID == null) {
+            final Logger log = Logger.getGlobal();
+            if (serverName == null) {
+                // No fallback
+                log.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
+                return null;
+            }
+            log.warning("Getting server by name (" + serverName + "), because UUID is not set.");
+            server = DESCRIPTOR.getServer(serverName);
+            if (server != null) {
+                this.setServerUUID(server.getUUID());
+            }
+        } else {
+            server = DESCRIPTOR.getServer(serverUUID);
+        }
+        return server;
     }
 
     /**

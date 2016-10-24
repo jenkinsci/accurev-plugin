@@ -20,8 +20,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static hudson.plugins.accurev.AccurevSCM.DESCRIPTOR;
-
 /**
  * Performs actual SCM operations
  */
@@ -56,7 +54,7 @@ public abstract class AbstractModeDelegate {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
-        server = DESCRIPTOR.getServer(scm.getServerUUID());
+        server = scm.getServer();
         accurevEnv = new HashMap<>();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
