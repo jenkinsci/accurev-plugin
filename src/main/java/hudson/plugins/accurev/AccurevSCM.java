@@ -183,10 +183,10 @@ public class AccurevSCM extends SCM {
             server = DESCRIPTOR.getServer(serverName);
             if (server != null) {
                 this.setServerUUID(server.getUUID());
+                DESCRIPTOR.save();
             }
         } else {
             server = DESCRIPTOR.getServer(serverUUID);
-            DESCRIPTOR.save();
         }
         return server;
     }
