@@ -156,7 +156,7 @@ public abstract class AbstractModeDelegate {
         }
 
         final EnvVars environment = build.getEnvironment(listener);
-        //accurevEnv.putAll(environment);
+        accurevEnv.putAll(environment);
 
         localStream = environment.expand(scm.getStream());
 
@@ -176,11 +176,11 @@ public abstract class AbstractModeDelegate {
             setStreamColor();
         }
 
-        return checkout(build, changelogFile) && populate() && captureChangeLog(build, changelogFile, streams, environment);
+        return checkout(build, changelogFile) && populate() && captureChangeLog(build, changelogFile, streams);
 
     }
 
-    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
+    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams) throws IOException, InterruptedException {
         try {
             AccurevTransaction latestTransaction = getLatestTransactionFromStreams(streams);
             if (latestTransaction == null) {
@@ -193,10 +193,10 @@ public abstract class AbstractModeDelegate {
             listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
 
             {
-                environment.put("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID);
-                environment.put("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate);
+                accurevEnv.put("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID);
+                accurevEnv.put("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate);
 
-                build.addAction(new AccuRevHiddenParametersAction(environment));
+                build.addAction(new AccuRevHiddenParametersAction(accurevEnv));
             }
 
         } catch (Exception e) {
