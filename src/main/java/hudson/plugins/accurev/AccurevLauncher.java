@@ -256,11 +256,12 @@ public final class AccurevLauncher {
                                              final FilePath directoryToRunCommandFrom, //
                                              TaskListener listener, final OutputStream stdoutStream, //
                                              final OutputStream stderrStream) throws IOException, InterruptedException {
-        String accurevPath = findAccurevExe(directoryToRunCommandFrom);
+        String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
-        if (environmentVariables.isEmpty()) environmentVariables.putAll(fetchEnvVars(n, listener));
+        // build environment if empty.
+        if (environmentVariables.isEmpty()) environmentVariables.putAll(buildEnvironment(n, listener));
         String path = null;
         FilePath filePath = null;
         if (null != n) filePath = n.getRootPath();
@@ -385,10 +386,9 @@ public final class AccurevLauncher {
         }
     }
 
-    public static EnvVars fetchEnvVars(Node node, TaskListener listener) throws IOException, InterruptedException {
+    public static EnvVars buildEnvironment(Node node, TaskListener listener) throws IOException, InterruptedException {
         EnvVars env;
-
-        if (node!=null) {
+        if (null != node) {
             final Computer computer = node.toComputer();
             env = (computer != null) ? computer.buildEnvironment(listener) : new EnvVars();
         } else {
@@ -397,20 +397,44 @@ public final class AccurevLauncher {
 
         // servlet container may have set CLASSPATH in its launch script,
         // so don't let that inherit to the new child process.
-        // see http://www.nabble.com/Run-Job-with-JDK-1.4.2-tf4468601.html
-        env.put("CLASSPATH","");
+        env.put("CLASSPATH", "");
 
         return env;
     }
 
-    public static String findAccurevExe(FilePath p) {
+    private static String separator(FilePath workspace) {
+        return isUnix(workspace) ? "/" : "\\";
+    }
+
+    private static String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
         String exe;
-        if (isUnix(p)) {
-            exe = getExistingPath(p, DEFAULT_NIX_CMD_LOCATIONS);
+        String binName = "accurev";
+        if (e.containsKey("ACCUREV_BIN")) {
+            exe = e.get("ACCUREV_BIN") + separator(workspace) + binName;
+            if (justAccurev(launcher, exe)) {
+                return exe;
+            }
+        }
+        if (e.containsKey("PATH")) {
+            exe = binName;
+            if (justAccurev(launcher, exe)) {
+                return exe;
+            }
+        }
+        if (isUnix(workspace)) {
+            exe = getExistingPath(workspace, DEFAULT_NIX_CMD_LOCATIONS);
         } else {
-            exe = getExistingPath(p, DEFAULT_WIN_CMD_LOCATIONS);
+            exe = getExistingPath(workspace, DEFAULT_WIN_CMD_LOCATIONS);
         }
         return exe;
+    }
+
+    private static boolean justAccurev(Launcher launcher, String exe) {
+        try {
+            return launcher.launch().cmdAsSingleString(exe).join() == 0;
+        } catch (IOException | InterruptedException e1) {
+            return false;
+        }
     }
 
     private static String getExistingPath(FilePath p, List<String> paths) {
@@ -419,7 +443,8 @@ public final class AccurevLauncher {
                 if (new FilePath(p.getChannel(), path).exists()) {
                     return path;
                 }
-            } catch (IOException | InterruptedException ignored) {}
+            } catch (IOException | InterruptedException ignored) {
+            }
         }
         return "";
     }
