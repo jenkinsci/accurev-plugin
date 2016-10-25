@@ -7,7 +7,7 @@ import hudson.model.InvisibleAction;
 
 public class AccuRevHiddenParametersAction extends InvisibleAction implements EnvironmentContributingAction {
 
-    private EnvVars values;
+    private final EnvVars values;
 
     public AccuRevHiddenParametersAction(EnvVars values) {
         this.values = values;

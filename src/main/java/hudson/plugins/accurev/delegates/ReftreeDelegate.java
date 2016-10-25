@@ -57,7 +57,6 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     protected Relocation checkForRelocation() throws IOException, InterruptedException {
-//      Map<String, AccurevStream> streams = null;
         final Map<String, AccurevReferenceTree> reftrees = getReftrees();
         String reftree = scm.getReftree();
         if (reftrees == null) {
@@ -70,17 +69,6 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         if (!scm.getDepot().equals(accurevReftree.getDepot())) {
             throw new IllegalArgumentException("The specified reference tree, " + reftree + ", is based in the depot " + accurevReftree.getDepot() + " not " + scm.getDepot());
         }
-
-//        Redundant null check of value known to be null, remove? Since comment below suggests we are not using this.
-//        if (streams != null) {
-//            // Dont think we really use this can avoid the call
-//            for (AccurevStream accurevStream : streams.values()) {
-//                if (accurevReftree.getStreamNumber().equals(accurevStream.getNumber())) {
-//                    accurevReftree.setStream(accurevStream);
-//                    break;
-//                }
-//            }
-//        }
 
         RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
 
@@ -95,7 +83,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
 
     }
 
-    protected RemoteWorkspaceDetails getRemoteWorkspaceDetails() throws IOException, InterruptedException {
+    protected RemoteWorkspaceDetails getRemoteWorkspaceDetails() throws InterruptedException {
         try {
             return jenkinsWorkspace.act(new DetermineRemoteHostname(accurevWorkingSpace.getRemote()));
         } catch (IOException e) {
@@ -104,18 +92,21 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         }
     }
 
-    private Map<String, AccurevReferenceTree> getReftrees()
-            throws IOException, InterruptedException {
+    /**
+     * Builds a command which gets executed and retrieves the following return data
+     * @return Map with Reference Tree name as key and Reference Tree Object as value.
+     * @throws IOException Failed to execute command or Parse data.
+     */
+    private Map<String, AccurevReferenceTree> getReftrees() throws IOException {
         listener.getLogger().println("Getting a list of reference trees...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("show");
         Command.addServer(cmd, server);
         cmd.add("-fx");
         cmd.add("refs");
-        final Map<String, AccurevReferenceTree> reftrees = AccurevLauncher.runCommand("Show ref trees command",
+        return AccurevLauncher.runCommand("Show ref trees command",
                 launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
                 XmlParserFactory.getFactory(), new ParseShowReftrees(), null);
-        return reftrees;
     }
 
     @Override

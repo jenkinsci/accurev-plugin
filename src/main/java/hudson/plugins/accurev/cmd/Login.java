@@ -33,9 +33,9 @@ public class Login extends Command {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("info");
         addServer(cmd, server);
-        final String username = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
+        // returns username
+        return AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
                 workspace, listener, logger, new ParseInfoToLoginName(), null);
-        return username;
     }
 
     public static boolean ensureLoggedInToAccurev(AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
@@ -80,7 +80,7 @@ public class Login extends Command {
                                         final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
-                                        final Launcher launcher) throws IOException, InterruptedException {
+                                        final Launcher launcher) throws IOException {
         listener.getLogger().println("Authenticating with Accurev server...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("login");

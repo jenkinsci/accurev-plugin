@@ -55,7 +55,7 @@ public class Update extends Command {
                                      FilePath workspace, //
                                      TaskListener listener, //
                                      Launcher launcher, //
-                                     String reftree) throws IOException, InterruptedException {
+                                     String reftree) throws IOException {
 
         List<String> files = new ArrayList<>();
         final ArgumentListBuilder cmd = createCommand(server, true, reftree, false);
@@ -104,7 +104,7 @@ public class Update extends Command {
                                         final TaskListener listener, //
                                         final Launcher launcher, //
                                         final String reftree,
-                                        File changelogFile) throws IOException, InterruptedException {
+                                        File changelogFile) throws IOException {
         final ArgumentListBuilder cmd = createCommand(server, false, reftree, false);
         final Boolean result = AccurevLauncher.runCommand("Update command", launcher,
                 cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,

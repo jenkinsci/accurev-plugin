@@ -87,8 +87,7 @@ public enum AccurevMode {
 
     public static AbstractModeDelegate findDelegate(AccurevSCM accurevSCM) {
         AccurevMode accurevMode = findMode(accurevSCM);
-        AbstractModeDelegate delegate = accurevMode.createDelegate(accurevSCM);
-        return delegate;
+        return accurevMode.createDelegate(accurevSCM);
     }
 
     public static AccurevMode findMode(AccurevSCM accurevSCM) {

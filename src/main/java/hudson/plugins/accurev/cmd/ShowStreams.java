@@ -34,7 +34,7 @@ public class ShowStreams extends Command {
                                                         final EnvVars accurevEnv, //
                                                         final FilePath workspace, //
                                                         final TaskListener listener, //
-                                                        final Launcher launcher) throws IOException, InterruptedException {
+                                                        final Launcher launcher) throws IOException {
         final Map<String, AccurevStream> streams;
         if (scm.isIgnoreStreamParent()) {
             streams = getOneStream(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);

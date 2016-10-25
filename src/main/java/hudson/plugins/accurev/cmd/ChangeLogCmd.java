@@ -45,7 +45,7 @@ public class ChangeLogCmd {
                                            File changelogFile,
                                            Logger logger,
                                            AccurevSCM scm,
-                                           Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
+                                           Map<String, GetConfigWebURL> webURL) throws IOException {
         final String accurevACSYNCEnvVar = "AC_SYNC";
         if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
             final String accurevACSYNC = "IGNORE";

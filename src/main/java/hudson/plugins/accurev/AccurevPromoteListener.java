@@ -14,10 +14,10 @@ import java.util.logging.Logger;
  */
 public class AccurevPromoteListener implements MqttCallback {
     private static final Logger LOGGER = Logger.getLogger(AccurevPromoteListener.class.getName());
+    private final String host;
+    private final HashSet<AccurevPromoteTrigger> triggers = new HashSet<>();
     private MqttAsyncClient client;
     private MqttConnectOptions conOpt;
-    private String host;
-    private HashSet<AccurevPromoteTrigger> triggers = new HashSet<>();
 
     public AccurevPromoteListener(String host) {
         this.host = host;
@@ -49,9 +49,11 @@ public class AccurevPromoteListener implements MqttCallback {
             String promoteDepot = json.getString("depot");
             String promoteStream = json.getString("stream");
 
-            triggers.stream().filter(t -> t.checkForChanges(promoteDepot, promoteStream)).forEach(t -> {
-                t.scheduleBuild(promoteAuthor, promoteStream);
-            });
+            triggers.stream()
+                    //Filter promote triggers based on matching depot and stream
+                    .filter(t -> t.checkForChanges(promoteDepot, promoteStream))
+                    //Schedule triggers with matching depot and stream
+                    .forEach(t -> t.scheduleBuild(promoteAuthor, promoteStream));
         } catch (JSONException ex) {
             LOGGER.info("Failed to convert to JSON: " + ex.getMessage());
         } catch (Exception ex) {

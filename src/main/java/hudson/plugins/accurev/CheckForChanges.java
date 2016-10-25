@@ -30,7 +30,6 @@ public class CheckForChanges {
      * @param scm        Accurev SCm
      * @return if there are any new transactions in the stream since the last build was done
      * @throws IOException          if there is issues with files
-     * @throws InterruptedException if failed to interrupt properly
      */
     //stream param is of type AccurevStream
     public static boolean checkStreamForChanges(AccurevServer server,
@@ -41,8 +40,7 @@ public class CheckForChanges {
                                                 AccurevStream stream,
                                                 Date buildDate,
                                                 Logger logger,
-                                                AccurevSCM scm)
-            throws IOException, InterruptedException {
+                                                AccurevSCM scm) throws IOException {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         String filterForPollSCM = scm.getFilterForPollSCM();
         String subPath = scm.getSubPath();

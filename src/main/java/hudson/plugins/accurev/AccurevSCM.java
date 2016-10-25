@@ -1,6 +1,5 @@
 package hudson.plugins.accurev;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -23,7 +22,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,10 +57,10 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
+    private final boolean useReftree;
+    private final boolean useWorkspace;
+    private final boolean noWspaceNoReftree;
     private String serverUUID;
-    private boolean useReftree;
-    private boolean useWorkspace;
-    private boolean noWspaceNoReftree;
     private Job<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
@@ -536,7 +534,6 @@ public class AccurevSCM extends SCM {
          * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          * @see <a href="http://javadoc.jenkins-ci.org/hudson/model/Descriptor.html#newInstance(org.kohsuke.stapler.StaplerRequest)">newInstance</a>
          */
-        @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
         @Override
         public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
             String serverUUID = req.getParameter("_.serverUUID");
@@ -696,12 +693,12 @@ public class AccurevSCM extends SCM {
         // keep all transaction types in a set for validation
         private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
+        private final String name;
+        private final String host;
+        private final int port;
+        private final String username;
+        private final String password;
         private UUID uuid;
-        private String name;
-        private String host;
-        private int port;
-        private String username;
-        private String password;
         private String validTransactionTypes;
         private boolean syncOperations;
         private boolean minimiseLogins;
@@ -863,7 +860,7 @@ public class AccurevSCM extends SCM {
         }
 
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
-                throws IOException, ServletException {
+        {
             final String[] formValidTypes = value.split(",");
             for (final String formValidType : formValidTypes) {
                 if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {

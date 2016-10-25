@@ -49,7 +49,7 @@ public final class Password {
         StringBuffer buf = new StringBuffer();
         byte[] b = new byte[0];
         try {
-            b = (s == null) ? "".getBytes("UTF-8") : s.getBytes("UTF-8");
+            b = s.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }

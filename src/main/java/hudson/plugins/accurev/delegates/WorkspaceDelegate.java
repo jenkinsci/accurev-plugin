@@ -95,7 +95,12 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         return new Relocation(relocationOptions, remoteDetails.getHostName(), accurevWorkingSpace.getRemote(), localStream);
     }
 
-    private Map<String, AccurevWorkspace> getWorkspaces() throws IOException, InterruptedException {
+    /**
+     * Builds a command which gets executed and retrieves the following return data
+     * @return Map with Workspace name as key and Workspace Object as value.
+     * @throws IOException Failed to execute command or Parse data.
+     */
+    private Map<String, AccurevWorkspace> getWorkspaces() throws IOException {
         listener.getLogger().println("Getting a list of workspaces...");
         String depot = scm.getDepot();
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
@@ -105,9 +110,8 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("wspaces");
-        final Map<String, AccurevWorkspace> workspaces = AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, scm.getOptionalLock(),
+        return AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, scm.getOptionalLock(),
                 accurevEnv, jenkinsWorkspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowWorkspaces(), null);
-        return workspaces;
     }
 
     @Override
