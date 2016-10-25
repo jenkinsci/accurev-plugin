@@ -540,7 +540,8 @@ public class AccurevSCM extends SCM {
         @Override
         public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
             String serverUUID = req.getParameter("_.serverUUID");
-            String serverName = getServer(serverUUID).getName();
+            AccurevServer server = getServer(serverUUID);
+            String serverName = server == null ? "" : server.getName();
             return new AccurevSCM( //
                     serverUUID, //
                     serverName, //
@@ -607,6 +608,7 @@ public class AccurevSCM extends SCM {
 
         public AccurevServer getServer(String uuid) {
             if (uuid == null) {
+                logger.info("No server found. - getServer(NULL)");
                 return null;
             }
             for (AccurevServer server : this._servers) {
@@ -617,6 +619,7 @@ public class AccurevSCM extends SCM {
                     return server;
                 }
             }
+            logger.info("No server found.");
             return null;
         }
 

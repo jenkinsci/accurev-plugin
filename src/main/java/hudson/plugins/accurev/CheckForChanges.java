@@ -9,7 +9,10 @@ import hudson.plugins.accurev.cmd.History;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,7 +68,7 @@ public class CheckForChanges {
 
         final String FFPSCM_DELIM = ",";
 
-        Collection<String> Filter_For_Poll_SCM = null;
+        Collection<String> Filter_For_Poll_SCM;
         String FFPSCM_LIST = "";
         if (StringUtils.isNotEmpty(filterForPollSCM)) {
             FFPSCM_LIST = filterForPollSCM;

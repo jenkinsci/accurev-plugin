@@ -10,7 +10,6 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class Synctime extends Command {

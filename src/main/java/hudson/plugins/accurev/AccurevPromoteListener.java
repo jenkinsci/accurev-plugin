@@ -49,11 +49,9 @@ public class AccurevPromoteListener implements MqttCallback {
             String promoteDepot = json.getString("depot");
             String promoteStream = json.getString("stream");
 
-            for (AccurevPromoteTrigger t : triggers) {
-                if (t.checkForChanges(promoteDepot, promoteStream)) {
-                    t.scheduleBuild(promoteAuthor, promoteStream);
-                }
-            }
+            triggers.stream().filter(t -> t.checkForChanges(promoteDepot, promoteStream)).forEach(t -> {
+                t.scheduleBuild(promoteAuthor, promoteStream);
+            });
         } catch (JSONException ex) {
             LOGGER.info("Failed to convert to JSON: " + ex.getMessage());
         } catch (Exception ex) {

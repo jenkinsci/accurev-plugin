@@ -11,9 +11,7 @@ import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class ShowDepots extends Command {

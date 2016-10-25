@@ -13,8 +13,6 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class Login extends Command {
@@ -44,11 +42,12 @@ public class Login extends Command {
                                                   Launcher launcher) throws IOException, InterruptedException {
 
         if (server == null) {
+            listener.getLogger().println("Authentication failure - Server is empty");
             return false;
         }
         final String requiredUsername = server.getUsername();
         if (StringUtils.isBlank(requiredUsername)) {
-            listener.getLogger().println("Authentication failure");
+            listener.getLogger().println("Authentication failure - Username blank");
             return false;
         }
         AccurevSCMDescriptor.lock();
@@ -56,7 +55,7 @@ public class Login extends Command {
             final boolean loginRequired;
             if (server.isMinimiseLogins()) {
                 final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
-                if (currentUsername == null) {
+                if (StringUtils.isEmpty(currentUsername)) {
                     loginRequired = true;
                     listener.getLogger().println("Not currently authenticated with Accurev server");
                 } else {
