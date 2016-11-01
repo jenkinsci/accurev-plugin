@@ -14,6 +14,7 @@ import org.apache.commons.jelly.XMLOutput;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     @Override
     public void start(AbstractProject<?, ?> project, boolean newInstance) {
         super.start(project, newInstance);
-        String host = getHost();
+        String host = getServer().getHost();
         if (StringUtils.isNotEmpty(host)) {
             initServer(host);
             AccurevPromoteListener listener = listeners.get(host);
@@ -67,7 +68,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public void stop() {
-        String host = getHost();
+        String host = getServer().getHost();
         if (StringUtils.isNotEmpty(host)) {
             AccurevPromoteListener listener = listeners.get(host);
             listener.removeTrigger(this);
@@ -87,8 +88,13 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return getScm() == null ? "" : getScm().getStream();
     }
 
-    public String getHost() {
-        return getScm() == null ? "" : getScm().getServer().getHost();
+
+    public AccurevSCM.AccurevServer getServer() {
+        AccurevSCM scm = getScm();
+        if (null != scm) {
+            return scm.getServer();
+        }
+        return null;
     }
 
     public void scheduleBuild(String author, String stream) {
@@ -100,6 +106,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return (DescriptorImpl) super.getDescriptor();
     }
 
+    @CheckForNull
     public AccurevSCM getScm() {
         if (job != null && job.getScm() instanceof AccurevSCM) {
             return (AccurevSCM) job.getScm();
@@ -117,7 +124,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             if (getStream().equals(promoteStream)) {
                 logger.println("Matching stream: " + promoteStream);
                 return true;
-            } else if (getDepot().equals(promoteDepot)) {
+            } else if (getDepot().equals(promoteDepot) && !scm.isIgnoreStreamParent()) {
                 AbstractModeDelegate delegate = AccurevMode.findDelegate(scm);
                 FilePath jenkinsWorkspace = new FilePath(job.getRootDir());
                 Launcher launcher = jenkins.createLauncher(listener);
@@ -152,6 +159,29 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return false;
     }
 
+    public static void validateListeners() {
+        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+            if (server.isUsePromoteListen()) {
+                initServer(server.getHost());
+            }
+        }
+        for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
+            AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
+            if (t != null) {
+                if (t.getServer().isUsePromoteListen()) {
+                    String host = t.getServer().getHost();
+                    if (StringUtils.isNotEmpty(host)) {
+                        AccurevPromoteListener listener = listeners.get(host);
+                        if (null != listener) {
+                            listener.addTrigger(t);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private File getLogFile() {
         return new File(job.getRootDir(), "accurev-promote-trigger.log");
     }
@@ -182,20 +212,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
             @Override
             public void onLoaded() {
-                AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
-                for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
-                    initServer(server.getHost());
-                }
-                for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
-                    AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
-                    if (t != null) {
-                        String host = t.getHost();
-                        if (StringUtils.isNotEmpty(host)) {
-                            AccurevPromoteListener listener = listeners.get(host);
-                            listener.addTrigger(t);
-                        }
-                    }
-                }
+                validateListeners();
             }
         }
     }
@@ -225,6 +242,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             return Util.loadFile(getLogFile());
         }
 
+        @SuppressWarnings("unused") // Used by Jetty
         public void writeLogTo(XMLOutput out) throws IOException {
             new AnnotatedLargeText<>(getLogFile(), StandardCharsets.UTF_8, true, this)
                     .writeHtmlTo(0, out.asWriter());

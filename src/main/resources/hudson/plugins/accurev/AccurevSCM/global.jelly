@@ -42,6 +42,9 @@
                         <f:entry title="Enable reset Color" help="/plugin/accurev/help/use-color.html">
                             <f:checkbox name="server.useColor" checked="${server.useColor}" default="false" />
                         </f:entry>
+                        <f:entry title="Enable Post Promote Listener" help="/plugin/accurev/help/use-promote-listen.html">
+                            <f:checkbox name="server.usePromoteListen" checked="${server.usePromoteListen}" default="false" />
+                        </f:entry>
                     </f:advanced>
                 </table>
                 <div align="right">

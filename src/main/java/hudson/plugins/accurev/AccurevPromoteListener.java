@@ -7,6 +7,7 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.HashSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -37,12 +38,13 @@ public class AccurevPromoteListener implements MqttCallback {
     }
 
     public void connectionLost(Throwable throwable) {
-        LOGGER.warning("Connection Lost");
+        LOGGER.log(Level.WARNING,"Connection Lost", throwable);
+        LOGGER.severe(throwable.getMessage());
         setupConnection();
     }
 
     public void messageArrived(String topic, MqttMessage message) {
-        LOGGER.info("Incoming Message: " + message.toString());
+        LOGGER.fine("Incoming Message: " + message.toString());
         try {
             JSONObject json = (JSONObject) JSONSerializer.toJSON(message.toString());
             String promoteAuthor = json.getString("principal");
@@ -55,7 +57,7 @@ public class AccurevPromoteListener implements MqttCallback {
                     //Schedule triggers with matching depot and stream
                     .forEach(t -> t.scheduleBuild(promoteAuthor, promoteStream));
         } catch (JSONException ex) {
-            LOGGER.info("Failed to convert to JSON: " + ex.getMessage());
+            LOGGER.warning("Failed to convert to JSON: " + ex.getMessage());
         } catch (Exception ex) {
             LOGGER.severe(ex.getMessage());
         }
@@ -72,15 +74,15 @@ public class AccurevPromoteListener implements MqttCallback {
             conOpt = new MqttConnectOptions();
             client.setCallback(this);
             conOpt.setCleanSession(true);
-            LOGGER.info("Attempting to connect Mosquitto Server: " + host);
+            LOGGER.fine("Attempting to connect Mosquitto Server: " + host);
             IMqttToken conToken = client.connect(conOpt, null, null);
             conToken.waitForCompletion();
-            LOGGER.info("Connected successfully to Mosquitto Server: " + host);
+            LOGGER.fine("Connected successfully to Mosquitto Server: " + host);
             IMqttToken subToken = client.subscribe("ci/build", 0, null, null);
             subToken.waitForCompletion();
-            LOGGER.info("Subscribed successfully to CI/Build Topic");
+            LOGGER.fine("Subscribed successfully to CI/Build Topic");
         } catch (MqttException e) {
-            LOGGER.warning("Connection failed: " + e.getMessage());
+            LOGGER.warning("MQTT Connection failed: " + e.getMessage());
         }
     }
 }

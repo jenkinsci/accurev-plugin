@@ -621,6 +621,7 @@ public class AccurevSCM extends SCM {
         }
 
         // This method will populate the servers in the select box
+        @SuppressWarnings("unused") // Used by Jetty
         public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
@@ -636,6 +637,7 @@ public class AccurevSCM extends SCM {
 
         // This method will populate the depots in the select box depending upon the
         // server selected.
+        @SuppressWarnings("unused") // Used by Jetty
         public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
@@ -664,6 +666,7 @@ public class AccurevSCM extends SCM {
         }
 
         // Populating the streams
+        @SuppressWarnings("unused") // Used by Jetty
         public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
@@ -705,6 +708,7 @@ public class AccurevSCM extends SCM {
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
         private boolean useColor;
+        private boolean usePromoteListen;
 
         @DataBoundConstructor
         public AccurevServer(//
@@ -719,7 +723,8 @@ public class AccurevSCM extends SCM {
                              boolean minimiseLogins, //
                              boolean useNonexpiringLogin, //
                              boolean useRestrictedShowStreams,
-                             boolean useColor) {
+                             boolean useColor,
+                             boolean usePromoteListen) {
             if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
             else this.uuid = UUID.fromString(uuid);
             this.name = name;
@@ -733,6 +738,8 @@ public class AccurevSCM extends SCM {
             this.useNonexpiringLogin = useNonexpiringLogin;
             this.useRestrictedShowStreams = useRestrictedShowStreams;
             this.useColor = useColor;
+            this.usePromoteListen = usePromoteListen;
+            AccurevPromoteTrigger.validateListeners();
         }
 
         /**
@@ -749,6 +756,12 @@ public class AccurevSCM extends SCM {
             return this;
         }
 
+        /**
+         * Getter for property 'uuid'.
+         * If value is null generate random UUID
+         *
+         * @return Value for property 'uuid'.
+         */
         public String getUUID() {
             if (uuid == null) {
                 uuid = UUID.randomUUID();
@@ -857,6 +870,14 @@ public class AccurevSCM extends SCM {
 
         public void setUseColor(boolean useColor) {
             this.useColor = useColor;
+        }
+
+        public boolean isUsePromoteListen() {
+            return usePromoteListen;
+        }
+
+        public void setUsePromoteListen(boolean usePromoteListen) {
+            this.usePromoteListen = usePromoteListen;
         }
 
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
