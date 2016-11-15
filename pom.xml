@@ -4,8 +4,8 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>2.17</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>2.19</version>
+        <relativePath/>
     </parent>
 
     <artifactId>accurev</artifactId>
@@ -14,7 +14,7 @@
     <name>Jenkins Accurev plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin</url>
     <properties>
-        <jenkins.version>2.19.1</jenkins.version>
+        <jenkins.version>2.19.2</jenkins.version>
         <java.level>8</java.level>
     </properties>
 
