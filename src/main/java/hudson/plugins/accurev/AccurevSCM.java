@@ -609,13 +609,15 @@ public class AccurevSCM extends SCM {
             if (uuid == null) {
                 return null;
             }
-            for (AccurevServer server : this._servers) {
-                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
-                    return server;
-                } else if (uuid.equals(server.getName())) {
-                    // support old server name
-                    return server;
-                }
+            if (this._servers != null) {
+              for (AccurevServer server : this._servers) {
+                  if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
+                      return server;
+                  } else if (uuid.equals(server.getName())) {
+                      // support old server name
+                      return server;
+                  }
+              }
             }
             return null;
         }
