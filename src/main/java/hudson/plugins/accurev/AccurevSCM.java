@@ -605,6 +605,7 @@ public class AccurevSCM extends SCM {
             this.pollOnMaster = pollOnMaster;
         }
 
+        @CheckForNull
         public AccurevServer getServer(String uuid) {
             if (uuid == null) {
                 return null;
