@@ -540,7 +540,13 @@ public class AccurevSCM extends SCM {
         @Override
         public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
             String serverUUID = req.getParameter("_.serverUUID");
-            String serverName = getServer(serverUUID).getName();
+            String serverName;
+            AccurevServer server = getServer(serverUUID);
+            if (null == server) {
+                throw new FormException("No server selected. Please add/select a server", "_.serverUUID");
+            } else {
+                serverName = server.getName();
+            }
             return new AccurevSCM( //
                     serverUUID, //
                     serverName, //
@@ -605,17 +611,20 @@ public class AccurevSCM extends SCM {
             this.pollOnMaster = pollOnMaster;
         }
 
+        @CheckForNull
         public AccurevServer getServer(String uuid) {
             if (uuid == null) {
                 return null;
             }
-            for (AccurevServer server : this._servers) {
-                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
-                    return server;
-                } else if (uuid.equals(server.getName())) {
-                    // support old server name
-                    return server;
-                }
+            if (this._servers != null) {
+              for (AccurevServer server : this._servers) {
+                  if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
+                      return server;
+                  } else if (uuid.equals(server.getName())) {
+                      // support old server name
+                      return server;
+                  }
+              }
             }
             return null;
         }
