@@ -38,7 +38,7 @@ public class AccurevPromoteListener implements MqttCallback {
     }
 
     public void connectionLost(Throwable throwable) {
-        LOGGER.log(Level.WARNING,"Connection Lost", throwable);
+        LOGGER.log(Level.WARNING, "Connection Lost", throwable);
         LOGGER.severe(throwable.getMessage());
         setupConnection();
     }

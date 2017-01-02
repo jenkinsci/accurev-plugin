@@ -42,6 +42,29 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         }
     }
 
+    public static void validateListeners() {
+        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+            if (server.isUsePromoteListen()) {
+                initServer(server.getHost());
+            }
+        }
+        for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
+            AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
+            if (t != null) {
+                if (t.getServer().isUsePromoteListen()) {
+                    String host = t.getServer().getHost();
+                    if (StringUtils.isNotEmpty(host)) {
+                        AccurevPromoteListener listener = listeners.get(host);
+                        if (null != listener) {
+                            listener.addTrigger(t);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void start(AbstractProject<?, ?> project, boolean newInstance) {
         super.start(project, newInstance);
@@ -87,7 +110,6 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     public String getStream() {
         return getScm() == null ? "" : getScm().getStream();
     }
-
 
     public AccurevSCM.AccurevServer getServer() {
         AccurevSCM scm = getScm();
@@ -157,29 +179,6 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             LOGGER.warning(ex.getMessage());
         }
         return false;
-    }
-
-    public static void validateListeners() {
-        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
-        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
-            if (server.isUsePromoteListen()) {
-                initServer(server.getHost());
-            }
-        }
-        for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
-            AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
-            if (t != null) {
-                if (t.getServer().isUsePromoteListen()) {
-                    String host = t.getServer().getHost();
-                    if (StringUtils.isNotEmpty(host)) {
-                        AccurevPromoteListener listener = listeners.get(host);
-                        if (null != listener) {
-                            listener.addTrigger(t);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private File getLogFile() {

@@ -29,7 +29,7 @@ public class CheckForChanges {
      * @param logger     logger
      * @param scm        Accurev SCm
      * @return if there are any new transactions in the stream since the last build was done
-     * @throws IOException          if there is issues with files
+     * @throws IOException if there is issues with files
      */
     //stream param is of type AccurevStream
     public static boolean checkStreamForChanges(AccurevServer server,

@@ -94,6 +94,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
 
     /**
      * Builds a command which gets executed and retrieves the following return data
+     *
      * @return Map with Reference Tree name as key and Reference Tree Object as value.
      * @throws IOException Failed to execute command or Parse data.
      */

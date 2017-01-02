@@ -249,7 +249,8 @@ public abstract class AbstractModeDelegate {
                 changedStreams.add(streamChangeLog.getName());
             }
             stream = stream.getParent();
-        } while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null && !scm.isIgnoreStreamParent());
+        }
+        while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null && !scm.isIgnoreStreamParent());
 
         XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile, getUpdateFileName());
         return capturedChangelog;

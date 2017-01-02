@@ -97,6 +97,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
     /**
      * Builds a command which gets executed and retrieves the following return data
+     *
      * @return Map with Workspace name as key and Workspace Object as value.
      * @throws IOException Failed to execute command or Parse data.
      */
