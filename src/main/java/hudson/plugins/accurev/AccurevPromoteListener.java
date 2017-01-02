@@ -70,7 +70,8 @@ public class AccurevPromoteListener implements MqttCallback {
     private void setupConnection() {
         try {
             MemoryPersistence persistence = new MemoryPersistence();
-            client = new MqttAsyncClient("tcp://" + host, "AccurevJenkinsClient", persistence);
+            String clientId = "JenkinsAccurevPromoteClient"+System.nanoTime();
+            client = new MqttAsyncClient("tcp://" + host, clientId, persistence);
             conOpt = new MqttConnectOptions();
             client.setCallback(this);
             conOpt.setCleanSession(true);

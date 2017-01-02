@@ -36,8 +36,8 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         super();
     }
 
-    public static void initServer(String host) {
-        if (!listeners.containsKey(host)) {
+    public static void initServer(String host, AccurevSCM.AccurevServer server) {
+        if (!listeners.containsKey(host) && server.isUsePromoteListen()) {
             listeners.put(host, new AccurevPromoteListener(host));
         }
     }
@@ -45,9 +45,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     public static void validateListeners() {
         AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
         for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
-            if (server.isUsePromoteListen()) {
-                initServer(server.getHost());
-            }
+            initServer(server.getHost(), server);
         }
         for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
             AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
@@ -68,9 +66,10 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     @Override
     public void start(AbstractProject<?, ?> project, boolean newInstance) {
         super.start(project, newInstance);
-        String host = getServer().getHost();
+        AccurevSCM.AccurevServer server = getServer();
+        String host = server.getHost();
         if (StringUtils.isNotEmpty(host)) {
-            initServer(host);
+            initServer(host, server);
             AccurevPromoteListener listener = listeners.get(host);
 
             if (listener != null) {
@@ -94,7 +93,9 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         String host = getServer().getHost();
         if (StringUtils.isNotEmpty(host)) {
             AccurevPromoteListener listener = listeners.get(host);
-            listener.removeTrigger(this);
+            if (listener != null) {
+                listener.removeTrigger(this);
+            }
         }
         super.stop();
     }
