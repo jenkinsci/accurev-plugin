@@ -1,24 +1,22 @@
 package hudson.plugins.accurev;
 
-import hudson.*;
+import hudson.Extension;
+import hudson.Util;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import hudson.model.listeners.ItemListener;
-import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.jelly.XMLOutput;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Logger;
@@ -30,19 +28,20 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     private static final Logger LOGGER = Logger.getLogger(AccurevPromoteTrigger.class.getName());
     private static final HashMap<String, AccurevPromoteListener> listeners = new HashMap<>();
+    private static final String ACCUREVLASTTRANSFILENAME = "AccurevLastTrans.txt";
 
     @DataBoundConstructor
     public AccurevPromoteTrigger() {
         super();
     }
 
-    public static void initServer(String host, AccurevSCM.AccurevServer server) {
+    public synchronized static void initServer(String host, AccurevSCM.AccurevServer server) {
         if (!listeners.containsKey(host) && server.isUsePromoteListen()) {
-            listeners.put(host, new AccurevPromoteListener(host));
+            listeners.put(host, new AccurevPromoteListener(server));
         }
     }
 
-    public static void validateListeners() {
+    public synchronized static void validateListeners() {
         AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
         for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
             initServer(server.getHost(), server);
@@ -121,6 +120,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public void scheduleBuild(String author, String stream) {
+        LOGGER.fine("schedule build: " + getProjectName());
         job.scheduleBuild2(10, new AccurevPromoteCause(author, stream));
     }
 
@@ -137,27 +137,24 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return null;
     }
 
-    public boolean checkForChanges(String promoteDepot, String promoteStream) {
-        final Jenkins jenkins = Jenkins.getInstance();
-
+    public boolean checkForChanges(String promoteDepot, String promoteStream, int promoteTrans, Map<String, AccurevStream> streams) {
         try (StreamTaskListener listener = new StreamTaskListener(getLogFile())) {
             PrintStream logger = listener.getLogger();
             AccurevSCM scm = getScm();
             if (scm == null) return false;
             if (getStream().equals(promoteStream)) {
                 logger.println("Matching stream: " + promoteStream);
-                return true;
-            } else if (getDepot().equals(promoteDepot) && !scm.isIgnoreStreamParent()) {
-                AbstractModeDelegate delegate = AccurevMode.findDelegate(scm);
-                FilePath jenkinsWorkspace = new FilePath(job.getRootDir());
-                Launcher launcher = jenkins.createLauncher(listener);
-                AccurevSCM.AccurevServer server = scm.getServer();
-                delegate.setup(launcher, jenkinsWorkspace, listener);
 
-                final EnvVars accurevEnv = delegate.getAccurevEnv();
-                String localStream = delegate.getPollingStream(job);
+                int lastTrans = NumberUtils.toInt(getPrevious(job), 0);
+                logger.println("Last build Transaction: " + lastTrans + ", promote transaction: " + promoteTrans);
+                if (promoteTrans > lastTrans) {
+                    setPrevious(job, promoteTrans);
+                    return true;
+                }
+            } else if (promoteDepot.equals(getDepot()) && !scm.isIgnoreStreamParent()) {
 
-                final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener, launcher);
+                String localStream = scm.getPollingStream(job, listener);
+
                 if (streams == null) {
                     listener.fatalError("streams EMPTY");
                     return false;
@@ -170,16 +167,41 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
                 do {
                     if (stream.getName().equals(promoteStream)) {
                         logger.println("Found matching parent stream: " + promoteStream);
-                        return true;
+
+                        int lastTrans = NumberUtils.toInt(getPrevious(job), 0);
+                        logger.println("Last build Transaction: " + lastTrans + ", promote transaction: " + promoteTrans);
+                        if (promoteTrans > lastTrans) {
+                            setPrevious(job, promoteTrans);
+                            return true;
+                        }
                     }
                     stream = stream.getParent();
                 } while (stream != null && stream.isReceivingChangesFromParent());
                 logger.println("No matching parent stream found");
             }
-        } catch (InterruptedException | IllegalArgumentException | IOException ex) {
+        } catch (IllegalArgumentException | IOException ex) {
             LOGGER.warning(ex.getMessage());
         }
         return false;
+    }
+
+    private String getPrevious(AbstractProject<?, ?> job) throws IOException {
+        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
+        if (!f.exists()) {
+            if (f.createNewFile()) return "";
+            else throw new IOException("Failed to create file");
+        }
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            String line = br.readLine();
+            return null != line ? line : "";
+        }
+    }
+
+    private void setPrevious(AbstractProject<?, ?> job, int previous) throws IOException {
+        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
+        try (BufferedWriter br = new BufferedWriter(new FileWriter(f))) {
+            br.write("" + previous);
+        }
     }
 
     private File getLogFile() {
