@@ -43,18 +43,17 @@ public class ShowStreams extends Command {
         } else {
             streams = getAllStreams(server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
         }
-        setParents(streams);
         return streams;
     }
 
-    private static Map<String, AccurevStream> getAllStreams(//
-                                                            final AccurevServer server, //
-                                                            final String depot, //
-                                                            final Lock lock, //
-                                                            final EnvVars accurevEnv, //
-                                                            final FilePath workspace, //
-                                                            final TaskListener listener, //
-                                                            final Launcher launcher) throws IOException {
+    public static Map<String, AccurevStream> getAllStreams(//
+                                                           final AccurevServer server, //
+                                                           final String depot, //
+                                                           final Lock lock, //
+                                                           final EnvVars accurevEnv, //
+                                                           final FilePath workspace, //
+                                                           final TaskListener listener, //
+                                                           final Launcher launcher) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("show");
         addServer(cmd, server);
@@ -62,8 +61,10 @@ public class ShowStreams extends Command {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("streams");
-        return AccurevLauncher.runCommand("Show streams command", launcher, cmd, lock, accurevEnv,
+        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", launcher, cmd, lock, accurevEnv,
                 workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), depot);
+        setParents(streams);
+        return streams;
     }
 
     private static Map<String, AccurevStream> getAllAncestorStreams(//
@@ -90,6 +91,7 @@ public class ShowStreams extends Command {
                 streams.putAll(oneStream);
             }
         }
+        setParents(streams);
         return streams;
     }
 
