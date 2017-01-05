@@ -94,48 +94,6 @@ public abstract class AbstractModeDelegate {
 
     protected abstract PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException;
 
-    private boolean hasStringVariableReference(final String str) {
-        return StringUtils.isNotEmpty(str) && str.startsWith("$");
-    }
-
-    public String getPollingStream(Job<?, ?> project) {
-        String parsedLocalStream;
-        if (hasStringVariableReference(scm.getStream())) {
-            ParametersDefinitionProperty paramDefProp = project
-                    .getProperty(ParametersDefinitionProperty.class);
-
-            if (paramDefProp == null) {
-                throw new IllegalArgumentException(
-                        "Polling is not supported when stream name has a variable reference '" + scm.getStream() + "'.");
-            }
-
-            Map<String, String> keyValues = new TreeMap<>();
-
-            /* Scan for all parameter with an associated default values */
-            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-
-                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-                if (defaultValue instanceof StringParameterValue) {
-                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-                    keyValues.put(defaultValue.getName(), strdefvalue.value);
-                }
-            }
-
-            final EnvVars environment = new EnvVars(keyValues);
-            parsedLocalStream = environment.expand(scm.getStream());
-            listener.getLogger().println("... expanded '" + scm.getStream() + "' to '" + parsedLocalStream + "'.");
-        } else {
-            parsedLocalStream = scm.getStream();
-        }
-
-        if (hasStringVariableReference(parsedLocalStream)) {
-            throw new IllegalArgumentException(
-                    "Polling is not supported when stream name has a variable reference '" + scm.getStream() + "'.");
-        }
-        return parsedLocalStream;
-    }
-
     public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
                             File changelogFile) throws IOException, InterruptedException {
 

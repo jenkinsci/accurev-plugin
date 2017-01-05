@@ -1,5 +1,6 @@
 package hudson.plugins.accurev;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -462,6 +463,48 @@ public class AccurevSCM extends SCM {
 
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
+    }
+
+    public boolean hasStringVariableReference(final String str) {
+        return StringUtils.isNotEmpty(str) && str.startsWith("$");
+    }
+
+    public String getPollingStream(Job<?, ?> project, TaskListener listener) {
+        String parsedLocalStream;
+        if (hasStringVariableReference(getStream())) {
+            ParametersDefinitionProperty paramDefProp = project
+                    .getProperty(ParametersDefinitionProperty.class);
+
+            if (paramDefProp == null) {
+                throw new IllegalArgumentException(
+                        "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
+            }
+
+            Map<String, String> keyValues = new TreeMap<>();
+
+            /* Scan for all parameter with an associated default values */
+            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
+
+                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
+
+                if (defaultValue instanceof StringParameterValue) {
+                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
+                    keyValues.put(defaultValue.getName(), strdefvalue.value);
+                }
+            }
+
+            final EnvVars environment = new EnvVars(keyValues);
+            parsedLocalStream = environment.expand(getStream());
+            listener.getLogger().println("... expanded '" + getStream() + "' to '" + parsedLocalStream + "'.");
+        } else {
+            parsedLocalStream = getStream();
+        }
+
+        if (hasStringVariableReference(parsedLocalStream)) {
+            throw new IllegalArgumentException(
+                    "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
+        }
+        return parsedLocalStream;
     }
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------

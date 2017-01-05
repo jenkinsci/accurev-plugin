@@ -37,7 +37,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
     @Override
     protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
-        localStream = getPollingStream(project);
+        localStream = scm.getPollingStream(project, listener);
         return super.checkForChanges(project);
     }
 

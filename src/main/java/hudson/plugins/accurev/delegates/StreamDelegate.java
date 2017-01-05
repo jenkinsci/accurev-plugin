@@ -63,7 +63,7 @@ public class StreamDelegate extends AbstractModeDelegate {
         }
         final Date buildDate = lastBuild.getTimestamp().getTime();
         try {
-            localStream = getPollingStream(project);
+            localStream = scm.getPollingStream(project, listener);
         } catch (IllegalArgumentException ex) {
             listener.getLogger().println(ex.getMessage());
             return PollingResult.NO_CHANGES;
