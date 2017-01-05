@@ -25,7 +25,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,7 +54,9 @@ public final class AccurevLauncher {
             "/bin/accurev",
             "/local/bin/accurev",
             "/opt/accurev/bin/accurev",
-            "/Applications/AccuRev/bin/accurev");
+            "/Applications/AccuRev/bin/accurev",
+            "/Applications/AccuRevClient/bin/accurev");
+    private static final Map<String, String> executables = new HashMap<>();
 
     /**
      * Runs a command and returns <code>true</code> if it passed,
@@ -404,32 +408,46 @@ public final class AccurevLauncher {
         return isUnix(workspace) ? "/" : "\\";
     }
 
-    private static String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
+    private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
+        String name = workspace.toComputer().getName();
         String exe;
         String binName = "accurev";
+        if (executables.containsKey(name)) {
+            return executables.get(name);
+        }
         if (e.containsKey("ACCUREV_BIN")) {
             exe = e.get("ACCUREV_BIN") + separator(workspace) + binName;
             if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
                 return exe;
             }
         }
-        if (e.containsKey("PATH")) {
+        if (e.containsKey("PATH") && e.get("PATH").contains(binName)) {
             exe = binName;
             if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
                 return exe;
             }
         }
         if (isUnix(workspace)) {
             exe = getExistingPath(workspace, DEFAULT_NIX_CMD_LOCATIONS);
+            if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
+                return exe;
+            }
         } else {
             exe = getExistingPath(workspace, DEFAULT_WIN_CMD_LOCATIONS);
+            if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
+                return exe;
+            }
         }
         return exe;
     }
 
     private static boolean justAccurev(Launcher launcher, String exe) {
         try {
-            return launcher.launch().cmdAsSingleString(exe).join() == 0;
+            return launcher.launch().quiet(true).cmdAsSingleString(exe).join() == 0;
         } catch (IOException | InterruptedException e1) {
             return false;
         }
