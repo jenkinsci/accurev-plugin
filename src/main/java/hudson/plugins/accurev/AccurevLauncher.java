@@ -267,8 +267,7 @@ public final class AccurevLauncher {
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
-        // build environment if empty.
-        if (environmentVariables.isEmpty()) environmentVariables.putAll(buildEnvironment(n, listener));
+        environmentVariables.putAll(buildEnvironment(n, listener));
         String path = null;
         FilePath filePath = null;
         if (null != n) filePath = n.getRootPath();
