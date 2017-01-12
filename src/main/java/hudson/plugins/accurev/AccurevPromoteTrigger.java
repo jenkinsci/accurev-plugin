@@ -64,6 +64,24 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         }
     }
 
+    public static void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
+        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
+        try (BufferedWriter br = Files.newBufferedWriter(f.toPath(), UTF_8)) {
+            br.write(previous);
+        }
+    }
+
+    private String getLastTransaction(Job<?, ?> job) throws IOException {
+        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
+        if (!f.exists()) {
+            if (f.createNewFile()) return "";
+            else throw new IOException("Failed to create file");
+        }
+        try (BufferedReader br = Files.newBufferedReader(f.toPath(), UTF_8)) {
+            return br.readLine();
+        }
+    }
+
     @Override
     public void start(AbstractProject<?, ?> project, boolean newInstance) {
         super.start(project, newInstance);
@@ -187,24 +205,6 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             LOGGER.warning(ex.getMessage());
         }
         return false;
-    }
-
-    private String getLastTransaction(Job<?, ?> job) throws IOException {
-        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
-        if (!f.exists()) {
-            if (f.createNewFile()) return "";
-            else throw new IOException("Failed to create file");
-        }
-        try (BufferedReader br = Files.newBufferedReader(f.toPath(), UTF_8)) {
-            return br.readLine();
-        }
-    }
-
-    public void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
-        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
-        try (BufferedWriter br = Files.newBufferedWriter(f.toPath(), UTF_8)) {
-            br.write(previous);
-        }
     }
 
     private File getLogFile() {
