@@ -7,6 +7,8 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,24 +57,9 @@ public class CheckForChanges {
                 "Checking transactions of type " + Arrays.asList(validTransactionTypes) + //
                         " in stream [" + stream + "]");
 
-        Iterator<String> affectedPaths;
         Collection<String> serverPaths;
+        List<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
 
-        final String FFPSCM_DELIM = ",";
-
-        Collection<String> Filter_For_Poll_SCM = null;
-
-        if (filterForPollSCM != null && !(filterForPollSCM.isEmpty())) {
-            String FFPSCM_LIST = filterForPollSCM;
-            FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-            Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
-        } else {
-            if (subPath != null && !(subPath.isEmpty())) {
-                String FFPSCM_LIST = subPath;
-                FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-                Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
-            }
-        }
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = History.getLatestTransaction(scm, server, accurevEnv, workspace,
@@ -86,45 +73,9 @@ public class CheckForChanges {
                         serverPaths = tempTransaction.getAffectedPaths();
                         if (tempTransaction.getAffectedPaths().size() > 0) {
                             listener.getLogger().println("This transaction seems to have happened after the latest build!!!");
-                            if (filterForPollSCM != null && !(filterForPollSCM.isEmpty())) {
-                                boolean buildRequired = false;
-                                for (String filterPath : Filter_For_Poll_SCM) {
-                                    affectedPaths = serverPaths.iterator();
-                                    while (affectedPaths.hasNext()) {
-
-                                        if (affectedPaths.next().contains(filterPath)) {
-                                            buildRequired = true;
-                                            break;
-                                        }
-
-                                    }
-                                }
-                                if (buildRequired) {
-
-                                } else {
-                                    return false;
-                                }
-                            } else {
-                                if (subPath != null && !(subPath.isEmpty())) {
-
-                                    boolean buildRequired = false;
-                                    for (String filterPath : Filter_For_Poll_SCM) {
-                                        affectedPaths = serverPaths.iterator();
-                                        while (affectedPaths.hasNext()) {
-
-                                            if (affectedPaths.next().contains(filterPath)) {
-                                                buildRequired = true;
-                                                break;
-                                            }
-
-                                        }
-                                    }
-                                    if (buildRequired) {
-
-                                    } else {
-                                        return false;
-                                    }
-                                }
+                            if (!changesMatchFilter(listener, serverPaths, pollingFilters)) {
+                                // Continue to next transaction (that may have a match)
+                                continue;
                             }
                         }
                     }
@@ -133,8 +84,6 @@ public class CheckForChanges {
                     //log last transaction information if retrieved
                     if (latestCodeChangeTransaction.getDate().equals(AccurevSCM.NO_TRANS_DATE)) {
                         listener.getLogger().println("No last transaction found.");
-                    } else {
-
                     }
                     if (buildDate.before(latestCodeChangeTransaction.getDate())) {
                         listener.getLogger().println("Last valid trans " + latestCodeChangeTransaction);
@@ -152,8 +101,6 @@ public class CheckForChanges {
             }
         }
         return false;
-
-
     }
 
     /**
@@ -202,25 +149,9 @@ public class CheckForChanges {
         }
         boolean isTransLatestThanBuild = false;
 
-
-        Iterator<String> affectedPaths;
         Collection<String> serverPaths;
+        List<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
 
-        final String FFPSCM_DELIM = ",";
-
-        Collection<String> Filter_For_Poll_SCM = null;
-
-        if (filterForPollSCM != null && !(filterForPollSCM.isEmpty())) {
-            String FFPSCM_LIST = filterForPollSCM;
-            FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-            Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
-        } else {
-            if (subPath != null && !(subPath.isEmpty())) {
-                String FFPSCM_LIST = subPath;
-                FFPSCM_LIST = FFPSCM_LIST.replace(", ", ",");
-                Filter_For_Poll_SCM = new ArrayList<>(Arrays.asList(FFPSCM_LIST.split(FFPSCM_DELIM)));
-            }
-        }
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = History.getLatestTransaction(scm, server, accurevEnv, workspace,
@@ -233,43 +164,9 @@ public class CheckForChanges {
                         //check the affected
                         serverPaths = tempTransaction.getAffectedPaths();
                         if (tempTransaction.getAffectedPaths().size() > 0) {
-                            if (filterForPollSCM != null && !(filterForPollSCM.isEmpty())) {
-                                boolean buildRequired = false;
-                                for (String filterPath : Filter_For_Poll_SCM) {
-                                    affectedPaths = serverPaths.iterator();
-                                    while (affectedPaths.hasNext()) {
-                                        if (affectedPaths.next().contains(filterPath)) {
-                                            buildRequired = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (buildRequired) {
-
-                                } else {
-                                    return false;
-                                }
-                            } else {
-                                if (subPath != null && !(subPath.isEmpty())) {
-
-                                    boolean buildRequired = false;
-                                    for (String filterPath : Filter_For_Poll_SCM) {
-                                        affectedPaths = serverPaths.iterator();
-                                        while (affectedPaths.hasNext()) {
-
-                                            if (affectedPaths.next().contains(filterPath)) {
-                                                buildRequired = true;
-                                                break;
-                                            }
-
-                                        }
-                                    }
-                                    if (buildRequired) {
-
-                                    } else {
-                                        return false;
-                                    }
-                                }
+                            if (!changesMatchFilter(listener, serverPaths, pollingFilters)) {
+                                // Continue to next transaction (that may have a match)
+                                continue;
                             }
                         }
                     }
@@ -294,5 +191,43 @@ public class CheckForChanges {
             }
         }
         return isTransLatestThanBuild;
+    }
+
+    private static boolean changesMatchFilter(TaskListener listener, Collection<String> serverPaths, List<String> filters) {
+        if (filters == null || filters.isEmpty()) {
+            // No filters, so always a match.
+            return true;
+        }
+
+        for (String filterPath : filters) {
+            // Paths are sanitized using java.nio.file.Paths (makes sure that the same path separators are used)
+            final Path fp = Paths.get(filterPath);
+            for (String serverPath : serverPaths) {
+                final Path sp = Paths.get(serverPath);
+                if (sp.toString().contains(fp.toString())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static List<String> getListOfPollingFilters(String filterForPollSCM, String subPath) {
+        final String DELIMITER = ",";
+        List<String> result = new ArrayList<>();
+
+        if (filterForPollSCM != null && !(filterForPollSCM.isEmpty())) {
+            for (String filter : filterForPollSCM.split(DELIMITER)) {
+                result.add(filter.trim());
+            }
+        } else {
+            if (subPath != null && !(subPath.isEmpty())) {
+                for (String filter : subPath.split(DELIMITER)) {
+                    result.add(filter.trim());
+                }
+            }
+        }
+
+        return result;
     }
 }
