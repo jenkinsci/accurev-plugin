@@ -3,11 +3,12 @@ package hudson.plugins.accurev.delegates;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.Job;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.cmd.*;
-import hudson.scm.ChangeLogSet;
-import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
@@ -34,9 +35,10 @@ public abstract class AbstractModeDelegate {
     private static final String ACCUREV_SERVER_HOSTNAME = "ACCUREV_SERVER_HOSTNAME";
     private static final String ACCUREV_SERVER_PORT = "ACCUREV_SERVER_PORT";
     private static final String ACCUREV_SUBPATH = "ACCUREV_SUBPATH";
-    private static final String ACCUREV_LAST_TRANSACTION = "ACCUREV_LAST_TRANSACTION";
+    private static final String ACCUREV_LATEST_TRANSACTION_ID = "ACCUREV_LATEST_TRANSACTION_ID";
+    private static final String ACCUREV_LATEST_TRANSACTION_DATE = "ACCUREV_LATEST_TRANSACTION_DATE";
     private static final String ACCUREV_HOME = "ACCUREV_HOME";
-    protected final AccurevSCM scm;
+    public final AccurevSCM scm;
     protected Launcher launcher;
     protected AccurevSCM.AccurevServer server;
     protected EnvVars accurevEnv;
@@ -71,7 +73,7 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState state) throws IOException, InterruptedException {
         if (project.isInQueue()) {
             listener.getLogger().println("Project build is currently in queue.");
             return PollingResult.NO_CHANGES;
@@ -115,7 +117,6 @@ public abstract class AbstractModeDelegate {
 
         final EnvVars environment = build.getEnvironment(listener);
         accurevEnv.putAll(environment);
-
         localStream = environment.expand(scm.getStream());
 
         listener.getLogger().println("Getting a list of streams...");
@@ -150,12 +151,10 @@ public abstract class AbstractModeDelegate {
             listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
             listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
 
-            {
-                accurevEnv.put("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID);
-                accurevEnv.put("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate);
-
-                build.addAction(new AccuRevHiddenParametersAction(accurevEnv));
-            }
+            accurevEnv.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
+            accurevEnv.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
+            AccurevPromoteTrigger.setLastTransaction(build.getParent(), latestTransactionID);
+            build.addOrReplaceAction(new AccuRevHiddenParametersAction(accurevEnv));
 
         } catch (Exception e) {
             listener.error("There was a problem getting the latest transaction info from the stream.");
@@ -166,9 +165,9 @@ public abstract class AbstractModeDelegate {
                 "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
-        Run<?, ?> prevbuild = null;
-        if (build != null) prevbuild = build.getPreviousBuild();
-        if (prevbuild != null) startTime = prevbuild.getTimestamp();
+        Run<?, ?> previousBuild = null;
+        if (build != null) previousBuild = build.getPreviousBuild();
+        if (previousBuild != null) startTime = previousBuild.getTimestamp();
         else {
             Calendar c = Calendar.getInstance();
             c.add(Calendar.MONTH, -1);
@@ -339,6 +338,8 @@ public abstract class AbstractModeDelegate {
             env.put(ACCUREV_HOME, System.getenv(ACCUREV_HOME));
         }
 
+        accurevEnv.putAll(env);
+        build.addOrReplaceAction(new AccuRevHiddenParametersAction(accurevEnv));
         buildEnvVarsCustom(build, env);
     }
 
