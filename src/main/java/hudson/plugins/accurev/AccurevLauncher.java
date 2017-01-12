@@ -19,6 +19,8 @@ import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,15 +82,15 @@ public final class AccurevLauncher {
      * @throws IOException handle it above
      */
     public static boolean runCommand(//
-                                     final String humanReadableCommandName, //
-                                     final Launcher launcher, //
-                                     final ArgumentListBuilder machineReadableCommand, //
-                                     final Lock synchronizationLockObjectOrNull, //
-                                     final EnvVars environmentVariables, //
-                                     final FilePath directoryToRunCommandFrom, //
-                                     final TaskListener listenerToLogFailuresTo, //
-                                     final Logger loggerToLogFailuresTo, //
-                                     final boolean... optionalFlagToCopyAllOutputToTaskListener) throws IOException {
+                                     @Nonnull final String humanReadableCommandName, //
+                                     @Nonnull final Launcher launcher, //
+                                     @Nonnull final ArgumentListBuilder machineReadableCommand, //
+                                     @Nonnull final Lock synchronizationLockObjectOrNull, //
+                                     @Nonnull final EnvVars environmentVariables, //
+                                     @Nonnull final FilePath directoryToRunCommandFrom, //
+                                     @Nonnull final TaskListener listenerToLogFailuresTo, //
+                                     @Nonnull final Logger loggerToLogFailuresTo, //
+                                     @Nullable final boolean... optionalFlagToCopyAllOutputToTaskListener) throws IOException {
         final Boolean result;
         final boolean shouldLogEverything = optionalFlagToCopyAllOutputToTaskListener != null
                 && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
@@ -131,17 +133,17 @@ public final class AccurevLauncher {
      * @throws IOException handle it above
      */
     public static <TResult, TContext> TResult runCommand(//
-                                                         final String humanReadableCommandName, //
-                                                         final Launcher launcher, //
-                                                         final ArgumentListBuilder machineReadableCommand, //
-                                                         final Lock synchronizationLockObjectOrNull, //
-                                                         final EnvVars environmentVariables, //
-                                                         final FilePath directoryToRunCommandFrom, //
-                                                         final TaskListener listenerToLogFailuresTo, //
-                                                         final Logger loggerToLogFailuresTo, //
-                                                         final XmlPullParserFactory xmlParserFactory, //
-                                                         final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
-                                                         final TContext commandOutputParserContext) throws IOException {
+                                                         @Nonnull final String humanReadableCommandName, //
+                                                         @Nonnull final Launcher launcher, //
+                                                         @Nonnull final ArgumentListBuilder machineReadableCommand, //
+                                                         @Nonnull final Lock synchronizationLockObjectOrNull, //
+                                                         @Nonnull final EnvVars environmentVariables, //
+                                                         @Nonnull final FilePath directoryToRunCommandFrom, //
+                                                         @Nonnull final TaskListener listenerToLogFailuresTo, //
+                                                         @Nonnull final Logger loggerToLogFailuresTo, //
+                                                         @Nonnull final XmlPullParserFactory xmlParserFactory, //
+                                                         @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+                                                         @Nullable final TContext commandOutputParserContext) throws IOException {
         return runCommand(humanReadableCommandName, launcher, machineReadableCommand,
                 synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
                 listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
@@ -199,16 +201,16 @@ public final class AccurevLauncher {
      * @throws IOException handle it above
      */
     public static <TResult, TContext> TResult runCommand(//
-                                                         final String humanReadableCommandName, //
-                                                         final Launcher launcher, //
-                                                         final ArgumentListBuilder machineReadableCommand, //
-                                                         final Lock synchronizationLockObjectOrNull, //
-                                                         final EnvVars environmentVariables, //
-                                                         final FilePath directoryToRunCommandFrom, //
-                                                         final TaskListener listenerToLogFailuresTo, //
-                                                         final Logger loggerToLogFailuresTo, //
-                                                         final ICmdOutputParser<TResult, TContext> commandOutputParser, //
-                                                         final TContext commandOutputParserContext) throws IOException {
+                                                         @Nonnull final String humanReadableCommandName, //
+                                                         @Nonnull final Launcher launcher, //
+                                                         @Nonnull final ArgumentListBuilder machineReadableCommand, //
+                                                         @Nullable final Lock synchronizationLockObjectOrNull, //
+                                                         @Nonnull final EnvVars environmentVariables, //
+                                                         @Nonnull final FilePath directoryToRunCommandFrom, //
+                                                         @Nonnull final TaskListener listenerToLogFailuresTo, //
+                                                         @Nonnull final Logger loggerToLogFailuresTo, //
+                                                         @Nonnull final ICmdOutputParser<TResult, TContext> commandOutputParser, //
+                                                         @Nullable final TContext commandOutputParserContext) throws IOException {
         try (final ByteArrayStream stdout = new ByteArrayStream();
              final ByteArrayStream stderr = new ByteArrayStream()) {
             final OutputStream stdoutStream = stdout.getOutput();
@@ -253,13 +255,14 @@ public final class AccurevLauncher {
         }
     }
 
-    private static ProcStarter createProcess(//
-                                             final Launcher launcher, //
-                                             final ArgumentListBuilder machineReadableCommand, //
-                                             final EnvVars environmentVariables, //
-                                             final FilePath directoryToRunCommandFrom, //
-                                             TaskListener listener, final OutputStream stdoutStream, //
-                                             final OutputStream stderrStream) throws IOException, InterruptedException {
+    private static ProcStarter createProcess(
+                                             @Nonnull final Launcher launcher,
+                                             @Nonnull final ArgumentListBuilder machineReadableCommand,
+                                             @Nonnull final EnvVars environmentVariables,
+                                             @Nonnull final FilePath directoryToRunCommandFrom,
+                                             @Nonnull TaskListener listener,
+                                             @Nonnull final OutputStream stdoutStream,
+                                             @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
         String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
