@@ -145,10 +145,10 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             if (getStream().equals(promoteStream)) {
                 logger.println("Matching stream: " + promoteStream);
 
-                int lastTrans = NumberUtils.toInt(getPrevious(job), 0);
+                int lastTrans = NumberUtils.toInt(getLastTransaction(job), 0);
                 logger.println("Last build Transaction: " + lastTrans + ", promote transaction: " + promoteTrans);
                 if (promoteTrans > lastTrans) {
-                    setPrevious(job, promoteTrans);
+                    setLastTransaction(job, String.valueOf(promoteTrans));
                     return true;
                 }
             } else if (promoteDepot.equals(getDepot()) && !scm.isIgnoreStreamParent()) {
@@ -168,10 +168,10 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
                     if (stream.getName().equals(promoteStream)) {
                         logger.println("Found matching parent stream: " + promoteStream);
 
-                        int lastTrans = NumberUtils.toInt(getPrevious(job), 0);
+                        int lastTrans = NumberUtils.toInt(getLastTransaction(job), 0);
                         logger.println("Last build Transaction: " + lastTrans + ", promote transaction: " + promoteTrans);
                         if (promoteTrans > lastTrans) {
-                            setPrevious(job, promoteTrans);
+                            setLastTransaction(job, String.valueOf(promoteTrans));
                             return true;
                         }
                     }
@@ -185,7 +185,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return false;
     }
 
-    private String getPrevious(AbstractProject<?, ?> job) throws IOException {
+    private String getLastTransaction(Job<?, ?> job) throws IOException {
         File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
         if (!f.exists()) {
             if (f.createNewFile()) return "";
@@ -197,10 +197,10 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         }
     }
 
-    private void setPrevious(AbstractProject<?, ?> job, int previous) throws IOException {
+    public static void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
         File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
         try (BufferedWriter br = new BufferedWriter(new FileWriter(f))) {
-            br.write("" + previous);
+            br.write(previous);
         }
     }
 
