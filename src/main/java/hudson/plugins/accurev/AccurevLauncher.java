@@ -410,10 +410,11 @@ public final class AccurevLauncher {
         return isUnix(workspace) ? "/" : "\\";
     }
 
+    @Nonnull
     private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
         String name = workspace.toComputer().getName();
-        String exe;
         String binName = "accurev";
+        String exe = binName;
         if (executables.containsKey(name)) {
             return executables.get(name);
         }

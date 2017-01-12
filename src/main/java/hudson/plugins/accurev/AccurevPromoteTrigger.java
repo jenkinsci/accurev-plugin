@@ -143,7 +143,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public void scheduleBuild(String author, String stream) {
         LOGGER.fine("schedule build: " + getProjectName());
-        job.scheduleBuild2(10, new AccurevPromoteCause(author, stream));
+        if (job != null) job.scheduleBuild2(10, new AccurevPromoteCause(author, stream));
     }
 
     @Override
@@ -163,7 +163,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         try (StreamTaskListener listener = new StreamTaskListener(getLogFile())) {
             PrintStream logger = listener.getLogger();
             AccurevSCM scm = getScm();
-            if (scm == null) return false;
+            if (scm == null || job == null) return false;
             if (getStream().equals(promoteStream)) {
                 logger.println("Matching stream: " + promoteStream);
 
@@ -207,7 +207,8 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return false;
     }
 
-    private File getLogFile() {
+    private File getLogFile() throws IOException {
+        if (job == null) throw new IOException("No job");
         return new File(job.getRootDir(), "accurev-promote-trigger.log");
     }
 
