@@ -170,7 +170,7 @@ public abstract class AbstractModeDelegate {
         if (previousBuild != null) startTime = previousBuild.getTimestamp();
         else {
             Calendar c = Calendar.getInstance();
-            c.add(Calendar.MONTH, -1);
+            c.add(Calendar.DAY_OF_YEAR, -7);
             startTime = c;
         }
 
