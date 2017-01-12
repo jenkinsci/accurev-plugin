@@ -334,36 +334,6 @@ public abstract class AbstractModeDelegate {
             env.put(ACCUREV_SUBPATH, "");
         }
 
-        // grab the last promote transaction from the changelog file
-        String lastTransaction = null;
-        // Abstract should have this since checkout should have already run
-        ChangeLogSet<?> changeSet = build.getChangeSet();
-        if (!changeSet.isEmptySet()) {
-            // first EDIT entry should be the last transaction we want
-            for (Object o : changeSet.getItems()) {
-                if (o instanceof AccurevTransaction) {
-                    AccurevTransaction t = (AccurevTransaction) o;
-                    if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                        lastTransaction = t.getId();
-                        break;
-                    }
-                }
-            }
-            /*
-             * in case you get a changelog with no changes (e.g. a dispatch
-             * message or something I don't know about yet), set something
-             * different than nothing
-             */
-            if (lastTransaction == null) {
-                lastTransaction = "NO_EDITS";
-            }
-        }
-        if (lastTransaction != null) {
-            env.put(ACCUREV_LAST_TRANSACTION, lastTransaction);
-        } else {
-            env.put(ACCUREV_LAST_TRANSACTION, "");
-        }
-
         // ACCUREV_HOME is added to the build env variables
         if (System.getenv(ACCUREV_HOME) != null) {
             env.put(ACCUREV_HOME, System.getenv(ACCUREV_HOME));
