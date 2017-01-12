@@ -42,7 +42,7 @@ public class AccurevSCM extends SCM {
     @Extension
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     static final Date NO_TRANS_DATE = new Date(0);
-    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
     private final String serverName;
     private final String depot;
     private final String stream;
@@ -175,10 +175,10 @@ public class AccurevSCM extends SCM {
         if (serverUUID == null) {
             if (serverName == null) {
                 // No fallback
-                logger.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
+                LOGGER.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
                 return null;
             }
-            logger.warning("Getting server by name (" + serverName + "), because UUID is not set.");
+            LOGGER.warning("Getting server by name (" + serverName + "), because UUID is not set.");
             server = DESCRIPTOR.getServer(serverName);
             if (server != null) {
                 this.setServerUUID(server.getUUID());
@@ -654,7 +654,7 @@ public class AccurevSCM extends SCM {
         @CheckForNull
         public AccurevServer getServer(String uuid) {
             if (uuid == null || this._servers == null) {
-                logger.fine("No server found. - getServer(NULL)");
+                LOGGER.fine("No server found. - getServer(NULL)");
                 return null;
             }
             for (AccurevServer server : this._servers) {
@@ -665,7 +665,7 @@ public class AccurevSCM extends SCM {
                     return server;
                 }
             }
-            logger.fine("No server found.");
+            LOGGER.fine("No server found.");
             return null;
         }
 

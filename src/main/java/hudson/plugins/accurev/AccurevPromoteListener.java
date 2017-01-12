@@ -25,8 +25,6 @@ public class AccurevPromoteListener implements MqttCallback {
     private static final Logger LOGGER = Logger.getLogger(AccurevPromoteListener.class.getName());
     private final AccurevSCM.AccurevServer server;
     private final HashSet<AccurevPromoteTrigger> triggers = new HashSet<>();
-    private MqttAsyncClient client;
-    private MqttConnectOptions conOpt;
 
     public AccurevPromoteListener(AccurevSCM.AccurevServer server) {
         this.server = server;
@@ -90,8 +88,8 @@ public class AccurevPromoteListener implements MqttCallback {
             MemoryPersistence persistence = new MemoryPersistence();
             String clientId = "JenkinsAccurevPromoteClient" + System.nanoTime();
             String host = server.getHost();
-            client = new MqttAsyncClient("tcp://" + host, clientId, persistence);
-            conOpt = new MqttConnectOptions();
+            MqttAsyncClient client = new MqttAsyncClient("tcp://" + host, clientId, persistence);
+            MqttConnectOptions conOpt = new MqttConnectOptions();
             client.setCallback(this);
             conOpt.setCleanSession(true);
             LOGGER.fine("Attempting to connect Mosquitto Server: " + host);
