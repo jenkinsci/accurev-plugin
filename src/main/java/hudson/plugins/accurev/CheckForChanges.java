@@ -9,10 +9,7 @@ import hudson.plugins.accurev.cmd.History;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,17 +44,17 @@ public class CheckForChanges {
         latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
 
         //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
-        String[] validTransactionTypes;
+        List<String> validTransactionTypes;
         if (stream.getType().name().equalsIgnoreCase("workspace")) {
             validTransactionTypes = AccurevServer.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
             listener.getLogger().println(//
-                    "Checking transactions of type " + Arrays.toString(validTransactionTypes) + //
+                    "Checking transactions of type " + String.join(", ", validTransactionTypes) + //
                             " in workspace [" + stream.getName() + "]");
         } else {
 
             validTransactionTypes = AccurevServer.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
             listener.getLogger().println(//
-                    "Checking transactions of type " + Arrays.toString(validTransactionTypes) + //
+                    "Checking transactions of type " + String.join(", ", validTransactionTypes) + //
                             " in stream [" + stream.getName() + "]");
         }
         boolean isTransLatestThanBuild = false;

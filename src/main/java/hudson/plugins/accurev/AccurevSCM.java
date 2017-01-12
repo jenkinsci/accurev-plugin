@@ -579,6 +579,7 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
+            if (req == null) throw new FormException("No request came through", "Request");
             String serverUUID = req.getParameter("_.serverUUID");
             String serverName;
             AccurevServer server = getServer(serverUUID);
@@ -739,8 +740,11 @@ public class AccurevSCM extends SCM {
     public static final class AccurevServer implements Serializable {
 
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        public static final String[] DEFAULT_VALID_STREAM_TRANSACTION_TYPES = {"chstream", "defcomp", "mkstream", "promote"};
-        public static final String[] DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = {"add", "chstream", "co", "defcomp", "defunct", "keep", "mkstream", "move", "promote", "purge", "dispatch"};
+        protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
+                .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
+        protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
+                .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
+                        "mkstream", "move", "promote", "purge", "dispatch"));
         private static final long serialVersionUID = 3270850408409304611L;
         // keep all transaction types in a set for validation
         private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};

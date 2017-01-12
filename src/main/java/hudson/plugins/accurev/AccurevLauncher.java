@@ -85,7 +85,7 @@ public final class AccurevLauncher {
                                      @Nonnull final String humanReadableCommandName, //
                                      @Nonnull final Launcher launcher, //
                                      @Nonnull final ArgumentListBuilder machineReadableCommand, //
-                                     @Nonnull final Lock synchronizationLockObjectOrNull, //
+                                     @Nullable final Lock synchronizationLockObjectOrNull, //
                                      @Nonnull final EnvVars environmentVariables, //
                                      @Nonnull final FilePath directoryToRunCommandFrom, //
                                      @Nonnull final TaskListener listenerToLogFailuresTo, //
@@ -136,7 +136,7 @@ public final class AccurevLauncher {
                                                          @Nonnull final String humanReadableCommandName, //
                                                          @Nonnull final Launcher launcher, //
                                                          @Nonnull final ArgumentListBuilder machineReadableCommand, //
-                                                         @Nonnull final Lock synchronizationLockObjectOrNull, //
+                                                         @Nullable final Lock synchronizationLockObjectOrNull, //
                                                          @Nonnull final EnvVars environmentVariables, //
                                                          @Nonnull final FilePath directoryToRunCommandFrom, //
                                                          @Nonnull final TaskListener listenerToLogFailuresTo, //
@@ -256,13 +256,13 @@ public final class AccurevLauncher {
     }
 
     private static ProcStarter createProcess(
-                                             @Nonnull final Launcher launcher,
-                                             @Nonnull final ArgumentListBuilder machineReadableCommand,
-                                             @Nonnull final EnvVars environmentVariables,
-                                             @Nonnull final FilePath directoryToRunCommandFrom,
-                                             @Nonnull TaskListener listener,
-                                             @Nonnull final OutputStream stdoutStream,
-                                             @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
+            @Nonnull final Launcher launcher,
+            @Nonnull final ArgumentListBuilder machineReadableCommand,
+            @Nonnull final EnvVars environmentVariables,
+            @Nonnull final FilePath directoryToRunCommandFrom,
+            @Nonnull TaskListener listener,
+            @Nonnull final OutputStream stdoutStream,
+            @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
         String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);

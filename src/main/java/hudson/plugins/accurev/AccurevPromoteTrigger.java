@@ -17,9 +17,11 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Created by josp on 16/08/16.
@@ -104,11 +106,13 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public String getDepot() {
-        return getScm() == null ? "" : getScm().getDepot();
+        AccurevSCM scm = getScm();
+        return scm == null ? "" : scm.getDepot();
     }
 
     public String getStream() {
-        return getScm() == null ? "" : getScm().getStream();
+        AccurevSCM scm = getScm();
+        return scm == null ? "" : scm.getStream();
     }
 
     public AccurevSCM.AccurevServer getServer() {
@@ -191,15 +195,14 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
             if (f.createNewFile()) return "";
             else throw new IOException("Failed to create file");
         }
-        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
-            String line = br.readLine();
-            return null != line ? line : "";
+        try (BufferedReader br = Files.newBufferedReader(f.toPath(), UTF_8)) {
+            return br.readLine();
         }
     }
 
-    public static void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
+    public void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
         File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
-        try (BufferedWriter br = new BufferedWriter(new FileWriter(f))) {
+        try (BufferedWriter br = Files.newBufferedWriter(f.toPath(), UTF_8)) {
             br.write(previous);
         }
     }
@@ -266,7 +269,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
         @SuppressWarnings("unused") // Used by Jetty
         public void writeLogTo(XMLOutput out) throws IOException {
-            new AnnotatedLargeText<>(getLogFile(), StandardCharsets.UTF_8, true, this)
+            new AnnotatedLargeText<>(getLogFile(), UTF_8, true, this)
                     .writeHtmlTo(0, out.asWriter());
         }
     }
