@@ -39,7 +39,7 @@ public class Login extends Command {
     }
 
     public static boolean ensureLoggedInToAccurev(AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
-                                                  Launcher launcher) throws IOException, InterruptedException {
+                                                  Launcher launcher) throws IOException {
 
         if (server == null) {
             listener.getLogger().println("Authentication failure - Server is empty");

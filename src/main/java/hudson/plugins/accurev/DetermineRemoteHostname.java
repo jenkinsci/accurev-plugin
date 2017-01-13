@@ -35,7 +35,7 @@ public class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails,
         // Accurev does not accept IP addresses so we are going to throw an error.
         if (hostName.matches(ipPattern))
             throw new UnknownHostException("Found IP, but need HostName, ensure proper FQDN.");
-        return new RemoteWorkspaceDetails(hostName, path, File.separator);
+        return new RemoteWorkspaceDetails(hostName, path);
     }
 
     @Override

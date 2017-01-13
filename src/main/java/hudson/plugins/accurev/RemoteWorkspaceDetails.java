@@ -1,5 +1,6 @@
 package hudson.plugins.accurev;
 
+import java.io.File;
 import java.io.Serializable;
 
 public class RemoteWorkspaceDetails implements Serializable {
@@ -8,10 +9,10 @@ public class RemoteWorkspaceDetails implements Serializable {
     private final String path;
     private final String fileSeparator;
 
-    public RemoteWorkspaceDetails(String hostName, String path, String fileSeparator) {
+    public RemoteWorkspaceDetails(String hostName, String path) {
         this.hostName = hostName;
         this.path = path;
-        this.fileSeparator = fileSeparator;
+        this.fileSeparator = File.separator;
     }
 
     /**

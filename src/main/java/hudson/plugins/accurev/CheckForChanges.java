@@ -38,7 +38,7 @@ public class CheckForChanges {
                                                 AccurevStream stream,
                                                 Date buildDate,
                                                 Logger logger,
-                                                AccurevSCM scm) throws IOException {
+                                                AccurevSCM scm) {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         String filterForPollSCM = scm.getFilterForPollSCM();
         String subPath = scm.getSubPath();

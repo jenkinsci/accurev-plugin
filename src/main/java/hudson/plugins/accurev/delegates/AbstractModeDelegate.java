@@ -193,7 +193,7 @@ public abstract class AbstractModeDelegate {
         return localStream;
     }
 
-    private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile, Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
+    private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile, Map<String, GetConfigWebURL> webURL) throws IOException {
         List<String> changedStreams = new ArrayList<>();
         // Capture changes in all streams and parents
         boolean capturedChangelog;

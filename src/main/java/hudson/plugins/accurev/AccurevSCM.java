@@ -384,7 +384,9 @@ public class AccurevSCM extends SCM {
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
-        AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
+        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
+        if (checkout) listener.getLogger().println("Checkout done");
+        else listener.getLogger().println("Checkout failed");
     }
 
     /**

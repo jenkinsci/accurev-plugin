@@ -132,7 +132,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
 
-    private boolean doUpdate(File changeLogFile) throws IOException, InterruptedException {
+    private boolean doUpdate(File changeLogFile) throws IOException {
         updateLogFile = XmlConsolidateStreamChangeLog.getUpdateChangeLogFile(changeLogFile);
         return Update.performUpdate(scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, getRefTree(), updateLogFile);
     }
