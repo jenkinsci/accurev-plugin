@@ -184,11 +184,9 @@ public abstract class AbstractModeDelegate {
                     localStream, changelogFile, logger, scm, webURL);
         }
 
-        if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
-            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher, startDateOfPopulate,
-                    startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
-        }
-        return true;
+        return getChangesFromStreams(startTime, stream, changelogFile, webURL) ||
+                ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher,
+                        startDateOfPopulate, startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
     }
 
     protected String getChangeLogStream() {
