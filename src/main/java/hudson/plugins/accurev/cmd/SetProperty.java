@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -9,19 +10,18 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class SetProperty extends Command {
 
     private static final Logger logger = Logger.getLogger(SetProperty.class.getName());
 
-    public static boolean setproperty(
+    public static void setproperty(
             final AccurevSCM scm,
             final FilePath accurevWorkingSpace, //
             final TaskListener listener, //
             final Launcher launcher,
-            final Map<String, String> accurevEnv,
+            final EnvVars accurevEnv,
             final AccurevServer server,
             final String streamOrWorkspaceName,
             final String colorCode,
@@ -38,8 +38,9 @@ public class SetProperty extends Command {
         bgColorStyleCmd.add("-r");
         bgColorStyleCmd.add(propertyName);
         bgColorStyleCmd.add(propertyValue);
-        return AccurevLauncher.runCommand("setproperty background color", launcher, bgColorStyleCmd,
+        boolean runCommand = AccurevLauncher.runCommand("setproperty background color", launcher, bgColorStyleCmd,
                 scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true);
+        if (!runCommand) throw new IOException("Command failed");
 
     }
 }

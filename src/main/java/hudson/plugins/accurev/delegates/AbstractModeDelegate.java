@@ -3,11 +3,12 @@ package hudson.plugins.accurev.delegates;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.Job;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.cmd.*;
-import hudson.scm.ChangeLogSet;
-import hudson.scm.EditType;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
@@ -34,12 +35,13 @@ public abstract class AbstractModeDelegate {
     private static final String ACCUREV_SERVER_HOSTNAME = "ACCUREV_SERVER_HOSTNAME";
     private static final String ACCUREV_SERVER_PORT = "ACCUREV_SERVER_PORT";
     private static final String ACCUREV_SUBPATH = "ACCUREV_SUBPATH";
-    private static final String ACCUREV_LAST_TRANSACTION = "ACCUREV_LAST_TRANSACTION";
+    private static final String ACCUREV_LATEST_TRANSACTION_ID = "ACCUREV_LATEST_TRANSACTION_ID";
+    private static final String ACCUREV_LATEST_TRANSACTION_DATE = "ACCUREV_LATEST_TRANSACTION_DATE";
     private static final String ACCUREV_HOME = "ACCUREV_HOME";
-    protected final AccurevSCM scm;
+    public final AccurevSCM scm;
     protected Launcher launcher;
     protected AccurevSCM.AccurevServer server;
-    protected Map<String, String> accurevEnv;
+    protected EnvVars accurevEnv;
     protected FilePath jenkinsWorkspace;
     protected TaskListener listener;
     protected FilePath accurevWorkingSpace;
@@ -50,12 +52,12 @@ public abstract class AbstractModeDelegate {
         this.scm = scm;
     }
 
-    private void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, InterruptedException {
+    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, InterruptedException {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
         server = scm.getServer();
-        accurevEnv = new HashMap<>();
+        accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
             if (!Login.ensureLoggedInToAccurev(server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
@@ -71,7 +73,7 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState scmrs) throws IOException, InterruptedException {
+    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState state) throws IOException, InterruptedException {
         if (project.isInQueue()) {
             listener.getLogger().println("Project build is currently in queue.");
             return PollingResult.NO_CHANGES;
@@ -94,57 +96,10 @@ public abstract class AbstractModeDelegate {
 
     protected abstract PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException;
 
-    private boolean hasStringVariableReference(final String str) {
-        return StringUtils.isNotEmpty(str) && str.startsWith("$");
-    }
-
-    protected String getPollingStream(Job<?, ?> project) {
-        String parsedLocalStream;
-        if (hasStringVariableReference(scm.getStream())) {
-            ParametersDefinitionProperty paramDefProp = project
-                    .getProperty(ParametersDefinitionProperty.class);
-
-            if (paramDefProp == null) {
-                throw new IllegalArgumentException(
-                        "Polling is not supported when stream name has a variable reference '" + scm.getStream() + "'.");
-            }
-
-            Map<String, String> keyValues = new TreeMap<>();
-
-            /* Scan for all parameter with an associated default values */
-            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-
-                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-                if (defaultValue instanceof StringParameterValue) {
-                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-                    keyValues.put(defaultValue.getName(), strdefvalue.value);
-                }
-            }
-
-            final EnvVars environment = new EnvVars(keyValues);
-            parsedLocalStream = environment.expand(scm.getStream());
-            listener.getLogger().println("... expanded '" + scm.getStream() + "' to '" + parsedLocalStream + "'.");
-        } else {
-            parsedLocalStream = scm.getStream();
-        }
-
-        if (hasStringVariableReference(parsedLocalStream)) {
-            throw new IllegalArgumentException(
-                    "Polling is not supported when stream name has a variable reference '" + scm.getStream() + "'.");
-        }
-        return parsedLocalStream;
-    }
-
     public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
                             File changelogFile) throws IOException, InterruptedException {
 
-        try {
-            setup(launcher, jenkinsWorkspace, listener);
-        } catch (IllegalArgumentException ex) {
-            build.setResult(Result.FAILURE);
-            return false;
-        }
+        setup(launcher, jenkinsWorkspace, listener);
 
         if (!accurevWorkingSpace.exists()) {
             accurevWorkingSpace.mkdirs();
@@ -161,31 +116,30 @@ public abstract class AbstractModeDelegate {
         }
 
         final EnvVars environment = build.getEnvironment(listener);
-
+        accurevEnv.putAll(environment);
         localStream = environment.expand(scm.getStream());
 
         listener.getLogger().println("Getting a list of streams...");
         final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener,
                 launcher);
         if (streams == null) {
-            build.setResult(Result.FAILURE);
-            return false;
+            throw new IllegalStateException("Stream(s) not found");
         }
 
         if (!streams.containsKey(localStream)) {
             listener.fatalError("The specified stream, '" + localStream + "' does not appear to exist!");
-            return false;
+            throw new IllegalStateException("Specified stream not found");
         }
 
         if (server.isUseColor()) {
             setStreamColor();
         }
 
-        return checkout(build, changelogFile) && populate() && captureChangeLog(build, changelogFile, streams, environment);
+        return checkout(build, changelogFile) && populate() && captureChangeLog(build, changelogFile, streams);
 
     }
 
-    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams, EnvVars environment) throws IOException, InterruptedException {
+    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams) throws IOException, InterruptedException {
         try {
             AccurevTransaction latestTransaction = getLatestTransactionFromStreams(streams);
             if (latestTransaction == null) {
@@ -197,12 +151,11 @@ public abstract class AbstractModeDelegate {
             listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
             listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
 
-            {
-                environment.put("ACCUREV_LATEST_TRANSACTION_ID", latestTransactionID);
-                environment.put("ACCUREV_LATEST_TRANSACTION_DATE", latestTransactionDate);
-
-                build.addAction(new AccuRevHiddenParametersAction(environment));
-            }
+            EnvVars envVars = new EnvVars();
+            envVars.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
+            envVars.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
+            AccurevPromoteTrigger.setLastTransaction(build.getParent(), latestTransactionID);
+            build.addAction(new AccuRevHiddenParametersAction(envVars));
 
         } catch (Exception e) {
             listener.error("There was a problem getting the latest transaction info from the stream.");
@@ -213,12 +166,12 @@ public abstract class AbstractModeDelegate {
                 "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
-        Run<?, ?> prevbuild = null;
-        if (build != null) prevbuild = build.getPreviousBuild();
-        if (prevbuild != null) startTime = prevbuild.getTimestamp();
+        Run<?, ?> previousBuild = null;
+        if (build != null) previousBuild = build.getPreviousBuild();
+        if (previousBuild != null) startTime = previousBuild.getTimestamp();
         else {
             Calendar c = Calendar.getInstance();
-            c.add(Calendar.MONTH, -1);
+            c.add(Calendar.DAY_OF_YEAR, -7);
             startTime = c;
         }
 
@@ -231,18 +184,16 @@ public abstract class AbstractModeDelegate {
                     localStream, changelogFile, logger, scm, webURL);
         }
 
-        if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
-            return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher, startDateOfPopulate,
-                    startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
-        }
-        return true;
+        return getChangesFromStreams(startTime, stream, changelogFile, webURL) ||
+                ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher,
+                        startDateOfPopulate, startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
     }
 
     protected String getChangeLogStream() {
         return localStream;
     }
 
-    private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile, Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
+    private boolean getChangesFromStreams(final Calendar startTime, AccurevStream stream, File changelogFile, Map<String, GetConfigWebURL> webURL) throws IOException {
         List<String> changedStreams = new ArrayList<>();
         // Capture changes in all streams and parents
         boolean capturedChangelog;
@@ -254,7 +205,8 @@ public abstract class AbstractModeDelegate {
                 changedStreams.add(streamChangeLog.getName());
             }
             stream = stream.getParent();
-        } while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null && !scm.isIgnoreStreamParent());
+        }
+        while (stream != null && stream.isReceivingChangesFromParent() && capturedChangelog && startTime != null && !scm.isIgnoreStreamParent());
 
         XmlConsolidateStreamChangeLog.createChangeLog(changedStreams, changelogFile, getUpdateFileName());
         return capturedChangelog;
@@ -273,6 +225,10 @@ public abstract class AbstractModeDelegate {
             stream = stream.getParent();
         } while (stream != null && stream.isReceivingChangesFromParent() && !scm.isIgnoreStreamParent());
         return transaction;
+    }
+
+    public EnvVars getAccurevEnv() {
+        return accurevEnv;
     }
 
     protected String getUpdateFileName() {
@@ -376,41 +332,10 @@ public abstract class AbstractModeDelegate {
             env.put(ACCUREV_SUBPATH, "");
         }
 
-        // grab the last promote transaction from the changelog file
-        String lastTransaction = null;
-        // Abstract should have this since checkout should have already run
-        ChangeLogSet<?> changeSet = build.getChangeSet();
-        if (!changeSet.isEmptySet()) {
-            // first EDIT entry should be the last transaction we want
-            for (Object o : changeSet.getItems()) {
-                if (o instanceof AccurevTransaction) {
-                    AccurevTransaction t = (AccurevTransaction) o;
-                    if (t.getEditType() == EditType.EDIT) { // this means promote or chstream in AccuRev
-                        lastTransaction = t.getId();
-                        break;
-                    }
-                }
-            }
-            /*
-             * in case you get a changelog with no changes (e.g. a dispatch
-             * message or something I don't know about yet), set something
-             * different than nothing
-             */
-            if (lastTransaction == null) {
-                lastTransaction = "NO_EDITS";
-            }
-        }
-        if (lastTransaction != null) {
-            env.put(ACCUREV_LAST_TRANSACTION, lastTransaction);
-        } else {
-            env.put(ACCUREV_LAST_TRANSACTION, "");
-        }
-
         // ACCUREV_HOME is added to the build env variables
         if (System.getenv(ACCUREV_HOME) != null) {
             env.put(ACCUREV_HOME, System.getenv(ACCUREV_HOME));
         }
-
         buildEnvVarsCustom(build, env);
     }
 

@@ -11,6 +11,7 @@ import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
 
     @Override
     protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
-        localStream = getPollingStream(project);
+        localStream = scm.getPollingStream(project, listener);
         return super.checkForChanges(project);
     }
 
@@ -95,7 +96,13 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         return new Relocation(relocationOptions, remoteDetails.getHostName(), accurevWorkingSpace.getRemote(), localStream);
     }
 
-    private Map<String, AccurevWorkspace> getWorkspaces() throws IOException, InterruptedException {
+    /**
+     * Builds a command which gets executed and retrieves the following return data
+     *
+     * @return Map with Workspace name as key and Workspace Object as value.
+     * @throws IOException Failed to execute command or Parse data.
+     */
+    private Map<String, AccurevWorkspace> getWorkspaces() throws IOException {
         listener.getLogger().println("Getting a list of workspaces...");
         String depot = scm.getDepot();
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
@@ -105,9 +112,10 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("wspaces");
-        final Map<String, AccurevWorkspace> workspaces = AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, scm.getOptionalLock(),
-                accurevEnv, jenkinsWorkspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowWorkspaces(), null);
-        return workspaces;
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
+        return AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, scm.getOptionalLock(),
+                accurevEnv, jenkinsWorkspace, listener, logger, parser, new ParseShowWorkspaces(), null);
     }
 
     @Override

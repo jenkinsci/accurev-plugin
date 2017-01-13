@@ -1,6 +1,6 @@
 package hudson.plugins.accurev;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -23,7 +23,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -43,7 +42,7 @@ public class AccurevSCM extends SCM {
     @Extension
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     static final Date NO_TRANS_DATE = new Date(0);
-    private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
     private final String serverName;
     private final String depot;
     private final String stream;
@@ -59,10 +58,10 @@ public class AccurevSCM extends SCM {
     private final String subPath;
     private final String filterForPollSCM;
     private final String directoryOffset;
+    private final boolean useReftree;
+    private final boolean useWorkspace;
+    private final boolean noWspaceNoReftree;
     private String serverUUID;
-    private boolean useReftree;
-    private boolean useWorkspace;
-    private boolean noWspaceNoReftree;
     private Job<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
@@ -176,10 +175,10 @@ public class AccurevSCM extends SCM {
         if (serverUUID == null) {
             if (serverName == null) {
                 // No fallback
-                logger.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
+                LOGGER.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
                 return null;
             }
-            logger.warning("Getting server by name (" + serverName + "), because UUID is not set.");
+            LOGGER.warning("Getting server by name (" + serverName + "), because UUID is not set.");
             server = DESCRIPTOR.getServer(serverName);
             if (server != null) {
                 this.setServerUUID(server.getUUID());
@@ -385,7 +384,9 @@ public class AccurevSCM extends SCM {
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
-        AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
+        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
+        if (checkout) listener.getLogger().println("Checkout done");
+        else listener.getLogger().println("Checkout failed");
     }
 
     /**
@@ -410,11 +411,9 @@ public class AccurevSCM extends SCM {
             activeProject = null;
         }
 
-        if (requiresWorkspace && activeProject == null) {
-            return true;
-        }
+        // Return true if activeProject null and it does require a workspace, otherwise false.
+        return requiresWorkspace && activeProject == null;
 
-        return false;
     }
 
     /**
@@ -464,6 +463,48 @@ public class AccurevSCM extends SCM {
 
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
+    }
+
+    public boolean hasStringVariableReference(final String str) {
+        return StringUtils.isNotEmpty(str) && str.startsWith("$");
+    }
+
+    public String getPollingStream(Job<?, ?> project, TaskListener listener) {
+        String parsedLocalStream;
+        if (hasStringVariableReference(getStream())) {
+            ParametersDefinitionProperty paramDefProp = project
+                    .getProperty(ParametersDefinitionProperty.class);
+
+            if (paramDefProp == null) {
+                throw new IllegalArgumentException(
+                        "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
+            }
+
+            Map<String, String> keyValues = new TreeMap<>();
+
+            /* Scan for all parameter with an associated default values */
+            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
+
+                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
+
+                if (defaultValue instanceof StringParameterValue) {
+                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
+                    keyValues.put(defaultValue.getName(), strdefvalue.value);
+                }
+            }
+
+            final EnvVars environment = new EnvVars(keyValues);
+            parsedLocalStream = environment.expand(getStream());
+            listener.getLogger().println("... expanded '" + getStream() + "' to '" + parsedLocalStream + "'.");
+        } else {
+            parsedLocalStream = getStream();
+        }
+
+        if (hasStringVariableReference(parsedLocalStream)) {
+            throw new IllegalArgumentException(
+                    "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
+        }
+        return parsedLocalStream;
     }
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------
@@ -536,9 +577,9 @@ public class AccurevSCM extends SCM {
          * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
          * @see <a href="http://javadoc.jenkins-ci.org/hudson/model/Descriptor.html#newInstance(org.kohsuke.stapler.StaplerRequest)">newInstance</a>
          */
-        @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
         @Override
         public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
+            if (req == null) throw new FormException("No request came through", "Request");
             String serverUUID = req.getParameter("_.serverUUID");
             String serverName;
             AccurevServer server = getServer(serverUUID);
@@ -613,23 +654,24 @@ public class AccurevSCM extends SCM {
 
         @CheckForNull
         public AccurevServer getServer(String uuid) {
-            if (uuid == null) {
+            if (uuid == null || this._servers == null) {
+                LOGGER.fine("No server found. - getServer(NULL)");
                 return null;
             }
-            if (this._servers != null) {
-              for (AccurevServer server : this._servers) {
-                  if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
-                      return server;
-                  } else if (uuid.equals(server.getName())) {
-                      // support old server name
-                      return server;
-                  }
-              }
+            for (AccurevServer server : this._servers) {
+                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
+                    return server;
+                } else if (uuid.equals(server.getName())) {
+                    // support old server name
+                    return server;
+                }
             }
+            LOGGER.fine("No server found.");
             return null;
         }
 
         // This method will populate the servers in the select box
+        @SuppressWarnings("unused") // Used by Jetty
         public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
@@ -645,6 +687,7 @@ public class AccurevSCM extends SCM {
 
         // This method will populate the depots in the select box depending upon the
         // server selected.
+        @SuppressWarnings("unused") // Used by Jetty
         public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
@@ -673,6 +716,7 @@ public class AccurevSCM extends SCM {
         }
 
         // Populating the streams
+        @SuppressWarnings("unused") // Used by Jetty
         public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
@@ -695,27 +739,29 @@ public class AccurevSCM extends SCM {
     // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer implements Serializable {
 
-        public static final String VTT_DELIM = ",";
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        public static final String DEFAULT_VALID_STREAM_TRANSACTION_TYPES = "chstream,defcomp,mkstream,promote";
-        public static final String DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
+        protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
+                .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
+        protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
+                .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
+                        "mkstream", "move", "promote", "purge", "dispatch"));
         private static final long serialVersionUID = 3270850408409304611L;
         // keep all transaction types in a set for validation
-        private static final String VTT_LIST = "chstream,defcomp,mkstream,promote";
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST
-                .split(VTT_DELIM)));
+        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
+        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
+        private final String name;
+        private final String host;
+        private final int port;
+        private final String username;
+        private final String password;
         private UUID uuid;
-        private String name;
-        private String host;
-        private int port;
-        private String username;
-        private String password;
         private String validTransactionTypes;
         private boolean syncOperations;
         private boolean minimiseLogins;
         private boolean useNonexpiringLogin;
         private boolean useRestrictedShowStreams;
         private boolean useColor;
+        private boolean usePromoteListen;
 
         @DataBoundConstructor
         public AccurevServer(//
@@ -730,7 +776,8 @@ public class AccurevSCM extends SCM {
                              boolean minimiseLogins, //
                              boolean useNonexpiringLogin, //
                              boolean useRestrictedShowStreams,
-                             boolean useColor) {
+                             boolean useColor,
+                             boolean usePromoteListen) {
             if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
             else this.uuid = UUID.fromString(uuid);
             this.name = name;
@@ -744,6 +791,8 @@ public class AccurevSCM extends SCM {
             this.useNonexpiringLogin = useNonexpiringLogin;
             this.useRestrictedShowStreams = useRestrictedShowStreams;
             this.useColor = useColor;
+            this.usePromoteListen = usePromoteListen;
+            AccurevPromoteTrigger.validateListeners();
         }
 
         /**
@@ -760,6 +809,12 @@ public class AccurevSCM extends SCM {
             return this;
         }
 
+        /**
+         * Getter for property 'uuid'.
+         * If value is null generate random UUID
+         *
+         * @return Value for property 'uuid'.
+         */
         public String getUUID() {
             if (uuid == null) {
                 uuid = UUID.randomUUID();
@@ -809,7 +864,7 @@ public class AccurevSCM extends SCM {
          * @return Value for property 'password'.
          */
         public String getPassword() {
-            return Password.deobfuscate(password);
+            return Password.deobfuscate(password); //TODO: Use Credentials plugin
         }
 
         /**
@@ -870,12 +925,20 @@ public class AccurevSCM extends SCM {
             this.useColor = useColor;
         }
 
+        public boolean isUsePromoteListen() {
+            return usePromoteListen;
+        }
+
+        public void setUsePromoteListen(boolean usePromoteListen) {
+            this.usePromoteListen = usePromoteListen;
+        }
+
         public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
-                throws IOException, ServletException {
-            final String[] formValidTypes = value.split(VTT_DELIM);
+        {
+            final String[] formValidTypes = value.split(",");
             for (final String formValidType : formValidTypes) {
                 if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {
-                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + VTT_LIST);
+                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + Arrays.toString(VTT_LIST));
                 }
             }
             return FormValidation.ok();

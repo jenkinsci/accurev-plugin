@@ -4,8 +4,8 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>2.17</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>2.19</version>
+        <relativePath/>
     </parent>
 
     <artifactId>accurev</artifactId>
@@ -14,7 +14,8 @@
     <name>Jenkins Accurev plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin</url>
     <properties>
-        <jenkins.version>2.19.1</jenkins.version>
+        <jenkins.version>2.32.1</jenkins.version>
+        <java.level>8</java.level>
     </properties>
 
     <developers>
@@ -23,6 +24,14 @@
             <name>Joseph Petersen</name>
         </developer>
     </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+    </dependencies>
 
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/accurev-plugin.git</connection>
@@ -85,10 +94,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <configuration>
+                    <quiet>true</quiet>
                 </configuration>
             </plugin>
         </plugins>
@@ -107,6 +123,10 @@
             <id>repo.jenkins-ci.org</id>
             <url>http://repo.jenkins-ci.org/public/</url>
         </repository>
+        <repository>
+            <id>Eclipse Paho Repo</id>
+            <url>https://repo.eclipse.org/content/repositories/paho-releases/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -115,6 +135,4 @@
             <url>http://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
-</project>  
-  
-
+</project>

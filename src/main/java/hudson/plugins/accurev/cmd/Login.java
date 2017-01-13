@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -12,8 +13,6 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class Login extends Command {
@@ -26,7 +25,7 @@ public class Login extends Command {
      */
     private static String getLoggedInUsername(//
                                               final AccurevServer server, //
-                                              final Map<String, String> accurevEnv, //
+                                              final EnvVars accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
                                               final Launcher launcher) throws IOException {
@@ -34,20 +33,21 @@ public class Login extends Command {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("info");
         addServer(cmd, server);
-        final String username = AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
+        // returns username
+        return AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
                 workspace, listener, logger, new ParseInfoToLoginName(), null);
-        return username;
     }
 
-    public static boolean ensureLoggedInToAccurev(AccurevServer server, Map<String, String> accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
-                                                  Launcher launcher) throws IOException, InterruptedException {
+    public static boolean ensureLoggedInToAccurev(AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
+                                                  Launcher launcher) throws IOException {
 
         if (server == null) {
+            listener.getLogger().println("Authentication failure - Server is empty");
             return false;
         }
         final String requiredUsername = server.getUsername();
         if (StringUtils.isBlank(requiredUsername)) {
-            listener.getLogger().println("Authentication failure");
+            listener.getLogger().println("Authentication failure - Username blank");
             return false;
         }
         AccurevSCMDescriptor.lock();
@@ -55,7 +55,7 @@ public class Login extends Command {
             final boolean loginRequired;
             if (server.isMinimiseLogins()) {
                 final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
-                if (currentUsername == null) {
+                if (StringUtils.isEmpty(currentUsername)) {
                     loginRequired = true;
                     listener.getLogger().println("Not currently authenticated with Accurev server");
                 } else {
@@ -77,10 +77,10 @@ public class Login extends Command {
 
     private static boolean accurevLogin(//
                                         final AccurevServer server, //
-                                        final Map<String, String> accurevEnv, //
+                                        final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
-                                        final Launcher launcher) throws IOException, InterruptedException {
+                                        final Launcher launcher) throws IOException {
         listener.getLogger().println("Authenticating with Accurev server...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("login");
@@ -121,7 +121,7 @@ public class Login extends Command {
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
-        Map<String, String> accurevEnv = new HashMap<>();
+        EnvVars accurevEnv = new EnvVars();
 
         return ensureLoggedInToAccurev(server, accurevEnv, jenkins.getRootPath(), listener, launcher);
     }

@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -10,10 +11,11 @@ import hudson.plugins.accurev.AccurevTransaction;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseHistory;
 import hudson.util.ArgumentListBuilder;
+import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class History extends Command {
@@ -31,17 +33,17 @@ public class History extends Command {
      *                        Specify what type of transaction to search for (can be null)
      * @return the latest transaction of the specified type from the selected
      * stream
-     * @throws Exception if no transaction was found
+     * @throws IOException if no transaction was found
      */
     public static AccurevTransaction getLatestTransaction(//
                                                           final AccurevSCM scm, //
                                                           final AccurevServer server, //
-                                                          final Map<String, String> accurevEnv, //
+                                                          final EnvVars accurevEnv, //
                                                           final FilePath workspace, //
                                                           final TaskListener listener, //
                                                           final Launcher launcher, //
                                                           final String stream, //
-                                                          final String transactionType) throws Exception {
+                                                          final String transactionType) throws IOException {
         // initialize code that extracts the latest transaction of a certain
         // type using -k flag
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
@@ -60,12 +62,14 @@ public class History extends Command {
         }
 
         // execute code that extracts the latest transaction
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         final List<AccurevTransaction> transaction = new ArrayList<>(1);
         final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, XmlParserFactory.getFactory(), new ParseHistory(), transaction);
+                logger, parser, new ParseHistory(), transaction);
         if (transactionFound == null) {
             final String msg = "History command failed when trying to get the latest transaction of type " + transactionType;
-            throw new Exception(msg);
+            throw new IOException(msg);
         }
         if (transactionFound) {
             return transaction.get(0);

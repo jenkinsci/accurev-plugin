@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -12,7 +13,6 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
@@ -48,7 +48,8 @@ public class PopulateCmd extends Command {
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
-                            FilePath accurevWorkingSpace, Map<String, String> accurevEnv) throws IOException {
+                            FilePath accurevWorkingSpace,
+                            EnvVars accurevEnv) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
         final ArgumentListBuilder popcmd = new ArgumentListBuilder();
         popcmd.add("pop");

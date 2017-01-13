@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -15,6 +16,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
 public class ChangeLogCmd {
 
     public static boolean captureChangelog(AccurevServer server,
-                                           Map<String, String> accurevEnv,
+                                           EnvVars accurevEnv,
                                            FilePath workspace,
                                            TaskListener listener,
                                            Launcher launcher,
@@ -44,7 +46,7 @@ public class ChangeLogCmd {
                                            File changelogFile,
                                            Logger logger,
                                            AccurevSCM scm,
-                                           Map<String, GetConfigWebURL> webURL) throws IOException, InterruptedException {
+                                           Map<String, GetConfigWebURL> webURL) throws IOException {
         final String accurevACSYNCEnvVar = "AC_SYNC";
         if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
             final String accurevACSYNC = "IGNORE";
@@ -99,7 +101,7 @@ public class ChangeLogCmd {
      */
 
     public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServer server,
-                                                              Map<String, String> accurevEnv,
+                                                              EnvVars accurevEnv,
                                                               FilePath workspace,
                                                               TaskListener listener,
                                                               Launcher launcher,
@@ -111,10 +113,12 @@ public class ChangeLogCmd {
         getConfigCmd.add("-s");
         getConfigCmd.add("-r");
         getConfigCmd.add("settings.xml");
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
 
         return AccurevLauncher.runCommand("Get config to fetch webURL",
                 launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
-                XmlParserFactory.getFactory(), new ParseGetConfig(), null);
+                parser, new ParseGetConfig(), null);
 
     }
 

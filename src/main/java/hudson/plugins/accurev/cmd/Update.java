@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -9,10 +10,14 @@ import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.util.ArgumentListBuilder;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -47,16 +52,18 @@ public class Update extends Command {
 
     public static Boolean hasChanges(AccurevSCM scm, //
                                      AccurevSCM.AccurevServer server, //
-                                     Map<String, String> accurevEnv, //
+                                     EnvVars accurevEnv, //
                                      FilePath workspace, //
                                      TaskListener listener, //
                                      Launcher launcher, //
-                                     String reftree) throws IOException, InterruptedException {
+                                     String reftree) throws IOException {
 
         List<String> files = new ArrayList<>();
         final ArgumentListBuilder cmd = createCommand(server, true, reftree, false);
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         Boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, XmlParserFactory.getFactory(), new ParseUpdate(), files);
+                logger, parser, new ParseUpdate(), files);
         if (transactionFound != null && transactionFound) {
             String filterForPollSCM = scm.getFilterForPollSCM();
             String subPath = scm.getSubPath();
@@ -95,12 +102,12 @@ public class Update extends Command {
 
     public static boolean performUpdate(final AccurevSCM scm, //
                                         final AccurevSCM.AccurevServer server, //
-                                        final Map<String, String> accurevEnv, //
+                                        final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
                                         final Launcher launcher, //
                                         final String reftree,
-                                        File changelogFile) throws IOException, InterruptedException {
+                                        File changelogFile) throws IOException {
         final ArgumentListBuilder cmd = createCommand(server, false, reftree, false);
         final Boolean result = AccurevLauncher.runCommand("Update command", launcher,
                 cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,

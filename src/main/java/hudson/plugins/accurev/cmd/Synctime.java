@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -9,7 +10,6 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class Synctime extends Command {
@@ -19,10 +19,10 @@ public class Synctime extends Command {
     public static boolean synctime(//
                                    final AccurevSCM scm,
                                    final AccurevServer server, //
-                                   final Map<String, String> accurevEnv, //
+                                   final EnvVars accurevEnv, //
                                    final FilePath workspace, //
                                    final TaskListener listener, //
-                                   final Launcher launcher) throws IOException, InterruptedException {
+                                   final Launcher launcher) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("synctime");
         addServer(cmd, server);

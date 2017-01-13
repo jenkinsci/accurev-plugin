@@ -38,14 +38,12 @@ public class Relocation {
     }
 
     public boolean isPopRequired() {
-        boolean retVal = false;
         for (RelocationOption relocationOption : relocationOptions) {
-            retVal |= relocationOption.isPopRequired();
-            if (retVal) {
-                break;
+            if (relocationOption.isPopRequired()) {
+                return true;
             }
         }
-        return retVal;
+        return false;
     }
 
     public void appendCommands(ArgumentListBuilder relocateCommand) {

@@ -105,12 +105,12 @@ public class ParseChangeLog extends ChangeLogParser {
     }
 
     private List<AccurevTransaction> parse(File changelogFile, UpdateLog updateLog) throws IOException {
-        List<AccurevTransaction> transactions = null;
+        List<AccurevTransaction> transactions = new ArrayList<>();
         try {
             XmlPullParser parser = XmlParserFactory.newParser();
             try (BufferedReader br = Files.newBufferedReader(changelogFile.toPath())) {
                 parser.setInput(br);
-                transactions = parseTransactions(parser, changelogFile, updateLog);
+                transactions.addAll(parseTransactions(parser, changelogFile, updateLog));
             } finally {
                 parser.setInput(null);
             }
@@ -121,6 +121,7 @@ public class ParseChangeLog extends ChangeLogParser {
         return transactions;
     }
 
+    // TODO: Reduce complexity
     @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT")
     private List<AccurevTransaction> parseTransactions(XmlPullParser parser, File changeLogFile, UpdateLog updateLog) throws IOException, XmlPullParserException {
         List<AccurevTransaction> transactions = new ArrayList<>();
@@ -236,7 +237,7 @@ public class ParseChangeLog extends ChangeLogParser {
         }
     }
 
-    private void parseUpdate(File updateLogFile, UpdateLog updateLog) throws XmlPullParserException, IOException {
+    private void parseUpdate(File updateLogFile, UpdateLog updateLog) throws IOException {
         ParseUpdate parseUpdate = new ParseUpdate();
         List<String> updatedFiles = new ArrayList<>();
         updateLog.changedFiles = updatedFiles;

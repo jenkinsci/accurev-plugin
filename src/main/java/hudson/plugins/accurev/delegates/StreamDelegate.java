@@ -63,7 +63,7 @@ public class StreamDelegate extends AbstractModeDelegate {
         }
         final Date buildDate = lastBuild.getTimestamp().getTime();
         try {
-            localStream = getPollingStream(project);
+            localStream = scm.getPollingStream(project, listener);
         } catch (IllegalArgumentException ex) {
             listener.getLogger().println(ex.getMessage());
             return PollingResult.NO_CHANGES;
@@ -73,13 +73,8 @@ public class StreamDelegate extends AbstractModeDelegate {
         AccurevStream stream = streams == null ? null : streams.get(localStream);
 
         if (stream == null) {
-            // if there was a problem, fall back to simple stream check
-            if (CheckForChanges.checkStreamForChanges(server, accurevEnv, jenkinsWorkspace, listener, launcher, localStream,
-                    buildDate, logger, scm)) {
-                return PollingResult.BUILD_NOW;
-            } else {
-                return PollingResult.NO_CHANGES;
-            }
+            listener.getLogger().println("Stream not found or Accurev login failed.");
+            return PollingResult.NO_CHANGES;
         }
         // There may be changes in a parent stream that we need to factor in.
         do {

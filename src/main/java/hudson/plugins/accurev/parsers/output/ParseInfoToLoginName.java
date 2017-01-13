@@ -20,8 +20,7 @@ public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void
                     final String part = parts[i];
                     if (usernameHeading.equals(part)) {
                         if ((i + 1) < parts.length) {
-                            final String username = parts[i + 1];
-                            return username;
+                            return parts[i + 1]; // returns username
                         }
                     }
                 }

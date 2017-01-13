@@ -19,14 +19,14 @@ import java.util.List;
 public final class AccurevTransaction extends ChangeLogSet.Entry {
     private static final String FIELD_SEPARATOR = ", ";
     private static final String EQ = "=";
+    private final List<String> affectedPaths = new ArrayList<>();
+    private final List<String> affectedRawPaths = new ArrayList<>();
+    private final List<String> fileRevisions = new ArrayList<>();
     //    private String revision;
     private User author;
     private Date date;
     private String msg;
     private String action;
-    private List<String> affectedPaths = new ArrayList<>();
-    private List<String> affectedRawPaths = new ArrayList<>();
-    private List<String> fileRevisions = new ArrayList<>();
     private String id;
     private String issueNum;
     private String webuiURLforTrans;

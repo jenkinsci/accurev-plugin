@@ -12,6 +12,7 @@ import static hudson.init.InitMilestone.JOB_LOADED;
 /**
  * Created by josp on 21/09/16.
  */
+@SuppressWarnings("unused") // Used for initialization/migration purpose
 public class AccurevPlugin {
     private static final Logger LOGGER = Logger.getLogger(AccurevPlugin.class.getName());
 
