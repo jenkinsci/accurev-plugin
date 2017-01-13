@@ -65,6 +65,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
+        if (job == null) throw new IOException("Job is null");
         File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
         try (BufferedWriter br = Files.newBufferedWriter(f.toPath(), UTF_8)) {
             br.write(previous);
@@ -72,6 +73,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     private String getLastTransaction(Job<?, ?> job) throws IOException {
+        if (job == null) throw new IOException("Job is null");
         File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
         if (!f.exists()) {
             if (f.createNewFile()) return "";
@@ -144,6 +146,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     public void scheduleBuild(String author, String stream) {
         LOGGER.fine("schedule build: " + getProjectName());
         if (job != null) job.scheduleBuild2(10, new AccurevPromoteCause(author, stream));
+        else LOGGER.warning("Job is null");
     }
 
     @Override

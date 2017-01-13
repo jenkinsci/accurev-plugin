@@ -264,6 +264,7 @@ public final class AccurevLauncher {
             @Nonnull final OutputStream stdoutStream,
             @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
         String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
+        if (accurevPath == null) accurevPath = "accurev";
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
@@ -410,12 +411,13 @@ public final class AccurevLauncher {
         return isUnix(workspace) ? "/" : "\\";
     }
 
-    @Nonnull
     private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
-        String name = workspace.toComputer().getName();
+        Computer computer = workspace.toComputer();
+        String name = null;
+        if (null != computer) name = computer.getName();
         String binName = "accurev";
-        String exe = binName;
-        if (executables.containsKey(name)) {
+        String exe;
+        if (null != name && executables.containsKey(name)) {
             return executables.get(name);
         }
         if (e.containsKey("ACCUREV_BIN")) {
@@ -445,6 +447,7 @@ public final class AccurevLauncher {
                 return exe;
             }
         }
+        if (StringUtils.isEmpty(exe)) exe = binName;
         return exe;
     }
 
