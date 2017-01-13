@@ -409,11 +409,9 @@ public class AccurevSCM extends SCM {
             activeProject = null;
         }
 
-        if (requiresWorkspace && activeProject == null) {
-            return true;
-        }
+        // Return true if activeProject null and it does require a workspace, otherwise false.
+        return requiresWorkspace && activeProject == null;
 
-        return false;
     }
 
     /**
