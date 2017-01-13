@@ -151,10 +151,11 @@ public abstract class AbstractModeDelegate {
             listener.getLogger().println("Latest Transaction ID: " + latestTransactionID);
             listener.getLogger().println("Latest transaction Date: " + latestTransactionDate);
 
-            accurevEnv.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
-            accurevEnv.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
+            EnvVars envVars = new EnvVars();
+            envVars.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
+            envVars.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
             AccurevPromoteTrigger.setLastTransaction(build.getParent(), latestTransactionID);
-            build.addOrReplaceAction(new AccuRevHiddenParametersAction(accurevEnv));
+            build.addAction(new AccuRevHiddenParametersAction(envVars));
 
         } catch (Exception e) {
             listener.error("There was a problem getting the latest transaction info from the stream.");
@@ -337,9 +338,6 @@ public abstract class AbstractModeDelegate {
         if (System.getenv(ACCUREV_HOME) != null) {
             env.put(ACCUREV_HOME, System.getenv(ACCUREV_HOME));
         }
-
-        accurevEnv.putAll(env);
-        build.addOrReplaceAction(new AccuRevHiddenParametersAction(accurevEnv));
         buildEnvVarsCustom(build, env);
     }
 
