@@ -10,6 +10,7 @@ import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.util.ArgumentListBuilder;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,8 +60,10 @@ public class Update extends Command {
 
         List<String> files = new ArrayList<>();
         final ArgumentListBuilder cmd = createCommand(server, true, reftree, false);
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         Boolean transactionFound = AccurevLauncher.runCommand("Update command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, XmlParserFactory.getFactory(), new ParseUpdate(), files);
+                logger, parser, new ParseUpdate(), files);
         if (transactionFound != null && transactionFound) {
             String filterForPollSCM = scm.getFilterForPollSCM();
             String subPath = scm.getSubPath();

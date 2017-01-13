@@ -11,6 +11,7 @@ import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,8 +112,10 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("wspaces");
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Show workspaces command", launcher, cmd, scm.getOptionalLock(),
-                accurevEnv, jenkinsWorkspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowWorkspaces(), null);
+                accurevEnv, jenkinsWorkspace, listener, logger, parser, new ParseShowWorkspaces(), null);
     }
 
     @Override

@@ -11,6 +11,7 @@ import hudson.plugins.accurev.AccurevTransaction;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseHistory;
 import hudson.util.ArgumentListBuilder;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,9 +62,11 @@ public class History extends Command {
         }
 
         // execute code that extracts the latest transaction
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         final List<AccurevTransaction> transaction = new ArrayList<>(1);
         final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, XmlParserFactory.getFactory(), new ParseHistory(), transaction);
+                logger, parser, new ParseHistory(), transaction);
         if (transactionFound == null) {
             final String msg = "History command failed when trying to get the latest transaction of type " + transactionType;
             throw new IOException(msg);

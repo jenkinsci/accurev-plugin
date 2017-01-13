@@ -11,6 +11,7 @@ import hudson.plugins.accurev.parsers.xml.ParseShowReftrees;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,9 +106,11 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         Command.addServer(cmd, server);
         cmd.add("-fx");
         cmd.add("refs");
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Show ref trees command",
                 launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
-                XmlParserFactory.getFactory(), new ParseShowReftrees(), null);
+                parser, new ParseShowReftrees(), null);
     }
 
     @Override

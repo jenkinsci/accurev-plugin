@@ -16,6 +16,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -112,10 +113,12 @@ public class ChangeLogCmd {
         getConfigCmd.add("-s");
         getConfigCmd.add("-r");
         getConfigCmd.add("settings.xml");
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
 
         return AccurevLauncher.runCommand("Get config to fetch webURL",
                 launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
-                XmlParserFactory.getFactory(), new ParseGetConfig(), null);
+                parser, new ParseGetConfig(), null);
 
     }
 

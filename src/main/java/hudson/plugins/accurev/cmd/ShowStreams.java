@@ -14,6 +14,7 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.ComboBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -61,8 +62,10 @@ public class ShowStreams extends Command {
         cmd.add("-p");
         cmd.add(depot);
         cmd.add("streams");
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", launcher, cmd, lock, accurevEnv,
-                workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), depot);
+                workspace, listener, logger, parser, new ParseShowStreams(), depot);
         setParents(streams);
         return streams;
     }
@@ -113,8 +116,10 @@ public class ShowStreams extends Command {
         cmd.add("-s");
         cmd.add(streamName);
         cmd.add("streams");
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Restricted show streams command", launcher, cmd, lock,
-                accurevEnv, workspace, listener, logger, XmlParserFactory.getFactory(), new ParseShowStreams(), depot);
+                accurevEnv, workspace, listener, logger, parser, new ParseShowStreams(), depot);
     }
 
     private static void setParents(Map<String, AccurevStream> streams) {

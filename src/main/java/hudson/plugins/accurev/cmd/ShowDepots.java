@@ -9,6 +9,7 @@ import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowDepots;
 import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,7 +33,9 @@ public class ShowDepots extends Command {
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         EnvVars accurevEnv = new EnvVars();
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("show depots command", launcher, cmd, null,
-                accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, XmlParserFactory.getFactory(), new ParseShowDepots(), null);
+                accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, parser, new ParseShowDepots(), null);
     }
 }
