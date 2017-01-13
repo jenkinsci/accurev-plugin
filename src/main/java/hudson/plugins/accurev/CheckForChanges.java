@@ -5,10 +5,10 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,7 +58,7 @@ public class CheckForChanges {
                         " in stream [" + stream + "]");
 
         Collection<String> serverPaths;
-        List<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
+        Set<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
 
         for (final String transactionType : validTransactionTypes) {
             try {
@@ -73,7 +73,7 @@ public class CheckForChanges {
                         serverPaths = tempTransaction.getAffectedPaths();
                         if (tempTransaction.getAffectedPaths().size() > 0) {
                             listener.getLogger().println("This transaction seems to have happened after the latest build!!!");
-                            if (!changesMatchFilter(listener, serverPaths, pollingFilters)) {
+                            if (!changesMatchFilter(serverPaths, pollingFilters)) {
                                 // Continue to next transaction (that may have a match)
                                 continue;
                             }
@@ -150,7 +150,7 @@ public class CheckForChanges {
         boolean isTransLatestThanBuild = false;
 
         Collection<String> serverPaths;
-        List<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
+        Set<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
 
         for (final String transactionType : validTransactionTypes) {
             try {
@@ -164,7 +164,7 @@ public class CheckForChanges {
                         //check the affected
                         serverPaths = tempTransaction.getAffectedPaths();
                         if (tempTransaction.getAffectedPaths().size() > 0) {
-                            if (!changesMatchFilter(listener, serverPaths, pollingFilters)) {
+                            if (!changesMatchFilter(serverPaths, pollingFilters)) {
                                 // Continue to next transaction (that may have a match)
                                 continue;
                             }
@@ -193,41 +193,46 @@ public class CheckForChanges {
         return isTransLatestThanBuild;
     }
 
-    private static boolean changesMatchFilter(TaskListener listener, Collection<String> serverPaths, List<String> filters) {
-        if (filters == null || filters.isEmpty()) {
+    private static boolean changesMatchFilter(Collection<String> serverPaths, Collection<String> filters) {
+        if (CollectionUtils.isEmpty(filters)) {
             // No filters, so always a match.
             return true;
         }
 
-        for (String filterPath : filters) {
-            // Paths are sanitized using java.nio.file.Paths (makes sure that the same path separators are used)
-            final Path fp = Paths.get(filterPath);
-            for (String serverPath : serverPaths) {
-                final Path sp = Paths.get(serverPath);
-                if (sp.toString().contains(fp.toString())) {
-                    return true;
-                }
+        final String[] filterArray = filters.toArray(new String[filters.size()]);
+
+        for (String path : serverPaths) {
+            if (StringUtils.indexOfAny(sanitizeSlashes(path), filterArray) > -1) {
+                // Path contains one of the filters
+                return true;
             }
         }
+
         return false;
     }
 
-    private static List<String> getListOfPollingFilters(String filterForPollSCM, String subPath) {
-        final String DELIMITER = ",";
-        List<String> result = new ArrayList<>();
-
-        if (filterForPollSCM != null && !(filterForPollSCM.isEmpty())) {
-            for (String filter : filterForPollSCM.split(DELIMITER)) {
-                result.add(filter.trim());
-            }
-        } else {
-            if (subPath != null && !(subPath.isEmpty())) {
-                for (String filter : subPath.split(DELIMITER)) {
-                    result.add(filter.trim());
-                }
-            }
+    private static Set<String> getListOfPollingFilters(String filterForPollSCM, String subPath) {
+        if (StringUtils.isNotBlank(filterForPollSCM)) {
+            return splitAndSanitizeFilters(filterForPollSCM);
         }
 
-        return result;
+		  return splitAndSanitizeFilters(subPath);
+    }
+
+    private static Set<String> splitAndSanitizeFilters(String input) {
+        if (StringUtils.isBlank(input)) {
+            return null;
+        }
+
+        final char DELIMITER = ',';
+        final String STRIP_CHARS = " \t\n\r/";
+        String[] filters = StringUtils.split(sanitizeSlashes(input), DELIMITER);
+        filters = StringUtils.stripAll(filters, STRIP_CHARS);
+
+        return new HashSet<>(Arrays.asList(filters));
+    }
+
+    private static String sanitizeSlashes(String input) {
+        return input.replace('\\', '/');
     }
 }
