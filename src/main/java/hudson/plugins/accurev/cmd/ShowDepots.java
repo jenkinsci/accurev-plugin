@@ -4,7 +4,7 @@ import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowDepots;
 import hudson.util.ArgumentListBuilder;
@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 public class ShowDepots extends Command {
 
     public static List<String> getDepots(//
-                                         final AccurevServer server,
+                                         final AccurevSCMBackwardCompatibility.AccurevServer server,
                                          final Logger descriptorLogger
     ) throws IOException {
 

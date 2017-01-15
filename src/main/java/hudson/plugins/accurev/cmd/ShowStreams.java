@@ -4,11 +4,7 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ComboBoxModel;
@@ -31,7 +27,7 @@ public class ShowStreams extends Command {
     public static Map<String, AccurevStream> getStreams(//
                                                         final AccurevSCM scm, //
                                                         final String nameOfStreamRequired, //
-                                                        final AccurevServer server, //
+                                                        final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                                         final EnvVars accurevEnv, //
                                                         final FilePath workspace, //
                                                         final TaskListener listener, //
@@ -48,7 +44,7 @@ public class ShowStreams extends Command {
     }
 
     public static Map<String, AccurevStream> getAllStreams(//
-                                                           final AccurevServer server, //
+                                                           final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                                            final String depot, //
                                                            final Lock lock, //
                                                            final EnvVars accurevEnv, //
@@ -72,7 +68,7 @@ public class ShowStreams extends Command {
 
     private static Map<String, AccurevStream> getAllAncestorStreams(//
                                                                     final String nameOfStreamRequired, //
-                                                                    final AccurevServer server, //
+                                                                    final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                                                     final String depot, //
                                                                     final Lock lock, //
                                                                     final EnvVars accurevEnv, //
@@ -100,7 +96,7 @@ public class ShowStreams extends Command {
 
     private static Map<String, AccurevStream> getOneStream(//
                                                            final String streamName, //
-                                                           final AccurevServer server, //
+                                                           final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                                            final String depot, //
                                                            final Lock lock, //
                                                            final EnvVars accurevEnv, //
@@ -134,7 +130,7 @@ public class ShowStreams extends Command {
     //Populating streams dynamically in the global config page
 
     public static ComboBoxModel getStreamsForGlobalConfig(//
-                                                          final AccurevServer server,
+                                                          final AccurevSCMBackwardCompatibility.AccurevServer server,
                                                           final String depot,
                                                           final ComboBoxModel cbm
     ) throws IOException {

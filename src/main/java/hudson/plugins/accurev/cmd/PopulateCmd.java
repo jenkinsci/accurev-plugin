@@ -6,7 +6,7 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +44,7 @@ public class PopulateCmd extends Command {
      * @throws IOException Handle it above
      */
     public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener,
-                            AccurevServer server,
+                            AccurevSCMBackwardCompatibility.AccurevServer server,
                             String streamName,
                             boolean overwrite,
                             String fromMessage,

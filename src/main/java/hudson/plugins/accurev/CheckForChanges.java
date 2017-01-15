@@ -4,12 +4,11 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,14 +40,14 @@ public class CheckForChanges {
         AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
         String filterForPollSCM = scm.getFilterForPollSCM();
         String subPath = scm.getSubPath();
-        latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
+        latestCodeChangeTransaction.setDate(new Date(0));
 
         //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
         List<String> validTransactionTypes;
         if (stream.getType().name().equalsIgnoreCase("workspace")) {
-            validTransactionTypes = AccurevServer.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
+            validTransactionTypes = AccurevSCMBackwardCompatibility.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
         } else {
-            validTransactionTypes = AccurevServer.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
+            validTransactionTypes = AccurevSCMBackwardCompatibility.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
         }
         listener.getLogger().println(//
                 "Checking transactions of type " + String.join(", ", validTransactionTypes) + //
@@ -77,7 +76,7 @@ public class CheckForChanges {
                         }
                     }
                     latestCodeChangeTransaction = tempTransaction;
-                    if (latestCodeChangeTransaction.getDate().equals(AccurevSCM.NO_TRANS_DATE)) {
+                    if (latestCodeChangeTransaction.getDate().equals(new Date(0))) {
                         listener.getLogger().println("No last transaction found.");
                     }
                     //log last transaction information if retrieved

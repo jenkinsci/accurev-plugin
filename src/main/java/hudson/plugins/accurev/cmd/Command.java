@@ -1,6 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
 
@@ -11,7 +11,7 @@ public class Command {
      * @param cmd    The accurev command line.
      * @param server The Accurev server details.
      */
-    public static void addServer(ArgumentListBuilder cmd, AccurevServer server) {
+    public static void addServer(ArgumentListBuilder cmd, AccurevSCMBackwardCompatibility.AccurevServer server) {
         if (null != server && null != server.getHost() && StringUtils.isNotBlank(server.getHost())) {
             cmd.add("-H");
             if (server.getPort() != 0) {

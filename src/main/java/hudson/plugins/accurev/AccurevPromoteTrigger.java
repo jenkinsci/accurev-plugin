@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Created by josp on 16/08/16.
+ * @author josp
  */
 public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
@@ -37,7 +37,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         super();
     }
 
-    public synchronized static void initServer(String host, AccurevSCM.AccurevServer server) {
+    public synchronized static void initServer(String host, AccurevSCMBackwardCompatibility.AccurevServer server) {
         if (!listeners.containsKey(host) && server.isUsePromoteListen()) {
             listeners.put(host, new AccurevPromoteListener(server));
         }
@@ -45,7 +45,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public synchronized static void validateListeners() {
         AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
-        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+        for (AccurevSCMBackwardCompatibility.AccurevServer server : Util.fixNull(descriptor._servers)) {
             initServer(server.getHost(), server);
         }
         for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {

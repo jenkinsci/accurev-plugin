@@ -1,13 +1,13 @@
-package hudson.plugins.accurev;
+package hudson.plugins.accurev.util;
 
 import org.apache.commons.lang.StringUtils;
 
 import java.util.UUID;
 
 /**
- * Created by josp on 21/09/16.
+ * @author josp
  */
-public class UUIDUtils {
+public class UniqueHelper {
     public static boolean isValid(String uuid) {
         if (StringUtils.isEmpty(uuid)) return false;
         try {
@@ -21,5 +21,9 @@ public class UUIDUtils {
 
     public static boolean isNotValid(String uuid) {
         return !isValid(uuid);
+    }
+
+    public static String randomUUID() {
+        return UUID.randomUUID().toString();
     }
 }

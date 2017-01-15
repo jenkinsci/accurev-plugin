@@ -1,957 +1,112 @@
 package hudson.plugins.accurev;
 
-import hudson.EnvVars;
+
 import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.*;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.ShowDepots;
-import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.delegates.AbstractModeDelegate;
-import hudson.plugins.jetty.security.Password;
-import hudson.scm.*;
-import hudson.util.ComboBoxModel;
-import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
+import hudson.Util;
+import hudson.model.Job;
+import hudson.model.Saveable;
+import hudson.plugins.accurev.browser.AccurevRepositoryBrowser;
+import hudson.plugins.accurev.config.AccurevServerConfig;
+import hudson.plugins.accurev.extensions.AccurevSCMExtension;
+import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
+import hudson.scm.SCMDescriptor;
+import hudson.util.DescribableList;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
+import java.util.List;
 
 /**
- * @author connollys
- * @since 09-Oct-2007 16:17:34
+ * @author josp
  */
-public class AccurevSCM extends SCM {
+public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
-// ------------------------------ FIELDS ------------------------------
-
-    @Extension
-    public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
-    static final Date NO_TRANS_DATE = new Date(0);
-    private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    private final String serverName;
-    private final String depot;
-    private final String stream;
-    private final boolean ignoreStreamParent;
-    private final String wspaceORreftree;
-    private final boolean cleanreftree;
-    private final String workspace;
-    private final boolean useSnapshot;
-    private final boolean dontPopContent;
-    private final String snapshotNameFormat;
-    private final boolean synctime;
-    private final String reftree;
-    private final String subPath;
-    private final String filterForPollSCM;
-    private final String directoryOffset;
-    private final boolean useReftree;
-    private final boolean useWorkspace;
-    private final boolean noWspaceNoReftree;
-    private String serverUUID;
-    private Job<?, ?> activeProject;
-
-// --------------------------- CONSTRUCTORS ---------------------------
+    private Long configVersion;
 
     /**
-     * Our constructor.
-     *
-     * @param serverUUID         Unique identifier for server
-     * @param serverName         name for the server
-     * @param depot              depot
-     * @param stream             stream
-     * @param wspaceORreftree    workspace or reftree
-     * @param workspace          workspace
-     * @param reftree            reftree
-     * @param subPath            subPath
-     * @param filterForPollSCM   filterForPollSCM
-     * @param synctime           synctime
-     * @param cleanreftree       cleanreftree
-     * @param useSnapshot        useSnapshot
-     * @param dontPopContent     Do not populate content
-     * @param snapshotNameFormat snapshot name format
-     * @param directoryOffset    directory offset
-     * @param ignoreStreamParent ignore Parent Stream
+     * All the remote accurev servers we care about
      */
+    private List<AccurevServerConfig> configs;
+
+    /**
+     * All the configured extensions attached to this.
+     */
+    private DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> extensions;
+
     @DataBoundConstructor
     public AccurevSCM(
-            String serverUUID,
-            String serverName,
-            String depot,
-            String stream,
-            String wspaceORreftree,
-            String workspace,
-            String reftree,
-            String subPath,
-            String filterForPollSCM,
-            boolean synctime,
-            boolean cleanreftree,
-            boolean useSnapshot,
-            boolean dontPopContent,
-            String snapshotNameFormat,
-            String directoryOffset,
-            boolean ignoreStreamParent) {
-        super();
-        this.serverUUID = serverUUID;
-        this.serverName = serverName;
-        this.depot = depot;
-        this.stream = stream;
-        this.wspaceORreftree = wspaceORreftree;
-        this.workspace = workspace;
-        this.reftree = reftree;
-        this.subPath = subPath;
-        this.filterForPollSCM = filterForPollSCM;
-        this.synctime = synctime;
-        this.cleanreftree = cleanreftree;
-        this.useSnapshot = useSnapshot;
-        this.dontPopContent = dontPopContent;
-        this.snapshotNameFormat = snapshotNameFormat;
-        this.ignoreStreamParent = ignoreStreamParent;
-        this.directoryOffset = directoryOffset;
-        AccurevMode accurevMode = AccurevMode.findMode(this);
-        useReftree = accurevMode.isReftree();
-        useWorkspace = accurevMode.isWorkspace();
-        noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
-    }
-
-// --------------------- GETTER / SETTER METHODS ---------------------
-
-    /**
-     * Getter for property 'depot'.
-     *
-     * @return Value for property 'depot'.
-     */
-    public String getDepot() {
-        return depot;
-    }
-
-    /**
-     * Getter for property 'serverName'.
-     *
-     * @return Value for property 'serverName'.
-     */
-    public String getServerName() {
-        return serverName;
-    }
-
-    /**
-     * Getter for property 'serverUUID'.
-     *
-     * @return Value for property 'serverUUID'.
-     */
-    public String getServerUUID() {
-        return serverUUID;
-    }
-
-    /**
-     * Setter for property 'serverUUID'.
-     *
-     * @param uuid Value for property 'serverUUID'
-     */
-    public void setServerUUID(String uuid) {
-        serverUUID = uuid;
-    }
-
-    /**
-     * Getter for Accurev server
-     *
-     * @return AccurevServer based on serverUUID (or serverName if serverUUID is null)
-     */
-    public AccurevServer getServer() {
-        AccurevServer server;
-        if (serverUUID == null) {
-            if (serverName == null) {
-                // No fallback
-                LOGGER.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
-                return null;
-            }
-            LOGGER.warning("Getting server by name (" + serverName + "), because UUID is not set.");
-            server = DESCRIPTOR.getServer(serverName);
-            if (server != null) {
-                this.setServerUUID(server.getUUID());
-                DESCRIPTOR.save();
-            }
-        } else {
-            server = DESCRIPTOR.getServer(serverUUID);
-        }
-        return server;
-    }
-
-    /**
-     * Getter for property 'stream'.
-     *
-     * @return Value for property 'stream'.
-     */
-    public String getStream() {
-        return stream;
-    }
-
-    /**
-     * Getter for property 'wspaceORreftree'.
-     *
-     * @return Value for property 'wspaceORreftree'.
-     */
-    public String getWspaceORreftree() {
-        return wspaceORreftree;
-    }
-
-    /**
-     * Getter for property 'reftree'.
-     *
-     * @return Value for property 'reftree'.
-     */
-    public String getReftree() {
-        return reftree;
-    }
-
-    /**
-     * Getter for property 'workspace'.
-     *
-     * @return Value for property 'workspace'.
-     */
-    public String getWorkspace() {
-        return workspace;
-    }
-
-    /**
-     * Getter for property 'subPath'.
-     *
-     * @return Value for property 'subPath'.
-     */
-    public String getSubPath() {
-        return subPath;
-    }
-
-    /**
-     * Getter for property 'filterForPollSCM'.
-     *
-     * @return Value for property 'filterForPollSCM'.
-     */
-    public String getFilterForPollSCM() {
-        return filterForPollSCM;
-    }
-
-    /**
-     * Getter for property 'snapshotNameFormat'.
-     *
-     * @return Value for property 'snapshotNameFormat'.
-     */
-    public String getSnapshotNameFormat() {
-        return snapshotNameFormat;
-    }
-
-    /**
-     * Getter for property 'ignoreStreamParent'.
-     *
-     * @return Value for property 'ignoreStreamParent'.
-     */
-    public boolean isIgnoreStreamParent() {
-        return ignoreStreamParent;
-    }
-
-    /**
-     * Getter for property 'synctime'.
-     *
-     * @return Value for property 'synctime'.
-     */
-    public boolean isSynctime() {
-        return synctime;
-    }
-
-    public boolean isDontPopContent() {
-        return dontPopContent;
-    }
-
-    /**
-     * Getter for property 'cleanreftree'.
-     *
-     * @return Value for property 'cleanreftree'.
-     */
-    public boolean isCleanreftree() {
-        return cleanreftree;
-    }
-
-    /**
-     * Getter for property 'useSnapshot'.
-     *
-     * @return Value for property 'useSnapshot'.
-     */
-    public boolean isUseSnapshot() {
-        return useSnapshot;
-    }
-
-    /**
-     * Getter for property 'useRefTree'.
-     *
-     * @return Value for property 'useRefTree'.
-     */
-    public boolean isUseReftree() {
-        return useReftree;
-    }
-
-    /**
-     * Getter for property 'useWorkspace'.
-     *
-     * @return Value for property 'useWorkspace'.
-     */
-    public boolean isUseWorkspace() {
-        return useWorkspace;
-    }
-
-    /**
-     * Getter for property 'noWspaceNoReftree'.
-     *
-     * @return Value for property 'noWspaceNoReftree'.
-     */
-    public boolean isNoWspaceNoReftree() {
-        return noWspaceNoReftree;
-    }
-
-    /**
-     * Getter for property 'directoryOffset'.
-     *
-     * @return Value for property 'directoryOffset'.
-     */
-    public String getDirectoryOffset() {
-        return directoryOffset;
-    }
-
-// ------------------------ INTERFACE METHODS ------------------------
-// --------------------- Interface Describable ---------------------
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return SCMDescriptor
-     */
-    @Override
-    public SCMDescriptor<?> getDescriptor() {
-        return DESCRIPTOR;
-    }
-
-// -------------------------- OTHER METHODS --------------------------
-
-    /**
-     * Exposes AccuRev-specific information to the environment. The following
-     * variables become available, if not null:
-     * <ul>
-     * <li>ACCUREV_DEPOT - The depot name</li>
-     * <li>ACCUREV_STREAM - The stream name</li>
-     * <li>ACCUREV_SERVER - The server name</li>
-     * <li>ACCUREV_REFTREE - The workspace name</li>
-     * <li>ACCUREV_SUBPATH - The workspace subpath</li>
-     * </ul>
-     *
-     * @param build build
-     * @param env   enviroments
-     * @since 0.6.9
-     */
-    @Override
-    public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
-        // call super even though SCM.buildEnvVars currently does nothing - this could change
-        super.buildEnvVars(build, env);
-        AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        delegate.buildEnvVars(build, env);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param build         build
-     * @param launcher      launcher
-     * @param workspace     jenkins workspace
-     * @param listener      listener
-     * @param changelogFile change log file
-     * @param baseline      SCMRevisionState
-     * @throws java.io.IOException            on failing IO
-     * @throws java.lang.InterruptedException on failing interrupt
-     */
-
-    public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
-                         @Nonnull TaskListener listener, @CheckForNull File changelogFile,
-                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
-        if (checkout) listener.getLogger().println("Checkout done");
-        else listener.getLogger().println("Checkout failed");
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return ChangeLogParser
-     */
-    public ChangeLogParser createChangeLogParser() {
-        return new AccurevChangeLogParser();
+            List<AccurevServerConfig> configs,
+            @Nonnull List<AccurevSCMExtension> extensions) {
+        this.configs = configs;
+        this.extensions = new DescribableList<>(Saveable.NOOP, Util.fixNull(extensions));
     }
 
     @Override
-    public boolean requiresWorkspaceForPolling() {
-        boolean requiresWorkspace = AccurevMode.findMode(this).isRequiresWorkspace();
-        if (DESCRIPTOR.isPollOnMaster() && !requiresWorkspace) {
-            // Does not require workspace if Poll On Master is enabled; unless build is using workspace
-            return false;
-        }
-
-        if (activeProject != null && !activeProject.isBuilding()) {
-            // Check if project is no longer active.
-            activeProject = null;
-        }
-
-        // Return true if activeProject null and it does require a workspace, otherwise false.
-        return requiresWorkspace && activeProject == null;
-
+    DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> getExtensions() {
+        return extensions;
     }
 
-    /**
-     * Gets the lock to be used on "normal" accurev commands, or
-     * <code>null</code> if command synchronization is switched off.
-     *
-     * @return See above.
-     */
-    public Lock getOptionalLock() {
-        final AccurevServer server = getServer();
-        final boolean shouldLock = server.isSyncOperations();
-        if (shouldLock) {
-            return getMandatoryLock();
-        } else {
-            return null;
-        }
+    public Object readResolve() throws IOException {
+        // Migrate
+
+        if (serverName != null)
+
+        if (extensions==null)
+            extensions = new DescribableList<>(Saveable.NOOP);
+
+        migrateThyLegacy();
+        return this;
     }
 
-    /**
-     * Gets the lock to be used on accurev commands where synchronization is
-     * mandatory.
-     *
-     * @return See above.
-     */
-    private Lock getMandatoryLock() {
-        return AccurevSCMDescriptor.ACCUREV_LOCK;
-    }
+    @Extension
+    public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> {
 
-    @Override
-    public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
-                                                   @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        return SCMRevisionState.NONE;
-    }
-
-    @Override
-    public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
-                                                   @Nullable FilePath workspace, @Nonnull TaskListener listener,
-                                                   @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        if (activeProject != null && activeProject.isBuilding()) {
-            // Skip polling while there is an active project.
-            // This will prevent waiting for the workspace to become available.
-            return PollingResult.NO_CHANGES;
-        }
-        activeProject = project;
-
-        AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
-    }
-
-    public boolean hasStringVariableReference(final String str) {
-        return StringUtils.isNotEmpty(str) && str.startsWith("$");
-    }
-
-    public String getPollingStream(Job<?, ?> project, TaskListener listener) {
-        String parsedLocalStream;
-        if (hasStringVariableReference(getStream())) {
-            ParametersDefinitionProperty paramDefProp = project
-                    .getProperty(ParametersDefinitionProperty.class);
-
-            if (paramDefProp == null) {
-                throw new IllegalArgumentException(
-                        "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
-            }
-
-            Map<String, String> keyValues = new TreeMap<>();
-
-            /* Scan for all parameter with an associated default values */
-            for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-
-                ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-                if (defaultValue instanceof StringParameterValue) {
-                    StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-                    keyValues.put(defaultValue.getName(), strdefvalue.value);
-                }
-            }
-
-            final EnvVars environment = new EnvVars(keyValues);
-            parsedLocalStream = environment.expand(getStream());
-            listener.getLogger().println("... expanded '" + getStream() + "' to '" + parsedLocalStream + "'.");
-        } else {
-            parsedLocalStream = getStream();
-        }
-
-        if (hasStringVariableReference(parsedLocalStream)) {
-            throw new IllegalArgumentException(
-                    "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
-        }
-        return parsedLocalStream;
-    }
-
-    //--------------------------- Inner Class - DescriptorImplementation ----------------------------
-    public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
-
-        /**
-         * The accurev server has been known to crash if more than one copy of
-         * the accurev has been run concurrently on the local machine. <br>
-         * Also, the accurev client has been known to complain that it's not
-         * logged in if another client on the same machine logs in again.
-         */
-        transient static final Lock ACCUREV_LOCK = new ReentrantLock();
-        private static final Logger DESCRIPTORLOGGER = Logger.getLogger(AccurevSCMDescriptor.class.getName());
-        private List<AccurevServer> _servers;
-        // The servers field is here for backwards compatibility.
-        // The transient modifier means it won't be written to the config file
-        private transient List<AccurevServer> servers;
-        private boolean pollOnMaster;
-
-        /**
-         * Constructs a new AccurevSCMDescriptor.
-         */
         public AccurevSCMDescriptor() {
-            super(AccurevSCM.class, null);
-            load();
+            super(AccurevSCM.class, AccurevRepositoryBrowser.class);
         }
 
-        public static void lock() {
-            ACCUREV_LOCK.lock();
-        }
-
-        public static void unlock() {
-            ACCUREV_LOCK.unlock();
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @return String
-         */
         @Override
         public String getDisplayName() {
-
             return "AccuRev";
-
         }
 
+        @Override public boolean isApplicable(Job project) {
+            return true;
+        }
+
+        public List<AccurevSCMExtensionDescriptor> getExtensionDescriptors() {
+            return AccurevSCMExtensionDescriptor.all();
+        }
+
+        // TODO: Implement AccurevTool
+
         /**
-         * {@inheritDoc}
+         * Determine the browser from the scmData contained in the {@link StaplerRequest}.
          *
-         * @param req      request
-         * @param formData json object
-         * @return boolean
-         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
+         * @param scmData data read for SCM browser
+         * @return browser based on request scmData
          */
+        private AccurevRepositoryBrowser getBrowserFromRequest(final StaplerRequest req, final JSONObject scmData) {
+            if (scmData.containsKey("browser")) {
+                return req.bindJSON(AccurevRepositoryBrowser.class, scmData.getJSONObject("browser"));
+            } else {
+                return null;
+            }
+        }
+
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            this._servers = req.bindJSONToList(AccurevServer.class, formData.get("server"));
-            pollOnMaster = req.getParameter("descriptor.pollOnMaster") != null;
+            req.bindJSON(this, formData);
             save();
             return true;
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @param req      request is non-null but annotated as CheckForNull due to compatibility
-         * @param formData json object
-         * @return SCM
-         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
-         * @see <a href="http://javadoc.jenkins-ci.org/hudson/model/Descriptor.html#newInstance(org.kohsuke.stapler.StaplerRequest)">newInstance</a>
-         */
-        @Override
-        public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
-            if (req == null) throw new FormException("No request came through", "Request");
-            String serverUUID = req.getParameter("_.serverUUID");
-            String serverName;
-            AccurevServer server = getServer(serverUUID);
-            if (null == server) {
-                throw new FormException("No server selected. Please add/select a server", "_.serverUUID");
-            } else {
-                serverName = server.getName();
-            }
-            return new AccurevSCM( //
-                    serverUUID, //
-                    serverName, //
-                    req.getParameter("_.depot"), //
-                    req.getParameter("_.stream"), //
-                    req.getParameter("accurev.wspaceORreftree"),//
-                    req.getParameter("accurev.workspace"),//
-                    req.getParameter("accurev.reftree"), //
-                    req.getParameter("accurev.subPath"), //
-                    req.getParameter("accurev.filterForPollSCM"), //
-                    req.getParameter("accurev.synctime") != null, //
-                    req.getParameter("accurev.cleanreftree") != null, //
-                    req.getParameter("accurev.useSnapshot") != null, //
-                    req.getParameter("accurev.dontPopContent") != null,
-                    req.getParameter("accurev.snapshotNameFormat"), //
-                    req.getParameter("accurev.directoryOffset"), //
-                    req.getParameter("accurev.ignoreStreamParent") != null);
-        }
+        transient List<AccurevServer> servers;
+        transient List<AccurevServer> _servers;
+        transient boolean pollOnMaster;
 
-        /**
-         * Getter for property 'servers'.
-         *
-         * @return Value for property 'servers'.
-         */
-        public List<AccurevServer> getServers() {
-            if (this._servers == null) {
-                this._servers = new ArrayList<>();
-            }
-            // We put this here to maintain backwards compatibility
-            // because we changed the name of the 'servers' field to '_servers'
-            if (this.servers != null) {
-                this._servers.addAll(servers);
-                servers = null;
-            }
-            return this._servers;
-        }
-
-        /**
-         * Setter for property 'servers'.
-         *
-         * @param servers Value to set for property 'servers'.
-         */
-        public void setServers(List<AccurevServer> servers) {
-            this._servers = servers;
-        }
-
-        /**
-         * Getter for property 'pollOnMaster'.
-         *
-         * @return Value for property 'pollOnMaster'.
-         */
-        public boolean isPollOnMaster() {
-            return pollOnMaster;
-        }
-
-        /**
-         * Setter for property 'pollOnMaster'.
-         *
-         * @param pollOnMaster poll on aster
-         */
-        public void setPollOnMaster(boolean pollOnMaster) {
-            this.pollOnMaster = pollOnMaster;
-        }
-
-        @CheckForNull
-        public AccurevServer getServer(String uuid) {
-            if (uuid == null || this._servers == null) {
-                LOGGER.fine("No server found. - getServer(NULL)");
-                return null;
-            }
-            for (AccurevServer server : this._servers) {
-                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
-                    return server;
-                } else if (uuid.equals(server.getName())) {
-                    // support old server name
-                    return server;
-                }
-            }
-            LOGGER.fine("No server found.");
-            return null;
-        }
-
-        // This method will populate the servers in the select box
-        @SuppressWarnings("unused") // Used by Jetty
-        public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
-            ListBoxModel s = new ListBoxModel();
-            if (this._servers == null) {
-                DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
-                return s;
-            }
-            for (AccurevServer server : this._servers) {
-                s.add(server.getName(), server.getUUID());
-            }
-
-            return s;
-        }
-
-        // This method will populate the depots in the select box depending upon the
-        // server selected.
-        @SuppressWarnings("unused") // Used by Jetty
-        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
-            final AccurevServer server = getServer(serverUUID);
-
-            if (server == null) {
-                return new ListBoxModel();
-            }
-
-            List<String> depots = new ArrayList<>();
-
-            // Execute the login command first & upon success of that run show depots
-            // command. If any of the command's exitvalue is 1 proper error message is
-            // logged
-            if (Login.accurevLoginFromGlobalConfig(server)) {
-                depots = ShowDepots.getDepots(server, DESCRIPTORLOGGER);
-            }
-
-            ListBoxModel d = new ListBoxModel();
-            for (String dname : depots) {
-                d.add(dname, dname);
-            }
-            // Below while loop is for to retain the selected item when you open the
-            // Job to reconfigure
-            d.stream().filter(o -> depot.equals(o.name)).forEach(o -> o.selected = true);
-            return d;
-        }
-
-        // Populating the streams
-        @SuppressWarnings("unused") // Used by Jetty
-        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
-            final AccurevServer server = getServer(serverUUID);
-
-            if (server == null || StringUtils.isBlank(depot)) {
-                //DESCRIPTORLOGGER.warning("Failed to find server.");
-                return new ComboBoxModel();
-            }
-            // Execute the login command first & upon success of that run show streams
-            // command. If any of the command's exitvalue is 1 proper error message is
-            // logged
-            ComboBoxModel cbm = new ComboBoxModel();
-            if (Login.accurevLoginFromGlobalConfig(server)) {
-                cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
-            }
-            return cbm;
-        }
-    }
-
-    // --------------------------- Inner Class ---------------------------------------------------
-    public static final class AccurevServer implements Serializable {
-
-        // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-                .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
-        protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
-                .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
-                        "mkstream", "move", "promote", "purge", "dispatch"));
-        private static final long serialVersionUID = 3270850408409304611L;
-        // keep all transaction types in a set for validation
-        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
-        private final String name;
-        private final String host;
-        private final int port;
-        private final String username;
-        private final String password;
-        private UUID uuid;
-        private String validTransactionTypes;
-        private boolean syncOperations;
-        private boolean minimiseLogins;
-        private boolean useNonexpiringLogin;
-        private boolean useRestrictedShowStreams;
-        private boolean useColor;
-        private boolean usePromoteListen;
-
-        @DataBoundConstructor
-        public AccurevServer(//
-                             String uuid,
-                             String name, //
-                             String host, //
-                             int port, //
-                             String username, //
-                             String password, //
-                             String validTransactionTypes, //
-                             boolean syncOperations, //
-                             boolean minimiseLogins, //
-                             boolean useNonexpiringLogin, //
-                             boolean useRestrictedShowStreams,
-                             boolean useColor,
-                             boolean usePromoteListen) {
-            if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
-            else this.uuid = UUID.fromString(uuid);
-            this.name = name;
-            this.host = host;
-            this.port = port;
-            this.username = username;
-            this.password = Password.obfuscate(password);
-            this.validTransactionTypes = validTransactionTypes;
-            this.syncOperations = syncOperations;
-            this.minimiseLogins = minimiseLogins;
-            this.useNonexpiringLogin = useNonexpiringLogin;
-            this.useRestrictedShowStreams = useRestrictedShowStreams;
-            this.useColor = useColor;
-            this.usePromoteListen = usePromoteListen;
-            AccurevPromoteTrigger.validateListeners();
-        }
-
-        /**
-         * When f:repeatable tags are nestable, we can change the advances page
-         * of the server config to allow specifying these locations... until
-         * then this hack!
-         *
-         * @return This.
-         */
-        private Object readResolve() {
-            if (uuid == null) {
-                uuid = UUID.randomUUID();
-            }
-            return this;
-        }
-
-        /**
-         * Getter for property 'uuid'.
-         * If value is null generate random UUID
-         *
-         * @return Value for property 'uuid'.
-         */
-        public String getUUID() {
-            if (uuid == null) {
-                uuid = UUID.randomUUID();
-            }
-            return uuid.toString();
-        }
-
-        /**
-         * Getter for property 'name'.
-         *
-         * @return Value for property 'name'.
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Getter for property 'host'.
-         *
-         * @return Value for property 'host'.
-         */
-        public String getHost() {
-            return host;
-        }
-
-        /**
-         * Getter for property 'port'.
-         *
-         * @return Value for property 'port'.
-         */
-        public int getPort() {
-            return port;
-        }
-
-        /**
-         * Getter for property 'username'.
-         *
-         * @return Value for property 'username'.
-         */
-        public String getUsername() {
-            return username;
-        }
-
-        /**
-         * Getter for property 'password'.
-         *
-         * @return Value for property 'password'.
-         */
-        public String getPassword() {
-            return Password.deobfuscate(password); //TODO: Use Credentials plugin
-        }
-
-        /**
-         * @return returns the currently set transaction types that are seen as
-         * valid for triggering builds and whos authors get notified when a
-         * build fails
-         */
-        public String getValidTransactionTypes() {
-            return validTransactionTypes;
-        }
-
-        /**
-         * @param validTransactionTypes the currently set transaction types that
-         *                              are seen as valid for triggering builds and whos authors get notified
-         *                              when a build fails
-         */
-        public void setValidTransactionTypes(String validTransactionTypes) {
-            this.validTransactionTypes = validTransactionTypes;
-        }
-
-        public boolean isSyncOperations() {
-            return syncOperations;
-        }
-
-        public void setSyncOperations(boolean syncOperations) {
-            this.syncOperations = syncOperations;
-        }
-
-        public boolean isMinimiseLogins() {
-            return minimiseLogins;
-        }
-
-        public void setMinimiseLogins(boolean minimiseLogins) {
-            this.minimiseLogins = minimiseLogins;
-        }
-
-        public boolean isUseNonexpiringLogin() {
-            return useNonexpiringLogin;
-        }
-
-        public void setUseNonexpiringLogin(boolean useNonexpiringLogin) {
-            this.useNonexpiringLogin = useNonexpiringLogin;
-        }
-
-        public boolean isUseRestrictedShowStreams() {
-            return useRestrictedShowStreams;
-        }
-
-        public void setUseRestrictedShowStreams(boolean useRestrictedShowStreams) {
-            this.useRestrictedShowStreams = useRestrictedShowStreams;
-        }
-
-        public boolean isUseColor() {
-            return useColor;
-        }
-
-        public void setUseColor(boolean useColor) {
-            this.useColor = useColor;
-        }
-
-        public boolean isUsePromoteListen() {
-            return usePromoteListen;
-        }
-
-        public void setUsePromoteListen(boolean usePromoteListen) {
-            this.usePromoteListen = usePromoteListen;
-        }
-
-        public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
-        {
-            final String[] formValidTypes = value.split(",");
-            for (final String formValidType : formValidTypes) {
-                if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {
-                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + Arrays.toString(VTT_LIST));
-                }
-            }
-            return FormValidation.ok();
-        }
-
-    }
-
-    // -------------------------- INNER CLASSES --------------------------
-
-    /**
-     * Class responsible for parsing change-logs recorded by the builds. If this
-     * is renamed or moved it'll break data-compatibility with old builds.
-     */
-    private static final class AccurevChangeLogParser extends ParseChangeLog {
     }
 }

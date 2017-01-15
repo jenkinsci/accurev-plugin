@@ -19,14 +19,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by josp on 16/08/16.
+ * @author josp
  */
 public class AccurevPromoteListener implements MqttCallback {
     private static final Logger LOGGER = Logger.getLogger(AccurevPromoteListener.class.getName());
-    private final AccurevSCM.AccurevServer server;
+    private final AccurevSCMBackwardCompatibility.AccurevServer server;
     private final HashSet<AccurevPromoteTrigger> triggers = new HashSet<>();
 
-    public AccurevPromoteListener(AccurevSCM.AccurevServer server) {
+    public AccurevPromoteListener(AccurevSCMBackwardCompatibility.AccurevServer server) {
         this.server = server;
         setupConnection();
     }

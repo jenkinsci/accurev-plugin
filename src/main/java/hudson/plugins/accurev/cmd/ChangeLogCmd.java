@@ -6,7 +6,7 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility.AccurevServer;
 import hudson.plugins.accurev.GetConfigWebURL;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;

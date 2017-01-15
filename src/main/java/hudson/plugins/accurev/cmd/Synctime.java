@@ -6,7 +6,7 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
@@ -18,7 +18,7 @@ public class Synctime extends Command {
     //Analagous to the Synchronize Time option in the AccuRev GUI client.
     public static boolean synctime(//
                                    final AccurevSCM scm,
-                                   final AccurevServer server, //
+                                   final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                    final EnvVars accurevEnv, //
                                    final FilePath workspace, //
                                    final TaskListener listener, //

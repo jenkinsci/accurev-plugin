@@ -5,8 +5,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
@@ -24,7 +23,7 @@ public class Login extends Command {
      * Returns null on failure.
      */
     private static String getLoggedInUsername(//
-                                              final AccurevServer server, //
+                                              final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                               final EnvVars accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
@@ -38,7 +37,7 @@ public class Login extends Command {
                 workspace, listener, logger, new ParseInfoToLoginName(), null);
     }
 
-    public static boolean ensureLoggedInToAccurev(AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
+    public static boolean ensureLoggedInToAccurev(AccurevSCMBackwardCompatibility.AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
                                                   Launcher launcher) throws IOException {
 
         if (server == null) {
@@ -50,33 +49,28 @@ public class Login extends Command {
             listener.getLogger().println("Authentication failure - Username blank");
             return false;
         }
-        AccurevSCMDescriptor.lock();
-        try {
-            final boolean loginRequired;
-            if (server.isMinimiseLogins()) {
-                final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
-                if (StringUtils.isEmpty(currentUsername)) {
-                    loginRequired = true;
-                    listener.getLogger().println("Not currently authenticated with Accurev server");
-                } else {
-                    loginRequired = !currentUsername.equals(requiredUsername);
-                    listener.getLogger().println(
-                            "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
-                }
-            } else {
+        final boolean loginRequired;
+        if (server.isMinimiseLogins()) {
+            final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
+            if (StringUtils.isEmpty(currentUsername)) {
                 loginRequired = true;
+                listener.getLogger().println("Not currently authenticated with Accurev server");
+            } else {
+                loginRequired = !currentUsername.equals(requiredUsername);
+                listener.getLogger().println(
+                        "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
             }
-            if (loginRequired) {
-                return accurevLogin(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
-            }
-        } finally {
-            AccurevSCMDescriptor.unlock();
+        } else {
+            loginRequired = true;
+        }
+        if (loginRequired) {
+            return accurevLogin(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
         }
         return true;
     }
 
     private static boolean accurevLogin(//
-                                        final AccurevServer server, //
+                                        final AccurevSCMBackwardCompatibility.AccurevServer server, //
                                         final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
@@ -116,7 +110,7 @@ public class Login extends Command {
      *                              This method is called from dofillstreams and dofilldepots while configuring the job
      */
     public static boolean accurevLoginFromGlobalConfig(//
-                                                       final AccurevServer server) throws IOException, InterruptedException {
+                                                       final AccurevSCMBackwardCompatibility.AccurevServer server) throws IOException, InterruptedException {
 
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
