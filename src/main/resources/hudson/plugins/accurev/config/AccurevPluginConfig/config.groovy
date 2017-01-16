@@ -1,13 +1,13 @@
 package hudson.plugins.accurev.config.AccurevPluginConfig
 
-f = namespace(lib.FormTagLib)
+def f = namespace(lib.FormTagLib);
 
-f.section(title: desciptor.displayName) {
-    f.entry(title: _("Accurev Servers")) {
+f.section(title: "AccuRev") {
+    f.entry(title: _("AccuRev Servers")) {
         f.repeatableHeteroProperty(
                 field: "configs",
                 hasHeader: "true",
-                addCaption: _("Add GitHub Server")
+                addCaption: _("Add AccuRev Server")
         )
     }
 }

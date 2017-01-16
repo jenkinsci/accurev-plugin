@@ -6,6 +6,7 @@ import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevStream.StreamType;
 import hudson.plugins.accurev.ParseChangeLog;
+import hudson.plugins.accurev.extensions.impl.AccurevDepot;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -14,8 +15,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
-    public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
+public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, AccurevDepot> {
+    public Map<String, AccurevStream> parse(XmlPullParser parser, AccurevDepot depot) throws UnhandledAccurevCommandOutput,
             IOException, XmlPullParserException {
         final Map<String, AccurevStream> streams = new HashMap<>();
         while (parser.next() != XmlPullParser.END_DOCUMENT) {

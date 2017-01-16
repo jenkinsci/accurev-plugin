@@ -5,9 +5,15 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
+import com.google.common.cache.Cache;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import hudson.Extension;
-import hudson.plugins.accurev.extensions.AccurevSCMExtension;
-import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
+import hudson.plugins.accurev.AccurevStream;
+import hudson.plugins.accurev.cmd.Login;
+import hudson.plugins.accurev.cmd.ShowDepots;
+import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.extensions.impl.AccurevDepot;
 import hudson.plugins.accurev.util.UniqueHelper;
 import hudson.security.ACL;
@@ -20,40 +26,87 @@ import org.apache.maven.scm.provider.accurev.AccuRevException;
 import org.apache.maven.scm.provider.accurev.cli.AccuRevCommandLine;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.annotation.CheckForNull;
 import java.io.IOException;
-import java.util.List;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.apache.commons.lang.ObjectUtils.defaultIfNull;
 
 /**
  * @author josp
  */
-public class AccurevServerConfig extends AccurevSCMExtension {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccurevServerConfig.class);
+@XStreamAlias("accurev-server-config")
+public class AccurevServerConfig extends AbstractDescribableImpl<AccurevServerConfig> {
+    private static final Logger LOGGER = Logger.getLogger(AccurevServerConfig.class.getName());
 
     private final String credentialsId;
     private final String id;
+    private String name;
     private String host;
     private int port;
-    private boolean promoteListen;
-    private boolean minimiseLogin;
-    private transient List<AccurevDepot> depots;
-
-    public AccurevServerConfig(String credentialsId) {
-        this.credentialsId = credentialsId;
-        this.id = null;
-    }
+    private transient boolean loggedIn;
+    private boolean usePromoteListener;
+    private boolean useMinimiseLogin;
+    private boolean useRestrictedShowStreams;
+    private boolean useColor;
+    private CacheConfiguration cache;
+    private final Cache<String, Map<String, AccurevDepot>> accurevDepots;
+    private final Cache<String, Map<String, AccurevStream>> accurevStreams;
 
     @DataBoundConstructor
-    public AccurevServerConfig(String credentialsId, String id, String host, int port, boolean promoteListen, boolean minimiseLogin) {
+    public AccurevServerConfig(String credentialsId, @CheckForNull String id, String name, String host, int port, boolean usePromoteListener, boolean useMinimiseLogin, boolean useRestrictedShowStreams, boolean useColor) {
         this.credentialsId = credentialsId;
-        if (StringUtils.isBlank(id)) this.id = UniqueHelper.randomUUID();
+        if (UniqueHelper.isNotValid(id)) this.id = UniqueHelper.randomUUID();
         else this.id = id;
+        this.name = name;
         this.host = host;
         this.port = port;
-        this.promoteListen = promoteListen;
-        this.minimiseLogin = minimiseLogin;
+        this.usePromoteListener = usePromoteListener;
+        this.useMinimiseLogin = useMinimiseLogin;
+        this.useRestrictedShowStreams = useRestrictedShowStreams;
+        this.useColor = useColor;
+
+        if (this.cache == null) {
+            this.cache = new CacheConfiguration(0, 0);
+        }
+
+        // On startup userCache and groupCache are not created and cache is different from null
+        if (cache.getAccurevDepots() == null || cache.getAccurevStreams() == null) {
+            this.cache = new CacheConfiguration(cache.getSize(), cache.getTtl());
+        }
+
+        this.accurevDepots = cache.getAccurevDepots();
+        this.accurevStreams = cache.getAccurevStreams();
+    }
+
+    public Map<String, AccurevDepot> retrieveDepots() {
+        AccurevServerConfig config = this;
+        try {
+            return accurevDepots.get(getHostPort(), () -> ShowDepots.getDepots(config));
+        } catch (ExecutionException e) {
+            LOGGER.log(Level.SEVERE, "Failed to ache depots", e);
+        }
+        return Collections.emptyMap();
+    }
+
+    public Map<String, AccurevStream> retrieveStreams(final AccurevDepot depot) {
+        try {
+            return accurevStreams.get(depot.getHostPortDepot(), new Callable<Map<String, AccurevStream>>() {
+                @Override
+                public Map<String, AccurevStream> call() throws Exception {
+                    return ShowStreams.getStreams(depot);
+                }
+            });
+        } catch (ExecutionException e) {
+            LOGGER.log(Level.SEVERE, "Failed to ache depots", e);
+        }
+        return Collections.emptyMap();
     }
 
     public String getCredentialsId() {
@@ -62,6 +115,14 @@ public class AccurevServerConfig extends AccurevSCMExtension {
 
     public String getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getHost() {
@@ -76,16 +137,36 @@ public class AccurevServerConfig extends AccurevSCMExtension {
         return port;
     }
 
+    public String getHostPort() {
+        return host + ":" + port;
+    }
+
     public void setPort(int port) {
         this.port = port;
     }
 
-    public boolean isPromoteListen() {
-        return promoteListen;
+    public boolean isUsePromoteListener() {
+        return usePromoteListener;
     }
 
-    public void setPromoteListen(boolean promoteListen) {
-        this.promoteListen = promoteListen;
+    public void setUsePromoteListener(boolean usePromoteListener) {
+        this.usePromoteListener = usePromoteListener;
+    }
+
+    public boolean isUseMinimiseLogin() {
+        return useMinimiseLogin;
+    }
+
+    public void setUseMinimiseLogin(boolean useMinimiseLogin) {
+        this.useMinimiseLogin = useMinimiseLogin;
+    }
+
+    public boolean isUseRestrictedShowStreams() {
+        return useRestrictedShowStreams;
+    }
+
+    public boolean isUseColor() {
+        return useColor;
     }
 
     public StandardUsernamePasswordCredentials getCredentails() {
@@ -111,12 +192,8 @@ public class AccurevServerConfig extends AccurevSCMExtension {
         return credentials == null ? "" : Secret.toString(credentials.getPassword());
     }
 
-    public boolean isMinimiseLogin() {
-        return minimiseLogin;
-    }
-
     @Extension
-    public static class DescriptorImpl extends AccurevSCMExtensionDescriptor {
+    public static class DescriptorImpl extends Descriptor<AccurevServerConfig> {
 
         @Override public String getDisplayName() {
             return "AccuRev Server";
@@ -142,13 +219,11 @@ public class AccurevServerConfig extends AccurevSCMExtension {
                 @QueryParameter String host,
                 @QueryParameter int port,
                 @QueryParameter String credentialsId) throws IOException {
-            AccurevServerConfig config = new AccurevServerConfig(credentialsId);
-            AccuRevCommandLine cl = new AccuRevCommandLine();
-            cl.setServer(config.getHost(), config.getPort());
 
+            StandardUsernamePasswordCredentials usernamePasswordCredentials = null;
             try {
-                if (cl.login(config.getUsername(), config.getPassword())) {
-                    return FormValidation.ok("Credentials verified for user %s", config.getUsername());
+                if (Login.validateCredentials(usernamePasswordCredentials)) {
+                    return FormValidation.ok("Credentials verified for user");
                 } else {
                     return FormValidation.error("Failed to validate credentials");
                 }

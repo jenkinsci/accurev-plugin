@@ -1,5 +1,7 @@
 package hudson.plugins.accurev;
 
+import hudson.plugins.accurev.extensions.impl.AccurevDepot;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -17,7 +19,7 @@ public class AccurevStream implements Serializable {
     private static final long serialVersionUID = 8004696899509026973L;
     private final String name;
     private final Long number;
-    private final String depot;
+    private final AccurevDepot depot;
     private final String basisName;
     private final Long basisNumber;
     private final boolean dynamic;
@@ -27,7 +29,7 @@ public class AccurevStream implements Serializable {
     private transient AccurevStream parent;
     private transient Set<AccurevStream> children = new HashSet<>();
 
-    public AccurevStream(String name, Long number, String depot, String basisName, Long basisNumber, boolean dynamic, StreamType type, Date time, Date startTime) {
+    public AccurevStream(String name, Long number, AccurevDepot depot, String basisName, Long basisNumber, boolean dynamic, StreamType type, Date time, Date startTime) {
         this.name = name;
         this.number = number;
         this.depot = depot;
@@ -68,7 +70,7 @@ public class AccurevStream implements Serializable {
      *
      * @return Value for property 'depot'.
      */
-    public String getDepot() {
+    public AccurevDepot getDepot() {
         return depot;
     }
 

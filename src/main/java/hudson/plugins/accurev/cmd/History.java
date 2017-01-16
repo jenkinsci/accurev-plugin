@@ -5,6 +5,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.*;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.plugins.accurev.parsers.xml.ParseHistory;
 import hudson.util.ArgumentListBuilder;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -33,7 +34,7 @@ public class History extends Command {
      */
     public static AccurevTransaction getLatestTransaction(//
                                                           final AccurevSCM scm, //
-                                                          final AccurevSCMBackwardCompatibility.AccurevServer server, //
+                                                          final AccurevServerConfig server, //
                                                           final EnvVars accurevEnv, //
                                                           final FilePath workspace, //
                                                           final TaskListener listener, //

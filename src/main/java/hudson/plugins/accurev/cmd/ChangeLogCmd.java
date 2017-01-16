@@ -6,9 +6,9 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCMBackwardCompatibility.AccurevServer;
 import hudson.plugins.accurev.GetConfigWebURL;
 import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseGetConfig;
 import hudson.util.ArgumentListBuilder;
@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 public class ChangeLogCmd {
 
-    public static boolean captureChangelog(AccurevServer server,
+    public static boolean captureChangelog(AccurevServerConfig server,
                                            EnvVars accurevEnv,
                                            FilePath workspace,
                                            TaskListener listener,
@@ -100,7 +100,7 @@ public class ChangeLogCmd {
      * @throws IOException Handle it above
      */
 
-    public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServer server,
+    public static Map<String, GetConfigWebURL> retrieveWebURL(AccurevServerConfig server,
                                                               EnvVars accurevEnv,
                                                               FilePath workspace,
                                                               TaskListener listener,

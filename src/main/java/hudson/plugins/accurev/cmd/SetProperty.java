@@ -6,7 +6,7 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.util.ArgumentListBuilder;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ public class SetProperty extends Command {
             final TaskListener listener, //
             final Launcher launcher,
             final EnvVars accurevEnv,
-            final AccurevSCMBackwardCompatibility.AccurevServer server,
+            final AccurevServerConfig server,
             final String streamOrWorkspaceName,
             final String colorCode,
             final String propertyName

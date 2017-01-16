@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.util.ArgumentListBuilder;
@@ -28,7 +29,7 @@ public class Update extends Command {
     private static final Logger logger = Logger.getLogger(Update.class.getName());
     private static final String FFPSCM_DELIM = ",";
 
-    private static ArgumentListBuilder createCommand(final AccurevSCM.AccurevServer server, //
+    private static ArgumentListBuilder createCommand(final AccurevServerConfig server, //
                                                      final boolean preview,
                                                      final String reftree,
                                                      final boolean minus9) {
@@ -51,7 +52,7 @@ public class Update extends Command {
     }
 
     public static Boolean hasChanges(AccurevSCM scm, //
-                                     AccurevSCM.AccurevServer server, //
+                                     AccurevServerConfig server, //
                                      EnvVars accurevEnv, //
                                      FilePath workspace, //
                                      TaskListener listener, //
@@ -101,7 +102,7 @@ public class Update extends Command {
     }
 
     public static boolean performUpdate(final AccurevSCM scm, //
-                                        final AccurevSCM.AccurevServer server, //
+                                        final AccurevServerConfig server, //
                                         final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //

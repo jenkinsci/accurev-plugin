@@ -2,18 +2,17 @@ package hudson.plugins.accurev;
 
 import hudson.EnvVars;
 import hudson.model.*;
+import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
-import hudson.plugins.accurev.util.UniqueHelper;
-import hudson.plugins.jetty.security.Password;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
 import hudson.util.DescribableList;
 import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 
@@ -77,15 +76,7 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     abstract DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> getExtensions();
 
     void migrateThyLegacy() {
-        try {
-            AccurevSCM.AccurevSCMDescriptor descriptor = getDescriptor();
-            if (descriptor != null) {
-                List<AccurevServer> servers = descriptor.servers;
 
-            }
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
     }
 
     private void addIfMissing(AccurevSCMExtension ext) throws IOException {
@@ -123,11 +114,6 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     }
 
     @Deprecated
-    public String getDepot() {
-        return depot;
-    }
-
-    @Deprecated
     public Lock getOptionalLock() {
         return null;
     }
@@ -136,61 +122,6 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     public String getStream() {
         return stream;
     }
-
-    @Deprecated
-    public AccurevServer getServer() {
-        AccurevServer server;
-        if (serverUUID == null) {
-            if (serverName == null) {
-                // No fallback
-                return null;
-            }
-            server = getServer(serverName);
-        } else {
-            server = getServer(serverUUID);
-        }
-        return server;
-    }
-
-        /**
-         * Getter for property 'servers'.
-         *
-         * @return Value for property 'servers'.
-         */
-        @Deprecated
-        @CheckForNull
-        public List<AccurevServer> getServers() {
-            AccurevSCM.AccurevSCMDescriptor descriptor = getDescriptor();
-
-            if (descriptor._servers == null) {
-                descriptor._servers = new ArrayList<>();
-            }
-            // We put this here to maintain backwards compatibility
-            // because we changed the name of the 'servers' field to '_servers'
-            if (descriptor.servers != null) {
-                descriptor._servers.addAll(descriptor.servers);
-                descriptor.servers = null;
-            }
-            return descriptor._servers;
-        }
-
-        @Deprecated
-        @CheckForNull
-        public AccurevServer getServer(String uuid) {
-            List<AccurevServer> servers = getServers();
-            if (uuid == null || getServers() == null) {
-                return null;
-            }
-            for (AccurevServer server : servers) {
-                if (UniqueHelper.isValid(uuid) && uuid.equals(server.getUUID())) {
-                    return server;
-                } else if (uuid.equals(server.getName())) {
-                    // support old server name
-                    return server;
-                }
-            }
-            return null;
-        }
 
     @Deprecated
     public void setServerUUID(String serverUUID) {
@@ -270,88 +201,26 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
         return dontPopContent;
     }
 
-    @Override
-    public AccurevSCM.AccurevSCMDescriptor getDescriptor() {
-        return (AccurevSCM.AccurevSCMDescriptor) super.getDescriptor();
+    public static String deobfuscate(String s) {
+        final String __OBFUSCATE = "OBF:";
+        if (s.startsWith(__OBFUSCATE))
+            s = s.substring(__OBFUSCATE.length());
+        if (StringUtils.isEmpty(s)) return "";
+        byte[] b = new byte[s.length() / 2];
+        int l = 0;
+        for (int i = 0; i < s.length(); i += 4) {
+            String x = s.substring(i, i + 4);
+            int i0 = Integer.parseInt(x, 36);
+            int i1 = (i0 / 256);
+            int i2 = (i0 % 256);
+            b[l++] = (byte) ((i1 + i2 - 254) / 2);
+        }
+        return new String(b, 0, l, StandardCharsets.UTF_8);
     }
 
-    // --------------------------- Inner Class ---------------------------------------------------
-    public static final class AccurevServer implements Serializable {
-
-        @Deprecated
-        private transient String name;
-        @Deprecated
-        private transient String host;
-        @Deprecated
-        private transient int port;
-        @Deprecated
-        private transient String username;
-        @Deprecated
-        private transient String password;
-        @Deprecated
-        private transient String uuid;
-        @Deprecated
-        private transient String validTransactionTypes;
-        @Deprecated
-        private transient boolean syncOperations;
-        @Deprecated
-        private transient boolean minimiseLogins;
-        @Deprecated
-        private transient boolean useNonexpiringLogin;
-        @Deprecated
-        private transient boolean useRestrictedShowStreams;
-        @Deprecated
-        private transient boolean useColor;
-        @Deprecated
-        private transient boolean usePromoteListen;
-
-        @Deprecated
-        public String getHost() {
-            return host;
-        }
-
-        public boolean isUsePromoteListen() {
-            return usePromoteListen;
-        }
-
-        @Deprecated
-        public String getUUID() {
-            return uuid;
-        }
-
-        @Deprecated
-        public String getName() {
-            return name;
-        }
-
-        @Deprecated
-        public boolean isUseRestrictedShowStreams() {
-            return useRestrictedShowStreams;
-        }
-
-        public boolean isUseColor() {
-            return useColor;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public int getPort() {
-            return port;
-        }
-
-        public boolean isMinimiseLogins() {
-            return minimiseLogins;
-        }
-
-        public boolean isUseNonexpiringLogin() {
-            return useNonexpiringLogin;
-        }
-
-        public String getPassword() {
-            return Password.obfuscate(password);
-        }
+    @Override
+    public AccurevSCMDescriptor getDescriptor() {
+        return (AccurevSCMDescriptor) super.getDescriptor();
     }
 
     // -------------------------- INNER CLASSES --------------------------

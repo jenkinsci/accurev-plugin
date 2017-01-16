@@ -9,6 +9,7 @@ import hudson.plugins.accurev.browser.AccurevRepositoryBrowser;
 import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
+import hudson.plugins.accurev.extensions.impl.AccurevDepot;
 import hudson.scm.SCMDescriptor;
 import hudson.util.DescribableList;
 import net.sf.json.JSONObject;
@@ -17,19 +18,20 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author josp
  */
 public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
+    private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
     private Long configVersion;
 
-    /**
-     * All the remote accurev servers we care about
-     */
-    private List<AccurevServerConfig> configs;
+    private AccurevServerConfig config;
+    private AccurevDepot depot;
 
     /**
      * All the configured extensions attached to this.
@@ -38,9 +40,9 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     @DataBoundConstructor
     public AccurevSCM(
-            List<AccurevServerConfig> configs,
+            AccurevServerConfig config,
             @Nonnull List<AccurevSCMExtension> extensions) {
-        this.configs = configs;
+        this.config = config;
         this.extensions = new DescribableList<>(Saveable.NOOP, Util.fixNull(extensions));
     }
 
@@ -51,18 +53,23 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     public Object readResolve() throws IOException {
         // Migrate
-
-        if (serverName != null)
-
+        LOGGER.info("hello");
         if (extensions==null)
             extensions = new DescribableList<>(Saveable.NOOP);
 
-        migrateThyLegacy();
         return this;
     }
 
+    public AccurevServerConfig getConfig() {
+        return config;
+    }
+
+    public AccurevDepot getDepot() {
+        return depot;
+    }
+
     @Extension
-    public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> {
+    public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> {
 
         public AccurevSCMDescriptor() {
             super(AccurevSCM.class, AccurevRepositoryBrowser.class);
@@ -106,7 +113,85 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
         transient List<AccurevServer> servers;
         transient List<AccurevServer> _servers;
-        transient boolean pollOnMaster;
+    }
 
+    // --------------------------- Inner Class ---------------------------------------------------
+    public static final class AccurevServer implements Serializable {
+
+        @Deprecated
+        transient String name;
+        @Deprecated
+        transient String host;
+        @Deprecated
+        transient int port;
+        @Deprecated
+        transient String username;
+        @Deprecated
+        transient String password;
+        @Deprecated
+        transient String uuid;
+        @Deprecated
+        transient String validTransactionTypes;
+        @Deprecated
+        transient boolean syncOperations;
+        @Deprecated
+        transient boolean minimiseLogins;
+        @Deprecated
+        transient boolean useNonexpiringLogin;
+        @Deprecated
+        transient boolean useRestrictedShowStreams;
+        @Deprecated
+        transient boolean useColor;
+        @Deprecated
+        transient boolean usePromoteListen;
+
+        @Deprecated
+        public String getHost() {
+            return host;
+        }
+
+        public boolean isUsePromoteListen() {
+            return usePromoteListen;
+        }
+
+        @Deprecated
+        public String getUUID() {
+            return uuid;
+        }
+
+        @Deprecated
+        public String getName() {
+            return name;
+        }
+
+        @Deprecated
+        public boolean isUseRestrictedShowStreams() {
+            return useRestrictedShowStreams;
+        }
+
+        public boolean isUseColor() {
+            return useColor;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public boolean isMinimiseLogins() {
+            return minimiseLogins;
+        }
+
+        public boolean isUseNonexpiringLogin() {
+            return useNonexpiringLogin;
+        }
+
+        @Deprecated
+        public String getPassword() {
+            return AccurevSCMBackwardCompatibility.deobfuscate(password);
+        }
     }
 }

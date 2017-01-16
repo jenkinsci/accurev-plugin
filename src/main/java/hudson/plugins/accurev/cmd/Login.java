@@ -1,14 +1,14 @@
 package hudson.plugins.accurev.cmd;
 
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class Login extends Command {
      * Returns null on failure.
      */
     private static String getLoggedInUsername(//
-                                              final AccurevSCMBackwardCompatibility.AccurevServer server, //
+                                              final AccurevServerConfig server, //
                                               final EnvVars accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
@@ -37,7 +37,7 @@ public class Login extends Command {
                 workspace, listener, logger, new ParseInfoToLoginName(), null);
     }
 
-    public static boolean ensureLoggedInToAccurev(AccurevSCMBackwardCompatibility.AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
+    public static boolean ensureLoggedInToAccurev(AccurevServerConfig server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
                                                   Launcher launcher) throws IOException {
 
         if (server == null) {
@@ -50,7 +50,7 @@ public class Login extends Command {
             return false;
         }
         final boolean loginRequired;
-        if (server.isMinimiseLogins()) {
+        if (server.isUseMinimiseLogin()) {
             final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
             if (StringUtils.isEmpty(currentUsername)) {
                 loginRequired = true;
@@ -70,7 +70,7 @@ public class Login extends Command {
     }
 
     private static boolean accurevLogin(//
-                                        final AccurevSCMBackwardCompatibility.AccurevServer server, //
+                                        final AccurevServerConfig server, //
                                         final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
@@ -79,7 +79,7 @@ public class Login extends Command {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("login");
         addServer(cmd, server);
-        if (server.isUseNonexpiringLogin()) {
+        if (server.isUseMinimiseLogin()) {
             cmd.add("-n");
         }
         cmd.add(server.getUsername());
@@ -101,22 +101,8 @@ public class Login extends Command {
         }
     }
 
-
-    /**
-     * @param server Accurev Server
-     * @return boolean whether am successful
-     * @throws IOException          failing IO
-     * @throws InterruptedException failing interrupt
-     *                              This method is called from dofillstreams and dofilldepots while configuring the job
-     */
-    public static boolean accurevLoginFromGlobalConfig(//
-                                                       final AccurevSCMBackwardCompatibility.AccurevServer server) throws IOException, InterruptedException {
-
-        Jenkins jenkins = Jenkins.getInstance();
-        TaskListener listener = TaskListener.NULL;
-        Launcher launcher = jenkins.createLauncher(listener);
-        EnvVars accurevEnv = new EnvVars();
-
-        return ensureLoggedInToAccurev(server, accurevEnv, jenkins.getRootPath(), listener, launcher);
+    public static boolean validateCredentials(StandardUsernamePasswordCredentials usernamePasswordCredentials) {
+        boolean result = false;
+        return result;
     }
 }

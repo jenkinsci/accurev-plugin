@@ -5,6 +5,7 @@ import hudson.Util;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import hudson.model.listeners.ItemListener;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.StreamTaskListener;
@@ -37,22 +38,22 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         super();
     }
 
-    public synchronized static void initServer(String host, AccurevSCMBackwardCompatibility.AccurevServer server) {
-        if (!listeners.containsKey(host) && server.isUsePromoteListen()) {
+    public synchronized static void initServer(String host, AccurevServerConfig server) {
+        if (!listeners.containsKey(host) && server.isUsePromoteListener()) {
             listeners.put(host, new AccurevPromoteListener(server));
         }
     }
 
     public synchronized static void validateListeners() {
-        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
-        for (AccurevSCMBackwardCompatibility.AccurevServer server : Util.fixNull(descriptor._servers)) {
+        List<AccurevServerConfig> configs = AccurevPlugin.configuration().getConfigs();
+        for (AccurevServerConfig server : configs) {
             initServer(server.getHost(), server);
         }
         for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
             AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
             if (t != null) {
-                if (t.getServer().isUsePromoteListen()) {
-                    String host = t.getServer().getHost();
+                if (t.getConfig().isUsePromoteListener()) {
+                    String host = t.getConfig().getHost();
                     if (StringUtils.isNotEmpty(host)) {
                         AccurevPromoteListener listener = listeners.get(host);
                         if (null != listener) {
@@ -87,7 +88,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     @Override
     public void start(AbstractProject<?, ?> project, boolean newInstance) {
         super.start(project, newInstance);
-        AccurevSCM.AccurevServer server = getServer();
+        AccurevServerConfig server = getConfig();
         String host = server.getHost();
         if (StringUtils.isNotEmpty(host)) {
             initServer(host, server);
@@ -111,7 +112,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public void stop() {
-        String host = getServer().getHost();
+        String host = getConfig().getHost();
         if (StringUtils.isNotEmpty(host)) {
             AccurevPromoteListener listener = listeners.get(host);
             if (listener != null) {
@@ -135,10 +136,10 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return scm == null ? "" : scm.getStream();
     }
 
-    public AccurevSCM.AccurevServer getServer() {
+    public AccurevServerConfig getConfig() {
         AccurevSCM scm = getScm();
         if (null != scm) {
-            return scm.getServer();
+            return scm.getConfig();
         }
         return null;
     }

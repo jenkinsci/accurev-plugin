@@ -5,6 +5,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.cmd.ShowStreams;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -23,10 +24,10 @@ import java.util.logging.Logger;
  */
 public class AccurevPromoteListener implements MqttCallback {
     private static final Logger LOGGER = Logger.getLogger(AccurevPromoteListener.class.getName());
-    private final AccurevSCMBackwardCompatibility.AccurevServer server;
+    private final AccurevServerConfig server;
     private final HashSet<AccurevPromoteTrigger> triggers = new HashSet<>();
 
-    public AccurevPromoteListener(AccurevSCMBackwardCompatibility.AccurevServer server) {
+    public AccurevPromoteListener(AccurevServerConfig server) {
         this.server = server;
         setupConnection();
     }

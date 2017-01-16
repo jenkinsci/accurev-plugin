@@ -4,8 +4,8 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevSCMBackwardCompatibility.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -28,7 +28,7 @@ public class CheckForChanges {
      * @return if there are any new transactions in the stream since the last build was done
      */
     //stream param is of type AccurevStream
-    public static boolean checkStreamForChanges(AccurevServer server,
+    public static boolean checkStreamForChanges(AccurevServerConfig server,
                                                 EnvVars accurevEnv,
                                                 FilePath workspace,
                                                 TaskListener listener,

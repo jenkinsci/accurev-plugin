@@ -9,6 +9,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.*;
 import hudson.plugins.accurev.cmd.*;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
@@ -40,7 +41,7 @@ public abstract class AbstractModeDelegate {
     private static final String ACCUREV_HOME = "ACCUREV_HOME";
     public final AccurevSCM scm;
     protected Launcher launcher;
-    protected AccurevSCM.AccurevServer server;
+    protected AccurevServerConfig server;
     protected EnvVars accurevEnv;
     protected FilePath jenkinsWorkspace;
     protected TaskListener listener;
@@ -56,7 +57,7 @@ public abstract class AbstractModeDelegate {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
-        server = scm.getServer();
+        server = scm.getConfig();
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
@@ -270,7 +271,7 @@ public abstract class AbstractModeDelegate {
     protected boolean populate(boolean populateRequired) throws IOException {
         if (populateRequired) {
             PopulateCmd pop = new PopulateCmd();
-            if (pop.populate(scm, launcher, listener, server, getPopulateStream(), true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
+            if (pop.populate(scm, launcher, listener, server, getPopulateStream(), false, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
                 startDateOfPopulate = pop.get_startDateOfPopulate();
             } else {
                 return false;

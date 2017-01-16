@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public class UniqueHelper {
     public static boolean isValid(String uuid) {
-        if (StringUtils.isEmpty(uuid)) return false;
+        if (StringUtils.isBlank(uuid)) return false;
         try {
             UUID fromStringUUID = UUID.fromString(uuid);
             String toStringUUID = fromStringUUID.toString();

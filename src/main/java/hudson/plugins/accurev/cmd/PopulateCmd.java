@@ -6,7 +6,7 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
+import hudson.plugins.accurev.config.AccurevServerConfig;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -36,15 +36,15 @@ public class PopulateCmd extends Command {
      * @param listener            listener
      * @param server              server
      * @param streamName          stream Name
-     * @param overwrite           overwrite
      * @param fromMessage         from Messge
+     * @param overwrite           overwrite files
      * @param accurevWorkingSpace Accurev Workspace
      * @param accurevEnv          Accurev Environment
      * @return boolean
      * @throws IOException Handle it above
      */
     public boolean populate(AccurevSCM scm, Launcher launcher, TaskListener listener,
-                            AccurevSCMBackwardCompatibility.AccurevServer server,
+                            AccurevServerConfig server,
                             String streamName,
                             boolean overwrite,
                             String fromMessage,

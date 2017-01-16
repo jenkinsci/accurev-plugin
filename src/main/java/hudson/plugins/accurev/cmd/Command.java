@@ -1,6 +1,7 @@
 package hudson.plugins.accurev.cmd;
 
-import hudson.plugins.accurev.AccurevSCMBackwardCompatibility;
+import hudson.plugins.accurev.config.AccurevServerConfig;
+import hudson.plugins.accurev.extensions.impl.AccurevDepot;
 import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
 
@@ -11,7 +12,7 @@ public class Command {
      * @param cmd    The accurev command line.
      * @param server The Accurev server details.
      */
-    public static void addServer(ArgumentListBuilder cmd, AccurevSCMBackwardCompatibility.AccurevServer server) {
+    public static void addServer(ArgumentListBuilder cmd, AccurevServerConfig server) {
         if (null != server && null != server.getHost() && StringUtils.isNotBlank(server.getHost())) {
             cmd.add("-H");
             if (server.getPort() != 0) {
@@ -19,6 +20,16 @@ public class Command {
             } else {
                 cmd.add(server.getHost());
             }
+        }
+    }
+
+    public static void addDepot(ArgumentListBuilder cmd, AccurevDepot depot) {
+        if (null != depot) {
+            cmd.add("-p");
+            if (StringUtils.isNotBlank(depot.getName()))
+                cmd.add(depot.getName());
+            else
+                cmd.add(depot.getNumber());
         }
     }
 }
