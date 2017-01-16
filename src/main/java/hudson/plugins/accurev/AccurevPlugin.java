@@ -63,6 +63,7 @@ public class AccurevPlugin {
                 for (AccurevSCM.AccurevServer server : Util.fixNull(servers)) {
                     String credentialsId = "";
                     String secret = server.getPassword();
+                    server.noise();
                     List<DomainRequirement> domainRequirements = Util.fixNull(URIRequirementBuilder
                             .fromUri("")
                             .withHostnamePort(server.host, server.port)

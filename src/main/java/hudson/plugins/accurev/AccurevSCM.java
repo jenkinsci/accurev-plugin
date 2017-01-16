@@ -117,6 +117,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer implements Serializable {
+        public static final Logger LOGGER = Logger.getLogger(AccurevSCM.AccurevServer.class.name());
 
         @Deprecated
         transient String name;
@@ -192,6 +193,10 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         @Deprecated
         public String getPassword() {
             return AccurevSCMBackwardCompatibility.deobfuscate(password);
+        }
+        
+        public void noise() {
+            this.LOGGER.info('make noise');
         }
     }
 }
