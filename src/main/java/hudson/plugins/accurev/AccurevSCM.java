@@ -469,15 +469,22 @@ public class AccurevSCM extends SCM {
         return StringUtils.isNotEmpty(str) && str.startsWith("$");
     }
 
-    public String getPollingStream(Job<?, ?> project, TaskListener listener) {
+    /**
+     *
+     * @param project Running build
+     * @param listener Listener that it runs the build on
+     * @return Stream name tries to expand Variable reference to a String
+     * @throws IllegalArgumentException Thrown when Variable reference is not supported or cannot expand
+     */
+    public String getPollingStream(Job<?, ?> project, TaskListener listener) throws IllegalArgumentException {
         String parsedLocalStream;
-        if (hasStringVariableReference(getStream())) {
+        if (hasStringVariableReference(stream)) {
             ParametersDefinitionProperty paramDefProp = project
                     .getProperty(ParametersDefinitionProperty.class);
 
             if (paramDefProp == null) {
                 throw new IllegalArgumentException(
-                        "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
+                        "Polling is not supported when stream name has a variable reference '" + stream + "'.");
             }
 
             Map<String, String> keyValues = new TreeMap<>();
@@ -495,14 +502,14 @@ public class AccurevSCM extends SCM {
 
             final EnvVars environment = new EnvVars(keyValues);
             parsedLocalStream = environment.expand(getStream());
-            listener.getLogger().println("... expanded '" + getStream() + "' to '" + parsedLocalStream + "'.");
+            listener.getLogger().println("... expanded '" + stream + "' to '" + parsedLocalStream + "'.");
         } else {
-            parsedLocalStream = getStream();
+            parsedLocalStream = stream;
         }
 
         if (hasStringVariableReference(parsedLocalStream)) {
             throw new IllegalArgumentException(
-                    "Polling is not supported when stream name has a variable reference '" + getStream() + "'.");
+                    "Failed to expand variable reference '" + stream + "'.");
         }
         return parsedLocalStream;
     }

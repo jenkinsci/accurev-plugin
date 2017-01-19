@@ -183,18 +183,17 @@ public abstract class AbstractModeDelegate {
                     startDateOfPopulate, startTime.getTime(),
                     localStream, changelogFile, logger, scm, webURL);
         }
-        
+
         // Too confusing reading it
         // This check is for whether to catch changes for one or multiple streams
         // ALso if it should ignore changes on Parent
         // Doing too much in too few lines to make it apparant
         // High potential for simple rewrite!
-         if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
+        if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher, startDateOfPopulate,
                     startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
         }
         return true;
-                
     }
 
     protected String getChangeLogStream() {
