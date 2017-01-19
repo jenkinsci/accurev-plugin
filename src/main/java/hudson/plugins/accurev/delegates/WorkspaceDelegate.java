@@ -37,7 +37,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     }
 
     @Override
-    protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException {
+    protected PollingResult checkForChanges(Job<?, ?> project) throws IOException, InterruptedException, IllegalArgumentException {
         localStream = scm.getPollingStream(project, listener);
         return super.checkForChanges(project);
     }
@@ -71,6 +71,9 @@ public class WorkspaceDelegate extends ReftreeDelegate {
                 } else {
                     Map<String, AccurevStream> workspaceBasis = ShowStreams.getStreams(scm, workspaceBasisStream, server, accurevEnv, jenkinsWorkspace, listener,
                             launcher);
+                    if (workspaceBasis == null) {
+                        throw new IllegalArgumentException("Could not determine the workspace basis stream");
+                    }
                     workspaceStream.setParent(workspaceBasis.get(workspaceBasisStream));
                 }
             } else {

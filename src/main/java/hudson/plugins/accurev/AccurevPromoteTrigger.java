@@ -178,7 +178,13 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
                 }
             } else if (promoteDepot.equals(getDepot()) && !scm.isIgnoreStreamParent()) {
 
-                String localStream = scm.getPollingStream(job, listener);
+                String localStream;
+                try {
+                    localStream = scm.getPollingStream(job, listener);
+                } catch (IllegalArgumentException ex) {
+                    listener.getLogger().println(ex.getMessage());
+                    return false;
+                }
 
                 if (streams == null) {
                     listener.fatalError("streams EMPTY");

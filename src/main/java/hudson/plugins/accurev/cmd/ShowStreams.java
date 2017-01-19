@@ -16,6 +16,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class ShowStreams extends Command {
     private static final Logger logger = Logger.getLogger(ShowStreams.class.getName());
 
+    @CheckForNull
     public static Map<String, AccurevStream> getStreams(//
                                                         final AccurevSCM scm, //
                                                         final String nameOfStreamRequired, //
