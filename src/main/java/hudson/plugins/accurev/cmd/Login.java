@@ -90,7 +90,7 @@ public class Login extends Command {
         }
         cmd.add(server.getUsername());
         if (StringUtils.isEmpty(server.getPassword())) {
-            if (AccurevLauncher.isUnix(workspace)) {
+            if (launcher.isUnix()) {
                 cmd.add("", true);
             } else {
                 cmd.addQuoted("", true);

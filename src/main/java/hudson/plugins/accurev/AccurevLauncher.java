@@ -1,9 +1,6 @@
 package hudson.plugins.accurev;
 
-import hudson.AbortException;
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
+import hudson.*;
 import hudson.Launcher.ProcStarter;
 import hudson.model.Computer;
 import hudson.model.Node;
@@ -21,7 +18,6 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -264,7 +260,7 @@ public final class AccurevLauncher {
             @Nonnull final OutputStream stdoutStream,
             @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
         String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
-        if (accurevPath == null) accurevPath = "accurev";
+        if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
@@ -407,10 +403,11 @@ public final class AccurevLauncher {
         return env;
     }
 
-    private static String separator(FilePath workspace) {
-        return isUnix(workspace) ? "/" : "\\";
+    private static String separator(Launcher launcher) {
+        return launcher.isUnix() ? "/" : "\\";
     }
 
+    @CheckForNull
     private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
         Computer computer = workspace.toComputer();
         String name = null;
@@ -421,7 +418,7 @@ public final class AccurevLauncher {
             return executables.get(name);
         }
         if (e.containsKey("ACCUREV_BIN")) {
-            exe = e.get("ACCUREV_BIN") + separator(workspace) + binName;
+            exe = e.get("ACCUREV_BIN") + separator(launcher) + binName;
             if (justAccurev(launcher, exe)) {
                 executables.put(name, exe);
                 return exe;
@@ -434,7 +431,7 @@ public final class AccurevLauncher {
                 return exe;
             }
         }
-        if (isUnix(workspace)) {
+        if (launcher.isUnix()) {
             exe = getExistingPath(workspace, DEFAULT_NIX_CMD_LOCATIONS);
             if (justAccurev(launcher, exe)) {
                 executables.put(name, exe);
@@ -460,7 +457,7 @@ public final class AccurevLauncher {
     }
 
     private static String getExistingPath(FilePath p, List<String> paths) {
-        for (final String path : paths) {
+        for (final String path : Util.fixNull(paths)) {
             try {
                 if (new FilePath(p.getChannel(), path).exists()) {
                     return path;
@@ -468,7 +465,7 @@ public final class AccurevLauncher {
             } catch (IOException | InterruptedException ignored) {
             }
         }
-        return "";
+        return "accurev";
     }
 
     @CheckForNull
@@ -477,24 +474,6 @@ public final class AccurevLauncher {
         Node node = null;
         if (null != computer) node = computer.getNode();
         return null != node ? node : Jenkins.getInstance();
-    }
-
-    public static boolean isUnix(FilePath workspace) {
-        // if the path represents a local path, there' no need to guess.
-        if (!workspace.isRemote())
-            return File.pathSeparatorChar != ';';
-
-        String remote = workspace.getRemote();
-
-        // note that we can't use the usual File.pathSeparator and etc., as the OS of
-        // the machine where this code runs and the OS that this FilePath refers to may be different.
-
-        // Windows absolute path is 'X:\...', so this is usually a good indication of Windows path
-        if (remote.length() > 3 && remote.charAt(1) == ':' && remote.charAt(2) == '\\')
-            return false;
-        // Windows can handle '\' as a path separator but Unix can't,
-        // so err on Unix side
-        return !remote.contains("\\");
     }
 
     /**
