@@ -408,6 +408,7 @@ public final class AccurevLauncher {
         return isUnix(workspace) ? "/" : "\\";
     }
 
+    @CheckForNull
     private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
         Computer computer = workspace.toComputer();
         String name = null;
