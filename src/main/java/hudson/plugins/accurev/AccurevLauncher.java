@@ -1,9 +1,6 @@
 package hudson.plugins.accurev;
 
-import hudson.AbortException;
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
+import hudson.*;
 import hudson.Launcher.ProcStarter;
 import hudson.model.Computer;
 import hudson.model.Node;
@@ -264,7 +261,7 @@ public final class AccurevLauncher {
             @Nonnull final OutputStream stdoutStream,
             @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
         String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
-        if (accurevPath == null) accurevPath = "accurev";
+        if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
         Node n = workspaceToNode(directoryToRunCommandFrom);
@@ -460,7 +457,7 @@ public final class AccurevLauncher {
     }
 
     private static String getExistingPath(FilePath p, List<String> paths) {
-        for (final String path : paths) {
+        for (final String path : Util.fixNull(paths)) {
             try {
                 if (new FilePath(p.getChannel(), path).exists()) {
                     return path;
@@ -468,7 +465,7 @@ public final class AccurevLauncher {
             } catch (IOException | InterruptedException ignored) {
             }
         }
-        return "";
+        return "accurev";
     }
 
     @CheckForNull
