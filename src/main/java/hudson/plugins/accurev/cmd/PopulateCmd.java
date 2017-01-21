@@ -31,15 +31,15 @@ public class PopulateCmd extends Command {
     }
 
     /**
-     * @param scm                 Accurev SCm
-     * @param launcher            launcher
-     * @param listener            listener
-     * @param server              server
-     * @param streamName          stream Name
-     * @param overwrite           overwrite
-     * @param fromMessage         from Messge
-     * @param accurevWorkingSpace Accurev Workspace
-     * @param accurevEnv          Accurev Environment
+     * @param scm         Accurev SCm
+     * @param launcher    launcher
+     * @param listener    listener
+     * @param server      server
+     * @param streamName  stream Name
+     * @param overwrite   overwrite
+     * @param fromMessage from Messge
+     * @param workspace   Accurev Workspace
+     * @param accurevEnv  Accurev Environment
      * @return boolean
      * @throws IOException Handle it above
      */
@@ -48,35 +48,35 @@ public class PopulateCmd extends Command {
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
-                            FilePath accurevWorkingSpace,
+                            FilePath workspace,
                             EnvVars accurevEnv) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
-        final ArgumentListBuilder popcmd = new ArgumentListBuilder();
-        popcmd.add("pop");
-        addServer(popcmd, server);
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add("pop");
+        addServer(cmd, server);
 
         if (streamName != null) {
-            popcmd.add("-v");
-            popcmd.add(streamName);
+            cmd.add("-v");
+            cmd.add(streamName);
         }
 
-        popcmd.add("-L");
-        popcmd.add(accurevWorkingSpace.getRemote());
+        cmd.add("-L");
+        cmd.add(workspace.getRemote());
 
-        if (overwrite) popcmd.add("-O");
+        if (overwrite) cmd.add("-O");
 
-        popcmd.add("-R");
+        cmd.add("-R");
         if (StringUtils.isBlank(scm.getSubPath())) {
-            popcmd.add(".");
+            cmd.add(".");
         } else {
             final StringTokenizer st = new StringTokenizer(scm.getSubPath(), ",");
             while (st.hasMoreElements()) {
-                popcmd.add(st.nextToken().trim());
+                cmd.add(st.nextToken().trim());
             }
         }
         _startDateOfPopulate = new Date();
-        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, scm.getOptionalLock(), accurevEnv,
-                accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger());
+        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
+                accurevEnv, workspace, listener, logger, new ParsePopulate(), listener.getLogger());
         if (success == null || !success) {
             return false;
         }

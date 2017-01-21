@@ -1,0 +1,169 @@
+package jenkins.plugins.accurev;
+
+import hudson.EnvVars;
+import hudson.Extension;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
+import hudson.model.EnvironmentSpecific;
+import hudson.model.Node;
+import hudson.model.TaskListener;
+import hudson.slaves.NodeSpecific;
+import hudson.tools.ToolDescriptor;
+import hudson.tools.ToolInstallation;
+import hudson.tools.ToolProperty;
+import hudson.util.FormValidation;
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
+
+/**
+ * Initialized by josep on 21-01-2017.
+ */
+public class AccurevTool extends ToolInstallation implements NodeSpecific<AccurevTool>, EnvironmentSpecific<AccurevTool> {
+
+
+    /**
+     * Constructor for AccurevTool
+     *
+     * @param name Tool name
+     * @param home Tool location (usually "accurev")
+     * @param properties {@link java.util.List} of properties for this tool
+     */
+    @DataBoundConstructor
+    public AccurevTool(String name, String home, List<? extends ToolProperty<?>> properties) {
+        super(name, home, properties);
+    }
+
+    public static transient final String DEFAULT = "Default";
+
+    private static final long serialVersionUID = 1;
+
+    /**
+     * getAccurevExe
+     *
+     * @return {@link java.lang.String} that will be used to execute accurev (e.g. "accurev" or "/usr/bin/accurev")
+     */
+    public String getAccurevExe() {
+        return getHome();
+    }
+
+    private static AccurevTool[] getInstallations(DescriptorImpl descriptor) {
+        AccurevTool[] installations = null;
+        try {
+            installations = descriptor.getInstallations();
+        } catch (NullPointerException e) {
+            installations = new AccurevTool[0];
+        }
+        return installations;
+    }
+
+    /**
+     * Returns the default installation.
+     *
+     * @return default installation
+     */
+    public static AccurevTool getDefaultInstallation() {
+        Jenkins jenkinsInstance = Jenkins.getInstance();
+        DescriptorImpl AccurevTools = jenkinsInstance.getDescriptorByType(AccurevTool.DescriptorImpl.class);
+        AccurevTool tool = AccurevTools.getInstallation(AccurevTool.DEFAULT);
+        if (tool != null) {
+            return tool;
+        } else {
+            AccurevTool[] installations = AccurevTools.getInstallations();
+            if (installations.length > 0) {
+                return installations[0];
+            } else {
+                onLoaded();
+                return AccurevTools.getInstallations()[0];
+            }
+        }
+    }
+
+    public AccurevTool forNode(Node node, TaskListener log) throws IOException, InterruptedException {
+        return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
+    }
+
+    public AccurevTool forEnvironment(EnvVars environment) {
+        return new AccurevTool(getName(), environment.expand(getHome()), Collections.emptyList());
+    }
+
+    @Override
+    public DescriptorImpl getDescriptor() {
+        Jenkins jenkinsInstance = Jenkins.getInstance();
+        return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
+    }
+
+    @Initializer(after=EXTENSIONS_AUGMENTED)
+    public static void onLoaded() {
+        //Creates default tool installation if needed. Uses "accurev" or migrates data from previous versions
+
+        Jenkins jenkinsInstance = Jenkins.getInstance();
+
+        DescriptorImpl descriptor = (DescriptorImpl) jenkinsInstance.getDescriptor(AccurevTool.class);
+        AccurevTool[] installations = getInstallations(descriptor);
+
+        if (installations != null && installations.length > 0) {
+            //No need to initialize if there's already something
+            return;
+        }
+
+        String defaultAccurevExe = "accurev";
+        AccurevTool tool = new AccurevTool(DEFAULT, defaultAccurevExe, Collections.emptyList());
+        descriptor.setInstallations(tool);
+        descriptor.save();
+    }
+
+    @Extension @Symbol("accurev")
+    public static class DescriptorImpl extends ToolDescriptor<AccurevTool> {
+        public DescriptorImpl() {
+            super();
+            load();
+        }
+
+        @Override
+        @Nonnull
+        public String getDisplayName() {
+            return "Accurev";
+        }
+
+        @SuppressWarnings("SuspiciousToArrayCall")
+        @Override
+        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+            setInstallations(req.bindJSONToList(clazz, json.get("tool")).toArray(new AccurevTool[0]));
+            save();
+            return true;
+        }
+
+        public FormValidation doCheckHome(@QueryParameter File value) {
+            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+            String path = value.getPath();
+
+            return FormValidation.validateExecutable(path);
+        }
+
+        public AccurevTool getInstallation(String name) {
+            for(AccurevTool i : getInstallations()) {
+                if(i.getName().equals(name)) {
+                    return i;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static final Logger LOGGER = Logger.getLogger(AccurevTool.class.getName());
+}

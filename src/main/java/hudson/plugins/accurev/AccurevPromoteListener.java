@@ -64,7 +64,7 @@ public class AccurevPromoteListener implements MqttCallback {
                 Launcher launcher = jenkins.createLauncher(listener);
                 EnvVars env = new EnvVars();
 
-                Map<String, AccurevStream> streams = ShowStreams.getAllStreams(server, promoteDepot, null, env, path, listener, launcher);
+                Map<String, AccurevStream> streams = ShowStreams.getAllStreams(null, server, promoteDepot, null, env, path, listener, launcher);
 
                 triggers.stream()
                         //Filter promote triggers based on matching depot and stream

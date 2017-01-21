@@ -12,7 +12,7 @@ import static hudson.init.InitMilestone.COMPLETED;
 import static hudson.init.InitMilestone.JOB_LOADED;
 
 /**
- * Created by josp on 21/09/16.
+ * Initialized by josp on 21/09/16.
  */
 @SuppressWarnings("unused") // Used for initialization/migration purpose
 public class AccurevPlugin {

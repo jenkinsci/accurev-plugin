@@ -40,17 +40,17 @@ public class ShowStreams extends Command {
                                                         final Launcher launcher) throws IOException {
         final Map<String, AccurevStream> streams;
         if (scm.isIgnoreStreamParent()) {
-            streams = getOneStream(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
+            streams = getOneStream(nameOfStreamRequired, accurevEnv, workspace, listener, launcher, scm);
         } else if (server.isUseRestrictedShowStreams()) {
-            streams = getAllAncestorStreams(nameOfStreamRequired, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
+            streams = getAllAncestorStreams(nameOfStreamRequired, scm, accurevEnv, workspace, listener, launcher);
         } else {
-            streams = getAllStreams(server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
+            streams = getAllStreams(scm, server, scm.getDepot(), scm.getOptionalLock(), accurevEnv, workspace, listener, launcher);
         }
         return streams;
     }
 
     public static Map<String, AccurevStream> getAllStreams(//
-                                                           final AccurevServer server, //
+                                                           AccurevSCM scm, final AccurevServer server, //
                                                            final String depot, //
                                                            final Lock lock, //
                                                            final EnvVars accurevEnv, //
@@ -58,6 +58,7 @@ public class ShowStreams extends Command {
                                                            final TaskListener listener, //
                                                            final Launcher launcher) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        String accurevTool = scm == null ? null : scm.getAccurevTool();
         cmd.add("show");
         addServer(cmd, server);
         cmd.add("-fx");
@@ -66,7 +67,7 @@ public class ShowStreams extends Command {
         cmd.add("streams");
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", launcher, cmd, lock, accurevEnv,
+        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", accurevTool, launcher, cmd, lock, accurevEnv,
                 workspace, listener, logger, parser, new ParseShowStreams(), depot);
         setParents(streams);
         return streams;
@@ -74,9 +75,7 @@ public class ShowStreams extends Command {
 
     private static Map<String, AccurevStream> getAllAncestorStreams(//
                                                                     final String nameOfStreamRequired, //
-                                                                    final AccurevServer server, //
-                                                                    final String depot, //
-                                                                    final Lock lock, //
+                                                                    final AccurevSCM scm,
                                                                     final EnvVars accurevEnv, //
                                                                     final FilePath workspace, //
                                                                     final TaskListener listener, //
@@ -84,7 +83,7 @@ public class ShowStreams extends Command {
         final Map<String, AccurevStream> streams = new HashMap<>();
         String streamName = nameOfStreamRequired;
         while (streamName != null && !streamName.isEmpty()) {
-            final Map<String, AccurevStream> oneStream = getOneStream(streamName, server, depot, lock, accurevEnv, workspace, listener, launcher);
+            final Map<String, AccurevStream> oneStream = getOneStream(streamName, accurevEnv, workspace, listener, launcher, scm);
             final AccurevStream theStream = oneStream == null ? null : oneStream.get(streamName);
             streamName = null;
             if (theStream != null) {
@@ -102,26 +101,23 @@ public class ShowStreams extends Command {
 
     private static Map<String, AccurevStream> getOneStream(//
                                                            final String streamName, //
-                                                           final AccurevServer server, //
-                                                           final String depot, //
-                                                           final Lock lock, //
                                                            final EnvVars accurevEnv, //
                                                            final FilePath workspace, //
                                                            final TaskListener listener, //
-                                                           final Launcher launcher) throws IOException {
+                                                           final Launcher launcher, AccurevSCM scm) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("show");
-        addServer(cmd, server);
+        addServer(cmd, scm.getServer());
         cmd.add("-fx");
         cmd.add("-p");
-        cmd.add(depot);
+        cmd.add(scm.getDepot());
         cmd.add("-s");
         cmd.add(streamName);
         cmd.add("streams");
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        return AccurevLauncher.runCommand("Restricted show streams command", launcher, cmd, lock,
-                accurevEnv, workspace, listener, logger, parser, new ParseShowStreams(), depot);
+        return AccurevLauncher.runCommand("Restricted show streams command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
+                accurevEnv, workspace, listener, logger, parser, new ParseShowStreams(), scm.getDepot());
     }
 
     private static void setParents(Map<String, AccurevStream> streams) {
@@ -147,7 +143,7 @@ public class ShowStreams extends Command {
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         EnvVars accurevEnv = new EnvVars();
-        List<String> streamNames = getAllStreams(server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher)
+        List<String> streamNames = getAllStreams(null, server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher)
                 .values()
                 .stream()
                 .filter(stream -> stream.getType() != AccurevStream.StreamType.WORKSPACE)

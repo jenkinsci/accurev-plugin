@@ -18,7 +18,7 @@ public class SetProperty extends Command {
 
     public static void setproperty(
             final AccurevSCM scm,
-            final FilePath accurevWorkingSpace, //
+            final FilePath workspace, //
             final TaskListener listener, //
             final Launcher launcher,
             final EnvVars accurevEnv,
@@ -30,16 +30,16 @@ public class SetProperty extends Command {
 
         String propertyValue = "<style><color><background-color>" + colorCode + "</background-color></color></style>";
 
-        final ArgumentListBuilder bgColorStyleCmd = new ArgumentListBuilder();
-        bgColorStyleCmd.add("setproperty");
-        Command.addServer(bgColorStyleCmd, server);
-        bgColorStyleCmd.add("-s");
-        bgColorStyleCmd.add(streamOrWorkspaceName);
-        bgColorStyleCmd.add("-r");
-        bgColorStyleCmd.add(propertyName);
-        bgColorStyleCmd.add(propertyValue);
-        boolean runCommand = AccurevLauncher.runCommand("setproperty background color", launcher, bgColorStyleCmd,
-                scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true);
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add("setproperty");
+        Command.addServer(cmd, server);
+        cmd.add("-s");
+        cmd.add(streamOrWorkspaceName);
+        cmd.add("-r");
+        cmd.add(propertyName);
+        cmd.add(propertyValue);
+        boolean runCommand = AccurevLauncher.runCommand("setproperty background color", scm.getAccurevTool(), launcher,
+                cmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger, true);
         if (!runCommand) throw new IOException("Command failed");
 
     }

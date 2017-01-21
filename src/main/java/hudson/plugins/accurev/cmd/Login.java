@@ -5,6 +5,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
+import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
@@ -24,7 +25,7 @@ public class Login extends Command {
      * Returns null on failure.
      */
     private static String getLoggedInUsername(//
-                                              final AccurevServer server, //
+                                              String accurevTool, final AccurevServer server, //
                                               final EnvVars accurevEnv, //
                                               final FilePath workspace, //
                                               final TaskListener listener, //
@@ -34,13 +35,13 @@ public class Login extends Command {
         cmd.add("info");
         addServer(cmd, server);
         // returns username
-        return AccurevLauncher.runCommand(commandDescription, launcher, cmd, null, accurevEnv,
-                workspace, listener, logger, new ParseInfoToLoginName(), null);
+        return AccurevLauncher.runCommand(commandDescription, accurevTool, launcher, cmd, null,
+                accurevEnv, workspace, listener, logger, new ParseInfoToLoginName(), null);
     }
 
-    public static boolean ensureLoggedInToAccurev(AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
+    public static boolean ensureLoggedInToAccurev(AccurevSCM scm, AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
                                                   Launcher launcher) throws IOException {
-
+        String accurevTool = scm == null ? null : scm.getAccurevTool();
         if (server == null) {
             listener.getLogger().println("Authentication failure - Server is empty");
             return false;
@@ -54,7 +55,7 @@ public class Login extends Command {
         try {
             final boolean loginRequired;
             if (server.isMinimiseLogins()) {
-                final String currentUsername = getLoggedInUsername(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
+                final String currentUsername = getLoggedInUsername(accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
                 if (StringUtils.isEmpty(currentUsername)) {
                     loginRequired = true;
                     listener.getLogger().println("Not currently authenticated with Accurev server");
@@ -67,7 +68,7 @@ public class Login extends Command {
                 loginRequired = true;
             }
             if (loginRequired) {
-                return accurevLogin(server, accurevEnv, pathToRunCommandsIn, listener, launcher);
+                return accurevLogin(accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
             }
         } finally {
             AccurevSCMDescriptor.unlock();
@@ -75,8 +76,7 @@ public class Login extends Command {
         return true;
     }
 
-    private static boolean accurevLogin(//
-                                        final AccurevServer server, //
+    private static boolean accurevLogin(String accurevTool, final AccurevServer server, //
                                         final EnvVars accurevEnv, //
                                         final FilePath workspace, //
                                         final TaskListener listener, //
@@ -98,7 +98,7 @@ public class Login extends Command {
         } else {
             cmd.add(server.getPassword(), true);
         }
-        final boolean success = AccurevLauncher.runCommand("login", launcher, cmd, null, accurevEnv, workspace, listener, logger);
+        final boolean success = AccurevLauncher.runCommand("login", accurevTool, launcher, cmd, null, accurevEnv, workspace, listener, logger);
         if (success) {
             listener.getLogger().println("Authentication completed successfully.");
             return true;
@@ -123,6 +123,6 @@ public class Login extends Command {
         Launcher launcher = jenkins.createLauncher(listener);
         EnvVars accurevEnv = new EnvVars();
 
-        return ensureLoggedInToAccurev(server, accurevEnv, jenkins.getRootPath(), listener, launcher);
+        return ensureLoggedInToAccurev(null, server, accurevEnv, jenkins.getRootPath(), listener, launcher);
     }
 }

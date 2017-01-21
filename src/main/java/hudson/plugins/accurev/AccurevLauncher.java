@@ -1,6 +1,9 @@
 package hudson.plugins.accurev;
 
-import hudson.*;
+import hudson.AbortException;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.model.Computer;
 import hudson.model.Node;
@@ -10,6 +13,7 @@ import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
 import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
 import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.AccurevTool;
 import org.apache.commons.lang.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -22,10 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,25 +37,6 @@ import java.util.logging.Logger;
  */
 public final class AccurevLauncher {
     private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
-    /**
-     * The default search paths for Windows clients.
-     */
-    private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(
-            "C:\\opt\\accurev\\bin\\accurev.exe",
-            "C:\\Program Files\\AccuRev\\bin\\accurev.exe",
-            "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
-    /**
-     * The default search paths for *nix clients
-     */
-    private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(
-            "/usr/local/bin/accurev",
-            "/usr/bin/accurev",
-            "/bin/accurev",
-            "/local/bin/accurev",
-            "/opt/accurev/bin/accurev",
-            "/Applications/AccuRev/bin/accurev",
-            "/Applications/AccuRevClient/bin/accurev");
-    private static final Map<String, String> executables = new HashMap<>();
 
     /**
      * Runs a command and returns <code>true</code> if it passed,
@@ -62,6 +44,7 @@ public final class AccurevLauncher {
      *
      * @param humanReadableCommandName                  Human-readable text saying what this command is. This appears
      *                                                  in the logs if there is a failure.
+     * @param accurevTool Which tool to find
      * @param launcher                                  Means of executing the command.
      * @param machineReadableCommand                    The command to be executed.
      * @param synchronizationLockObjectOrNull           The {@link Lock} object to be used to prevent concurrent
@@ -79,7 +62,7 @@ public final class AccurevLauncher {
      */
     public static boolean runCommand(//
                                      @Nonnull final String humanReadableCommandName, //
-                                     @Nonnull final Launcher launcher, //
+                                     String accurevTool, @Nonnull final Launcher launcher, //
                                      @Nonnull final ArgumentListBuilder machineReadableCommand, //
                                      @Nullable final Lock synchronizationLockObjectOrNull, //
                                      @Nonnull final EnvVars environmentVariables, //
@@ -91,14 +74,14 @@ public final class AccurevLauncher {
         final boolean shouldLogEverything = optionalFlagToCopyAllOutputToTaskListener != null
                 && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
         if (shouldLogEverything) {
-            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand,
-                    synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
-                    listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseOutputToStream(),
-                    listenerToLogFailuresTo.getLogger());
+            result = runCommand(humanReadableCommandName, accurevTool, launcher,
+                    machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
+                    directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo,
+                    new ParseOutputToStream(), listenerToLogFailuresTo.getLogger());
         } else {
-            result = runCommand(humanReadableCommandName, launcher, machineReadableCommand,
-                    synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
-                    listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
+            result = runCommand(humanReadableCommandName, accurevTool, launcher,
+                    machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
+                    directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
         if (result == null) return false;
         return result;
@@ -106,12 +89,13 @@ public final class AccurevLauncher {
 
     /**
      * As
-     * {@link #runCommand(String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
+     * {@link #runCommand(String, String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
      * but uses an {@link ICmdOutputXmlParser} instead.
      *
      * @param <TResult>                       The type of the result returned by the parser.
      * @param <TContext>                      The type of data to be passed to the parser. Can be
      * @param humanReadableCommandName        Human readable command
+     * @param accurevTool Which tool to find
      * @param launcher                        launcher
      * @param machineReadableCommand          Machine readable command
      * @param synchronizationLockObjectOrNull Synchronization lock
@@ -130,7 +114,7 @@ public final class AccurevLauncher {
      */
     public static <TResult, TContext> TResult runCommand(//
                                                          @Nonnull final String humanReadableCommandName, //
-                                                         @Nonnull final Launcher launcher, //
+                                                         String accurevTool, @Nonnull final Launcher launcher, //
                                                          @Nonnull final ArgumentListBuilder machineReadableCommand, //
                                                          @Nullable final Lock synchronizationLockObjectOrNull, //
                                                          @Nonnull final EnvVars environmentVariables, //
@@ -140,9 +124,9 @@ public final class AccurevLauncher {
                                                          @Nonnull final XmlPullParserFactory xmlParserFactory, //
                                                          @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
                                                          @Nullable final TContext commandOutputParserContext) throws IOException {
-        return runCommand(humanReadableCommandName, launcher, machineReadableCommand,
-                synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
-                listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
+        return runCommand(humanReadableCommandName, accurevTool, launcher,
+                machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
+                directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
                     XmlPullParser parser = null;
                     try {
                         parser = xmlParserFactory.newPullParser();
@@ -180,6 +164,7 @@ public final class AccurevLauncher {
      *                                        {@link Void} if no result is needed.
      * @param humanReadableCommandName        Human-readable text saying what this command is. This appears
      *                                        in the logs if there is a failure.
+     * @param accurevTool Which tool to find
      * @param launcher                        Means of executing the command.
      * @param machineReadableCommand          The command to be executed.
      * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
@@ -198,7 +183,7 @@ public final class AccurevLauncher {
      */
     public static <TResult, TContext> TResult runCommand(//
                                                          @Nonnull final String humanReadableCommandName, //
-                                                         @Nonnull final Launcher launcher, //
+                                                         String accurevTool, @Nonnull final Launcher launcher, //
                                                          @Nonnull final ArgumentListBuilder machineReadableCommand, //
                                                          @Nullable final Lock synchronizationLockObjectOrNull, //
                                                          @Nonnull final EnvVars environmentVariables, //
@@ -212,7 +197,7 @@ public final class AccurevLauncher {
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
             final ProcStarter starter = createProcess(launcher, machineReadableCommand,
-                    environmentVariables, directoryToRunCommandFrom, listenerToLogFailuresTo, stdoutStream, stderrStream);
+                    environmentVariables, directoryToRunCommandFrom, listenerToLogFailuresTo, stdoutStream, stderrStream, accurevTool);
             logCommandExecution(humanReadableCommandName, machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
                     listenerToLogFailuresTo);
             try {
@@ -234,6 +219,42 @@ public final class AccurevLauncher {
             logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
             return null;
         }
+    }
+
+    public static AccurevTool resolveAccurevTool(String accurevTool, TaskListener listener) {
+        if (StringUtils.isBlank(accurevTool)) return AccurevTool.getDefaultInstallation();
+
+        AccurevTool accurev = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallation(accurevTool);
+        if (accurev == null) {
+            listener.getLogger().println("Selected Accurev installation does not exist. Using Default");
+            accurev = AccurevTool.getDefaultInstallation();
+        }
+        return accurev;
+    }
+
+
+    /**
+     * @param accurevTool Which tool to find
+     * @param builtOn  node where build was performed
+     * @param env      environment variables used in the build
+     * @param listener build log
+     * @return accurev exe for builtOn node, often "Default"
+     */
+    public static String getAccurevExe(String accurevTool, Node builtOn, EnvVars env, TaskListener listener) {
+
+        AccurevTool tool = resolveAccurevTool(accurevTool, listener);
+        if (builtOn != null) {
+            try {
+                tool = tool.forNode(builtOn, listener);
+            } catch (IOException | InterruptedException e) {
+                listener.getLogger().println("Failed to get accurev executable");
+            }
+        }
+        if (env != null) {
+            tool = tool.forEnvironment(env);
+        }
+
+        return tool.getAccurevExe();
     }
 
     private static Integer runCommandToCompletion(//
@@ -258,8 +279,8 @@ public final class AccurevLauncher {
             @Nonnull final FilePath directoryToRunCommandFrom,
             @Nonnull TaskListener listener,
             @Nonnull final OutputStream stdoutStream,
-            @Nonnull final OutputStream stderrStream) throws IOException, InterruptedException {
-        String accurevPath = findAccurevExe(directoryToRunCommandFrom, environmentVariables, launcher);
+            @Nonnull final OutputStream stderrStream, String accurevTool) throws IOException, InterruptedException {
+        String accurevPath = getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener);
         if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
         if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
         ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
@@ -403,69 +424,12 @@ public final class AccurevLauncher {
         return env;
     }
 
-    private static String separator(Launcher launcher) {
-        return launcher.isUnix() ? "/" : "\\";
-    }
-
-    @CheckForNull
-    private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
-        Computer computer = workspace.toComputer();
-        String name = null;
-        if (null != computer) name = computer.getName();
-        String binName = "accurev";
-        String exe;
-        if (null != name && executables.containsKey(name)) {
-            return executables.get(name);
-        }
-        if (e.containsKey("ACCUREV_BIN")) {
-            exe = e.get("ACCUREV_BIN") + separator(launcher) + binName;
-            if (justAccurev(launcher, exe)) {
-                executables.put(name, exe);
-                return exe;
-            }
-        }
-        if (e.containsKey("PATH") && e.get("PATH").contains(binName)) {
-            exe = binName;
-            if (justAccurev(launcher, exe)) {
-                executables.put(name, exe);
-                return exe;
-            }
-        }
-        if (launcher.isUnix()) {
-            exe = getExistingPath(workspace, DEFAULT_NIX_CMD_LOCATIONS);
-            if (justAccurev(launcher, exe)) {
-                executables.put(name, exe);
-                return exe;
-            }
-        } else {
-            exe = getExistingPath(workspace, DEFAULT_WIN_CMD_LOCATIONS);
-            if (justAccurev(launcher, exe)) {
-                executables.put(name, exe);
-                return exe;
-            }
-        }
-        if (StringUtils.isEmpty(exe)) exe = binName;
-        return exe;
-    }
-
     private static boolean justAccurev(Launcher launcher, String exe) {
         try {
             return launcher.launch().quiet(true).cmdAsSingleString(exe).join() == 0;
         } catch (IOException | InterruptedException e1) {
             return false;
         }
-    }
-
-    private static String getExistingPath(FilePath p, List<String> paths) {
-        for (final String path : Util.fixNull(paths)) {
-            try {
-                if (new FilePath(p.getChannel(), path).exists()) {
-                    return path;
-                }
-            } catch (IOException | InterruptedException ignored) {
-            }
-        }
-        return "accurev";
     }
 
     @CheckForNull

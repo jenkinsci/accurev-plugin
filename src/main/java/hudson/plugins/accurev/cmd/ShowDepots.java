@@ -22,20 +22,21 @@ public class ShowDepots extends Command {
                                          final Logger descriptorLogger
     ) throws IOException {
 
-        final ArgumentListBuilder cmd = new ArgumentListBuilder();
-
-        cmd.add("show");
-        addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("depots");
 
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         EnvVars accurevEnv = new EnvVars();
+
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add("show");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("depots");
+
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        return AccurevLauncher.runCommand("show depots command", launcher, cmd, null,
+        return AccurevLauncher.runCommand("show depots command", "", launcher, cmd, null,
                 accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, parser, new ParseShowDepots(), null);
     }
 }
