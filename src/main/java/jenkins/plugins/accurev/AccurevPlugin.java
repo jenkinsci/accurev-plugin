@@ -1,7 +1,9 @@
-package hudson.plugins.accurev;
+package jenkins.plugins.accurev;
 
 import hudson.init.Initializer;
 import hudson.model.Project;
+import hudson.plugins.accurev.AccurevSCM;
+import jenkins.plugins.accurev.util.UUIDUtils;
 import jenkins.model.Jenkins;
 
 import java.util.logging.Logger;
