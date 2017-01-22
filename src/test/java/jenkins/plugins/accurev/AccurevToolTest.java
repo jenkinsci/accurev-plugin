@@ -5,6 +5,7 @@ import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
 import hudson.util.StreamTaskListener;
+import org.junit.Before;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
@@ -20,7 +21,7 @@ public class AccurevToolTest {
 
     private AccurevTool accurevTool;
 
-    @org.junit.Before
+    @Before
     public void setUp() throws Exception {
         AccurevTool.onLoaded();
         accurevTool = AccurevTool.getDefaultInstallation();
