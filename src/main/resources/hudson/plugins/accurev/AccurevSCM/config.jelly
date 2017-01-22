@@ -21,7 +21,6 @@
                         <f:select />
                     </f:entry>
                 </j:if>
-
                 <f:section title="Advanced Options">
                     <f:advanced>
                         <f:radioBlock name="accurev.wspaceORreftree" value="wspace" title="Use Workspace" checked="${scm.useWorkspace}"

@@ -44,7 +44,7 @@ public final class AccurevLauncher {
      *
      * @param humanReadableCommandName                  Human-readable text saying what this command is. This appears
      *                                                  in the logs if there is a failure.
-     * @param accurevTool Which tool to find
+     * @param accurevTool                               Which tool to find
      * @param launcher                                  Means of executing the command.
      * @param machineReadableCommand                    The command to be executed.
      * @param synchronizationLockObjectOrNull           The {@link Lock} object to be used to prevent concurrent
@@ -95,7 +95,7 @@ public final class AccurevLauncher {
      * @param <TResult>                       The type of the result returned by the parser.
      * @param <TContext>                      The type of data to be passed to the parser. Can be
      * @param humanReadableCommandName        Human readable command
-     * @param accurevTool Which tool to find
+     * @param accurevTool                     Which tool to find
      * @param launcher                        launcher
      * @param machineReadableCommand          Machine readable command
      * @param synchronizationLockObjectOrNull Synchronization lock
@@ -164,7 +164,7 @@ public final class AccurevLauncher {
      *                                        {@link Void} if no result is needed.
      * @param humanReadableCommandName        Human-readable text saying what this command is. This appears
      *                                        in the logs if there is a failure.
-     * @param accurevTool Which tool to find
+     * @param accurevTool                     Which tool to find
      * @param launcher                        Means of executing the command.
      * @param machineReadableCommand          The command to be executed.
      * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
@@ -235,9 +235,9 @@ public final class AccurevLauncher {
 
     /**
      * @param accurevTool Which tool to find
-     * @param builtOn  node where build was performed
-     * @param env      environment variables used in the build
-     * @param listener build log
+     * @param builtOn     node where build was performed
+     * @param env         environment variables used in the build
+     * @param listener    build log
      * @return accurev exe for builtOn node, often "Default"
      */
     public static String getAccurevExe(String accurevTool, Node builtOn, EnvVars env, TaskListener listener) {

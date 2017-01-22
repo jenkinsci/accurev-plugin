@@ -2,7 +2,6 @@ package jenkins.plugins.accurev;
 
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.model.EnvironmentSpecific;
 import hudson.model.Node;
@@ -19,11 +18,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
@@ -36,29 +33,20 @@ import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
 public class AccurevTool extends ToolInstallation implements NodeSpecific<AccurevTool>, EnvironmentSpecific<AccurevTool> {
 
 
+    public static transient final String DEFAULT = "Default";
+    private static final long serialVersionUID = 1;
+    private static final Logger LOGGER = Logger.getLogger(AccurevTool.class.getName());
+
     /**
      * Constructor for AccurevTool
      *
-     * @param name Tool name
-     * @param home Tool location (usually "accurev")
+     * @param name       Tool name
+     * @param home       Tool location (usually "accurev")
      * @param properties {@link java.util.List} of properties for this tool
      */
     @DataBoundConstructor
     public AccurevTool(String name, String home, List<? extends ToolProperty<?>> properties) {
         super(name, home, properties);
-    }
-
-    public static transient final String DEFAULT = "Default";
-
-    private static final long serialVersionUID = 1;
-
-    /**
-     * getAccurevExe
-     *
-     * @return {@link java.lang.String} that will be used to execute accurev (e.g. "accurev" or "/usr/bin/accurev")
-     */
-    public String getAccurevExe() {
-        return getHome();
     }
 
     private static AccurevTool[] getInstallations(DescriptorImpl descriptor) {
@@ -93,21 +81,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
         }
     }
 
-    public AccurevTool forNode(Node node, TaskListener log) throws IOException, InterruptedException {
-        return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
-    }
-
-    public AccurevTool forEnvironment(EnvVars environment) {
-        return new AccurevTool(getName(), environment.expand(getHome()), Collections.emptyList());
-    }
-
-    @Override
-    public DescriptorImpl getDescriptor() {
-        Jenkins jenkinsInstance = Jenkins.getInstance();
-        return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
-    }
-
-    @Initializer(after=EXTENSIONS_AUGMENTED)
+    @Initializer(after = EXTENSIONS_AUGMENTED)
     public static void onLoaded() {
         //Creates default tool installation if needed. Uses "accurev" or migrates data from previous versions
 
@@ -127,7 +101,31 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
         descriptor.save();
     }
 
-    @Extension @Symbol("accurev")
+    /**
+     * getAccurevExe
+     *
+     * @return {@link java.lang.String} that will be used to execute accurev (e.g. "accurev" or "/usr/bin/accurev")
+     */
+    public String getAccurevExe() {
+        return getHome();
+    }
+
+    public AccurevTool forNode(Node node, TaskListener log) throws IOException, InterruptedException {
+        return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
+    }
+
+    public AccurevTool forEnvironment(EnvVars environment) {
+        return new AccurevTool(getName(), environment.expand(getHome()), Collections.emptyList());
+    }
+
+    @Override
+    public DescriptorImpl getDescriptor() {
+        Jenkins jenkinsInstance = Jenkins.getInstance();
+        return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
+    }
+
+    @Extension
+    @Symbol("accurev")
     public static class DescriptorImpl extends ToolDescriptor<AccurevTool> {
         public DescriptorImpl() {
             super();
@@ -156,14 +154,12 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
         }
 
         public AccurevTool getInstallation(String name) {
-            for(AccurevTool i : getInstallations()) {
-                if(i.getName().equals(name)) {
+            for (AccurevTool i : getInstallations()) {
+                if (i.getName().equals(name)) {
                     return i;
                 }
             }
             return null;
         }
     }
-
-    private static final Logger LOGGER = Logger.getLogger(AccurevTool.class.getName());
 }
