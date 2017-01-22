@@ -438,7 +438,7 @@ public class AccurevSCM extends SCM {
      */
     public Lock getOptionalLock() {
         final AccurevServer server = getServer();
-        final boolean shouldLock = server.isSyncOperations();
+        final boolean shouldLock = server != null && server.isSyncOperations();
         if (shouldLock) {
             return getMandatoryLock();
         } else {
