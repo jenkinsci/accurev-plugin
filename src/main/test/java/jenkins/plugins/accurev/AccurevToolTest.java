@@ -43,20 +43,20 @@ public class AccurevToolTest {
     }
 
     @Test
-    public void testGetDescriptor() {
+    public void testGetDescriptor() throws Exception {
         AccurevTool.DescriptorImpl descriptor = accurevTool.getDescriptor();
         assertEquals("Accurev", descriptor.getDisplayName());
     }
 
     @Test
-    public void testGetInstallationFromDescriptor() {
+    public void testGetInstallationFromDescriptor() throws Exception {
         AccurevTool.DescriptorImpl descriptor = accurevTool.getDescriptor();
         assertEquals(null, descriptor.getInstallation(""));
         assertEquals(null, descriptor.getInstallation("not-a-valid-accurev-install"));
     }
 
     @Test
-    public void testGetDefaultInstallationFromDescriptor() {
+    public void testGetDefaultInstallationFromDescriptor() throws Exception {
         AccurevTool newTool = AccurevTool.getDefaultInstallation();
         assertEquals(accurevTool.getHome(), newTool.getHome());
         assertEquals(accurevTool.getName(), newTool.getName());
