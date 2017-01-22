@@ -101,16 +101,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
         descriptor.save();
     }
 
-    /**
-     * getAccurevExe
-     *
-     * @return {@link java.lang.String} that will be used to execute accurev (e.g. "accurev" or "/usr/bin/accurev")
-     */
-    public String getAccurevExe() {
-        return getHome();
-    }
-
-    public AccurevTool forNode(Node node, TaskListener log) throws IOException, InterruptedException {
+    public AccurevTool forNode(@Nonnull Node node, TaskListener log) throws IOException, InterruptedException {
         return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
     }
 

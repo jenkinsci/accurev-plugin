@@ -241,7 +241,6 @@ public final class AccurevLauncher {
      * @return accurev exe for builtOn node, often "Default"
      */
     public static String getAccurevExe(String accurevTool, Node builtOn, EnvVars env, TaskListener listener) {
-
         AccurevTool tool = resolveAccurevTool(accurevTool, listener);
         if (builtOn != null) {
             try {
@@ -253,8 +252,7 @@ public final class AccurevLauncher {
         if (env != null) {
             tool = tool.forEnvironment(env);
         }
-
-        return tool.getAccurevExe();
+        return tool.getHome();
     }
 
     private static Integer runCommandToCompletion(//
