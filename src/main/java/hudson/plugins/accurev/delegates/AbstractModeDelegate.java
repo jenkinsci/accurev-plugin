@@ -47,6 +47,7 @@ public abstract class AbstractModeDelegate {
     protected FilePath accurevWorkingSpace;
     protected String localStream;
     protected Date startDateOfPopulate;
+    protected String accurevTool;
 
     public AbstractModeDelegate(AccurevSCM scm) {
         this.scm = scm;
@@ -60,7 +61,7 @@ public abstract class AbstractModeDelegate {
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
-            if (!Login.ensureLoggedInToAccurev(server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
+            if (!Login.ensureLoggedInToAccurev(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
             }
 
@@ -295,7 +296,7 @@ public abstract class AbstractModeDelegate {
 
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
         try {
-            setup(null, null, null);
+            setup(null, null, TaskListener.NULL);
         } catch (IOException | InterruptedException ex) {
             logger.log(Level.SEVERE, "buildEnvVars", ex);
         }

@@ -7,9 +7,12 @@
 
     <p>
         However, there may be situations when the use of a workspace is preferred. If you want to use a workspace,
-        select this option and enter the name of an existing workspace in the <b>Workspace</b> field. The plugin can manage
-        migrating the workspace to the appropriate build machine and re-parenting the workspace to use the correct parent
-        stream (Jenkins considers the <b>Stream</b> field value as the parent stream). Note that workspace changes (<code>accurev chws</code>) are logged as AccuRev transactions.
+        select this option and enter the name of an existing workspace in the <b>Workspace</b> field. The plugin can
+        manage
+        migrating the workspace to the appropriate build machine and re-parenting the workspace to use the correct
+        parent
+        stream (Jenkins considers the <b>Stream</b> field value as the parent stream). Note that workspace changes
+        (<code>accurev chws</code>) are logged as AccuRev transactions.
     </p>
 
     <p>When not using a workspace, the following AccuRev commands will be used:</p>
@@ -20,9 +23,11 @@
     </ul>
     <p>When using a workspace, the following AccuRev commands are used:</p>
     <ul>
-        <li><code>accurev show wspaces</code> to validate that the workspace is valid and has the correct parent stream</li>
+        <li><code>accurev show wspaces</code> to validate that the workspace is valid and has the correct parent stream
+        </li>
     </ul>
-    <p>If the workspace needs to be relocated or if the host machine needs to be updated, the following AccuRev commands are also used:</p>
+    <p>If the workspace needs to be relocated or if the host machine needs to be updated, the following AccuRev commands
+        are also used:</p>
     <ul>
         <li><code>accurev chws</code></li>
         <li><code>accurev update -9</code></li>
@@ -33,5 +38,6 @@
         <li><code>accurev chws</code> (if re-parenting is required)</li>
         <li><code>accurev update</code></li>
     </ul>
-    <p><b>Note: </b>If you decide to stop using an AccuRev workspace after having run a build, you must manually move the AccuRev workspace directory.</p>
+    <p><b>Note: </b>If you decide to stop using an AccuRev workspace after having run a build, you must manually move
+        the AccuRev workspace directory.</p>
 </div>

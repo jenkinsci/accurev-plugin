@@ -1,13 +1,19 @@
 <div>
     <p>
-        By default, AccuRev Plug-in for Jenkins checks out the latest changes without using a reference tree. When not using a reference tree, AccuRev Plug-in for Jenkins uses the
-        <code>accurev pop -R</code> command to extract all the files. However, there may be situations when the use of a reference tree is preferred, such as when you want to use
-        the latest versions of files that you do not intend to modify. You can think of a reference tree as a read-only portal to the AccuRev data repository.
+        By default, AccuRev Plug-in for Jenkins checks out the latest changes without using a reference tree. When not
+        using a reference tree, AccuRev Plug-in for Jenkins uses the
+        <code>accurev pop -R</code> command to extract all the files. However, there may be situations when the use of a
+        reference tree is preferred, such as when you want to use
+        the latest versions of files that you do not intend to modify. You can think of a reference tree as a read-only
+        portal to the AccuRev data repository.
     </p>
 
-    <p>If the <b>Use Reference Tree</b> check box is marked, AccuRev Plug-in for Jenkins attempts to use the reference tree specified in the <b>Reference Tree</b> text box. (You
-        must create a reference tree in AccuRev before you can specify it here.) AccuRev Plug-in for Jenkins manages the process of migrating the reference tree to the appropriate
-        build machine and relocating the reference tree to use the correct location. Note that these changes are recorded in the AccuRrev repository.</p>
+    <p>If the <b>Use Reference Tree</b> check box is marked, AccuRev Plug-in for Jenkins attempts to use the reference
+        tree specified in the <b>Reference Tree</b> text box. (You
+        must create a reference tree in AccuRev before you can specify it here.) AccuRev Plug-in for Jenkins manages the
+        process of migrating the reference tree to the appropriate
+        build machine and relocating the reference tree to use the correct location. Note that these changes are
+        recorded in the AccuRrev repository.</p>
     <p>
         When using a reference tree, the following Accurev commands are used:
     </p>
@@ -15,11 +21,15 @@
     <ul>
         <li><code>accurev show refs</code> confirms that the reference tree is valid and has the correct parent stream.
         </li>
-        <li><code>accurev chref</code> is run if the reference tree is in the wrong directory or on the wrong machine. <i>(Optional)</i>
+        <li><code>accurev chref</code> is run if the reference tree is in the wrong directory or on the wrong machine.
+            <i>(Optional)</i>
         </li>
-        <li><code>accurev update</code> refreshes the reference tree. If the update fails, AccuRev Plug-in for Jenkins uses the <code>accurev update -9</code> command to update the
+        <li><code>accurev update</code> refreshes the reference tree. If the update fails, AccuRev Plug-in for Jenkins
+            uses the <code>accurev update -9</code> command to update the
             reference tree.
         </li>
-        <li><code>accurev pop -O -R</code> ensures that all files are populated and that the reference tree always contains the fresh update.</li>
+        <li><code>accurev pop -O -R</code> ensures that all files are populated and that the reference tree always
+            contains the fresh update.
+        </li>
     </ul>
 </div>

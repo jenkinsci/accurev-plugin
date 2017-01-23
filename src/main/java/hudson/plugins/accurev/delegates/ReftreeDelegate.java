@@ -108,7 +108,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         cmd.add("refs");
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        return AccurevLauncher.runCommand("Show ref trees command",
+        return AccurevLauncher.runCommand("Show ref trees command", accurevTool,
                 launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
                 parser, new ParseShowReftrees(), null);
     }
@@ -160,8 +160,8 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         }
         relocation.appendCommands(relocateCommand);
 
-        return (AccurevLauncher.runCommand("relocation command", launcher, relocateCommand,
-                scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true));
+        return AccurevLauncher.runCommand("relocation command", accurevTool, launcher,
+                relocateCommand, scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true);
     }
 
     protected ArgumentListBuilder getRelocateCommand() {

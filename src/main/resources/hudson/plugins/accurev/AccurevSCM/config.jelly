@@ -16,6 +16,11 @@
                 <f:entry title="Stream ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}" field="stream" help="/plugin/accurev/help/project/stream.html">
                     <f:combobox style="width: inherit;"/>
                 </f:entry>
+                <j:if test="${descriptor.showAccurevToolOptions()}">
+                    <f:entry title="${%Accurev executable}" field="accurevTool">
+                        <f:select />
+                    </f:entry>
+                </j:if>
                 <f:section title="Advanced Options">
                     <f:advanced>
                         <f:radioBlock name="accurev.wspaceORreftree" value="wspace" title="Use Workspace" checked="${scm.useWorkspace}"

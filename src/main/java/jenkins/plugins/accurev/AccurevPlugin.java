@@ -1,8 +1,10 @@
-package hudson.plugins.accurev;
+package jenkins.plugins.accurev;
 
 import hudson.init.Initializer;
 import hudson.model.Project;
+import hudson.plugins.accurev.AccurevSCM;
 import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.util.UUIDUtils;
 
 import java.util.logging.Logger;
 
@@ -10,7 +12,7 @@ import static hudson.init.InitMilestone.COMPLETED;
 import static hudson.init.InitMilestone.JOB_LOADED;
 
 /**
- * Created by josp on 21/09/16.
+ * Initialized by josp on 21/09/16.
  */
 @SuppressWarnings("unused") // Used for initialization/migration purpose
 public class AccurevPlugin {

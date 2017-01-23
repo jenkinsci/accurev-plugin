@@ -47,7 +47,7 @@ public class SnapshotDelegate extends StreamDelegate {
         mksnapcmd.add(localStream);
         mksnapcmd.add("-t");
         mksnapcmd.add("now");
-        if (!AccurevLauncher.runCommand("Create snapshot command", launcher, mksnapcmd, scm.getOptionalLock(),
+        if (!AccurevLauncher.runCommand("Create snapshot command", scm.getAccurevTool(), launcher, mksnapcmd, scm.getOptionalLock(),
                 accurevEnv, jenkinsWorkspace, listener, logger, true)) {
             return false;
         }

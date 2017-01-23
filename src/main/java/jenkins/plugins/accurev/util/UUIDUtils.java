@@ -1,11 +1,11 @@
-package hudson.plugins.accurev;
+package jenkins.plugins.accurev.util;
 
 import org.apache.commons.lang.StringUtils;
 
 import java.util.UUID;
 
 /**
- * Created by josp on 21/09/16.
+ * Initialized by josp on 21/09/16.
  */
 public class UUIDUtils {
     public static boolean isValid(String uuid) {

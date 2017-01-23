@@ -14,6 +14,9 @@ import hudson.scm.*;
 import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.AccurevTool;
+import jenkins.plugins.accurev.util.UUIDUtils;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -62,6 +65,8 @@ public class AccurevSCM extends SCM {
     private final boolean useWorkspace;
     private final boolean noWspaceNoReftree;
     private String serverUUID;
+    @CheckForNull
+    private String accurevTool = null;
     private Job<?, ?> activeProject;
 
 // --------------------------- CONSTRUCTORS ---------------------------
@@ -78,6 +83,7 @@ public class AccurevSCM extends SCM {
      * @param reftree            reftree
      * @param subPath            subPath
      * @param filterForPollSCM   filterForPollSCM
+     * @param accurevTool        Which tool to find
      * @param synctime           synctime
      * @param cleanreftree       cleanreftree
      * @param useSnapshot        useSnapshot
@@ -97,6 +103,7 @@ public class AccurevSCM extends SCM {
             String reftree,
             String subPath,
             String filterForPollSCM,
+            @CheckForNull String accurevTool,
             boolean synctime,
             boolean cleanreftree,
             boolean useSnapshot,
@@ -121,6 +128,7 @@ public class AccurevSCM extends SCM {
         this.snapshotNameFormat = snapshotNameFormat;
         this.ignoreStreamParent = ignoreStreamParent;
         this.directoryOffset = directoryOffset;
+        this.accurevTool = accurevTool;
         AccurevMode accurevMode = AccurevMode.findMode(this);
         useReftree = accurevMode.isReftree();
         useWorkspace = accurevMode.isWorkspace();
@@ -170,6 +178,7 @@ public class AccurevSCM extends SCM {
      *
      * @return AccurevServer based on serverUUID (or serverName if serverUUID is null)
      */
+    @CheckForNull
     public AccurevServer getServer() {
         AccurevServer server;
         if (serverUUID == null) {
@@ -224,6 +233,11 @@ public class AccurevSCM extends SCM {
      */
     public String getWorkspace() {
         return workspace;
+    }
+
+    @CheckForNull
+    public String getAccurevTool() {
+        return accurevTool;
     }
 
     /**
@@ -424,7 +438,7 @@ public class AccurevSCM extends SCM {
      */
     public Lock getOptionalLock() {
         final AccurevServer server = getServer();
-        final boolean shouldLock = server.isSyncOperations();
+        final boolean shouldLock = server != null && server.isSyncOperations();
         if (shouldLock) {
             return getMandatoryLock();
         } else {
@@ -470,8 +484,7 @@ public class AccurevSCM extends SCM {
     }
 
     /**
-     *
-     * @param project Running build
+     * @param project  Running build
      * @param listener Listener that it runs the build on
      * @return Stream name tries to expand Variable reference to a String
      * @throws IllegalArgumentException Thrown when Variable reference is not supported or cannot expand
@@ -559,6 +572,30 @@ public class AccurevSCM extends SCM {
 
         }
 
+        public boolean showAccurevToolOptions() {
+            return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
+        }
+
+        /**
+         * Lists available tool installations.
+         *
+         * @return list of available accurev tools
+         */
+        public List<AccurevTool> getAccurevTools() {
+            AccurevTool[] accurevToolInstallations = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations();
+            return Arrays.asList(accurevToolInstallations);
+        }
+
+
+        @SuppressWarnings("unused") // Used by stapler
+        public ListBoxModel doFillAccurevToolItems() {
+            ListBoxModel r = new ListBoxModel();
+            for (AccurevTool accurev : getAccurevTools()) {
+                r.add(accurev.getName());
+            }
+            return r;
+        }
+
         /**
          * {@inheritDoc}
          *
@@ -605,6 +642,7 @@ public class AccurevSCM extends SCM {
                     req.getParameter("accurev.reftree"), //
                     req.getParameter("accurev.subPath"), //
                     req.getParameter("accurev.filterForPollSCM"), //
+                    req.getParameter("_.accurevTool"),
                     req.getParameter("accurev.synctime") != null, //
                     req.getParameter("accurev.cleanreftree") != null, //
                     req.getParameter("accurev.useSnapshot") != null, //
