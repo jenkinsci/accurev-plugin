@@ -280,7 +280,7 @@ public final class AccurevLauncher {
             @Nonnull final OutputStream stderrStream, String accurevTool) throws IllegalStateException, IOException, InterruptedException {
         String accurevPath = getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener);
         if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
-        if (!machineReadableCommand.toString().contains(accurevPath)) machineReadableCommand.prepend(accurevPath);
+        if (!accurevPath.equals(machineReadableCommand.toCommandArray()[0])) machineReadableCommand.prepend(accurevPath);
         if (!justAccurev(launcher, accurevPath)) {
             throw new IllegalStateException("Cannot find accurev executable. Please check installation/tool");
         }
