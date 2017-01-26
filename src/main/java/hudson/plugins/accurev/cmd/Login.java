@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -10,6 +11,7 @@ import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
+import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
@@ -81,6 +83,15 @@ public class Login extends Command {
                                         final FilePath workspace, //
                                         final TaskListener listener, //
                                         final Launcher launcher) throws IOException {
+        StandardUsernamePasswordCredentials credentials = server.getCredentials();
+        if (credentials == null) {
+            listener.getLogger().println("Credentials not found");
+            return false;
+        }
+        if (StringUtils.isBlank(credentials.getUsername())) {
+            listener.getLogger().println("Credentials username cannot be blank");
+            return false;
+        }
         listener.getLogger().println("Authenticating with Accurev server...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("login");
@@ -88,8 +99,8 @@ public class Login extends Command {
         if (server.isUseNonexpiringLogin()) {
             cmd.add("-n");
         }
-        cmd.add(server.getUsername());
-        if (StringUtils.isEmpty(server.getPassword())) {
+        cmd.add(credentials.getUsername());
+        if (StringUtils.isEmpty(Secret.toString(credentials.getPassword()))) {
             if (launcher.isUnix()) {
                 cmd.add("", true);
             } else {

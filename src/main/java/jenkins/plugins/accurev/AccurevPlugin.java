@@ -29,7 +29,11 @@ public class AccurevPlugin {
     public static void initializers() throws Exception {
         final Jenkins jenkins = Jenkins.getInstance();
         boolean changed = false;
-        AccurevSCM.AccurevSCMDescriptor descriptor = jenkins.getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        boolean migratedCredentials = false;
+        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+            if (server.migrateCredentials()) changed = true;
+        }
         for (Project<?, ?> p : jenkins.getAllItems(Project.class)) {
             if (p.getScm() instanceof AccurevSCM) {
                 AccurevSCM scm = (AccurevSCM) p.getScm();
