@@ -1,5 +1,6 @@
 package jenkins.plugins.accurev;
 
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import hudson.init.Initializer;
 import hudson.model.Project;
 import hudson.plugins.accurev.AccurevSCM;
@@ -9,7 +10,7 @@ import jenkins.plugins.accurev.util.UUIDUtils;
 import java.util.logging.Logger;
 
 import static hudson.init.InitMilestone.COMPLETED;
-import static hudson.init.InitMilestone.JOB_LOADED;
+import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
 
 /**
  * Initialized by josp on 21/09/16.
@@ -25,15 +26,11 @@ public class AccurevPlugin {
      *
      * @throws Exception Exceptions
      */
-    @Initializer(after = JOB_LOADED, before = COMPLETED)
-    public static void initializers() throws Exception {
+    @Initializer(after = EXTENSIONS_AUGMENTED, before = COMPLETED)
+    public static void migrateJobsToServerUUID() throws Exception {
         final Jenkins jenkins = Jenkins.getInstance();
         boolean changed = false;
         AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
-        boolean migratedCredentials = false;
-        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
-            if (server.migrateCredentials()) changed = true;
-        }
         for (Project<?, ?> p : jenkins.getAllItems(Project.class)) {
             if (p.getScm() instanceof AccurevSCM) {
                 AccurevSCM scm = (AccurevSCM) p.getScm();
@@ -52,5 +49,24 @@ public class AccurevPlugin {
             }
         }
         if (changed) descriptor.save();
+    }
+
+    /**
+     * We need ensure that migrator will after Extensions are augmented
+     * Launches migration if servers still uses username and password
+     * Expected milestone: @Initializer(after = EXTENSIONS_AUGMENTED)
+     *
+     * @throws Exception Exceptions
+     */
+    @Initializer(after = EXTENSIONS_AUGMENTED)
+    public static void migrateServersToCredentials() throws Exception {
+        final Jenkins jenkins = Jenkins.getInstance();
+        boolean changed = false;
+        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        boolean migratedCredentials = false;
+        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+            if (server.migrateCredentials()) changed = true;
+        }
+        if (changed) SystemCredentialsProvider.getInstance().save();
     }
 }

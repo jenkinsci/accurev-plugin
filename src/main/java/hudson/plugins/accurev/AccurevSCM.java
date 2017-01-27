@@ -816,10 +816,8 @@ public class AccurevSCM extends SCM {
         private final String name;
         private final String host;
         private final int port;
-        @Deprecated
-        public transient String username;
-        @Deprecated
-        public transient String password;
+        transient String username;
+        transient String password;
         private String credentialsId;
         private UUID uuid;
         private String validTransactionTypes;
@@ -860,7 +858,7 @@ public class AccurevSCM extends SCM {
             AccurevPromoteTrigger.validateListeners();
         }
 
-        @Deprecated
+        /* Used for testing */
         public AccurevServer(String name, String host, int port, String username, String password) {
             this.uuid = UUID.randomUUID();
             this.name = name;
@@ -1098,15 +1096,10 @@ public class AccurevSCM extends SCM {
                     this.credentialsId = credentialsId;
                 }
                 if (StringUtils.isNotEmpty(this.credentialsId)) {
-                    try {
-                        SystemCredentialsProvider.getInstance().save();
-                        LOGGER.info("Migrated successfully to credentials");
-                        username = null;
-                        password = null;
-                        return true;
-                    } catch (IOException e) {
-                        LOGGER.severe("Failed to save credentials");
-                    }
+                    LOGGER.info("Migrated successfully to credentials");
+                    username = null;
+                    password = null;
+                    return true;
                 } else {
                     LOGGER.severe("Migration failed");
                 }

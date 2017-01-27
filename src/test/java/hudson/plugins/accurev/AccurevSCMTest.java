@@ -4,12 +4,18 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
+import hudson.model.FreeStyleProject;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.AccurevPlugin;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -17,13 +23,26 @@ public class AccurevSCMTest {
     @org.junit.Rule
     public JenkinsRule j = new JenkinsRule();
 
+    private AccurevServer server;
+    private AccurevSCM.AccurevSCMDescriptor descriptor;
+    private AccurevSCM scm;
+
     @Before
     public void setUp() throws Exception {
+        server = new AccurevServer("test", "localhost", 5050, "bob", "OBF:1rwf1x1b1rwf");
+        scm = new AccurevSCM(null, "test", "test", "test", "none",
+                "", "", "", "", "", false, false,
+                false, false, "", "", false);
+        FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
+        accurevTest.setScm(scm);
+        descriptor = (AccurevSCM.AccurevSCMDescriptor) scm.getDescriptor();
+        List<AccurevServer> servers = new ArrayList<>();
+        servers.add(server);
+        descriptor.setServers(servers);
     }
 
     @Test
     public void testMigrateCredential() throws Exception {
-        AccurevServer server = new AccurevServer("test", "localhost", 5050, "bob", "OBF:1rwf1x1b1rwf");
         boolean migrated = server.migrateCredentials();
         StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
                 CredentialsProvider
@@ -39,4 +58,15 @@ public class AccurevSCMTest {
         assertNull(server.username);
         assertNull(server.password);
     }
+
+    @Test
+    public void testMigrateToServerUUID() throws Exception {
+        AccurevPlugin.migrateJobsToServerUUID();
+        assertTrue(StringUtils.equals(server.getUUID(), scm.getServerUUID()));
+        assertNotNull(descriptor.getServer(scm.getServerUUID()));
+        assertNotNull(scm.getServer());
+        assertEquals(descriptor.getServer(scm.getServerUUID()), scm.getServer());
+    }
+
+
 }
