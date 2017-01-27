@@ -30,7 +30,7 @@ public class AccurevPlugin {
     public static void migrateJobsToServerUUID() throws Exception {
         final Jenkins jenkins = Jenkins.getInstance();
         boolean changed = false;
-        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        AccurevSCM.AccurevSCMDescriptor descriptor = jenkins.getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
         for (Project<?, ?> p : jenkins.getAllItems(Project.class)) {
             if (p.getScm() instanceof AccurevSCM) {
                 AccurevSCM scm = (AccurevSCM) p.getScm();
@@ -60,7 +60,6 @@ public class AccurevPlugin {
      */
     @Initializer(after = EXTENSIONS_AUGMENTED)
     public static void migrateServersToCredentials() throws Exception {
-        final Jenkins jenkins = Jenkins.getInstance();
         boolean changed = false;
         AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
         boolean migratedCredentials = false;
