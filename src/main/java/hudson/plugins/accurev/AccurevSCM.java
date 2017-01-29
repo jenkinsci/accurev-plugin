@@ -759,16 +759,14 @@ public class AccurevSCM extends SCM {
         public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
             final AccurevServer server = getServer(serverUUID);
-
-            if (server == null || StringUtils.isBlank(depot)) {
-                //DESCRIPTORLOGGER.warning("Failed to find server.");
+            if (server == null) {
                 return new ComboBoxModel();
             }
-            // Execute the login command first & upon success of that run show streams
-            // command. If any of the command's exitvalue is 1 proper error message is
-            // logged
             ComboBoxModel cbm = new ComboBoxModel();
             if (Login.accurevLoginFromGlobalConfig(server)) {
+                if (StringUtils.isBlank(depot)) {
+                    depot = Util.fixNull(ShowDepots.getDepots(server, DESCRIPTORLOGGER)).get(0);
+                }
                 cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
             }
             return cbm;
