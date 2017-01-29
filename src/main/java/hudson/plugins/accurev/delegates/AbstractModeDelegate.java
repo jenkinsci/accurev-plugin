@@ -53,7 +53,7 @@ public abstract class AbstractModeDelegate {
         this.scm = scm;
     }
 
-    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, InterruptedException {
+    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, IllegalArgumentException {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
@@ -140,7 +140,7 @@ public abstract class AbstractModeDelegate {
 
     }
 
-    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams) throws IOException, InterruptedException {
+    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams) throws IOException {
         try {
             AccurevTransaction latestTransaction = getLatestTransactionFromStreams(streams);
             if (latestTransaction == null) {
@@ -297,7 +297,7 @@ public abstract class AbstractModeDelegate {
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
         try {
             setup(null, null, TaskListener.NULL);
-        } catch (IOException | InterruptedException ex) {
+        } catch (IOException ex) {
             logger.log(Level.SEVERE, "buildEnvVars", ex);
         }
 

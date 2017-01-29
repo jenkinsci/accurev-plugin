@@ -123,11 +123,10 @@ public class Login extends Command {
      * @param server Accurev Server
      * @return boolean whether am successful
      * @throws IOException          failing IO
-     * @throws InterruptedException failing interrupt
      *                              This method is called from dofillstreams and dofilldepots while configuring the job
      */
     public static boolean accurevLoginFromGlobalConfig(//
-                                                       final AccurevServer server) throws IOException, InterruptedException {
+                                                       final AccurevServer server) throws IOException {
 
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;

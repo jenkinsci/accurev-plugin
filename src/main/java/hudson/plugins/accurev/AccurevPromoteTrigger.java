@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Created by josp on 16/08/16.
+ * Initialized by josp on 16/08/16.
  */
 public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 

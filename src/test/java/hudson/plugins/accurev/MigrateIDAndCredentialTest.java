@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class AccurevSCMTest {
+public class MigrateIDAndCredentialTest {
     @org.junit.Rule
     public JenkinsRule j = new JenkinsRule();
 
@@ -29,10 +29,19 @@ public class AccurevSCMTest {
 
     @Before
     public void setUp() throws Exception {
-        server = new AccurevServer("test", "localhost", 5050, "bob", "OBF:1rwf1x1b1rwf");
-        scm = new AccurevSCM(null, "test", "test", "test", "none",
-                "", "", "", "", "", false, false,
-                false, false, "", "", false);
+        server = new AccurevServer(null,
+                "test", "localhost",
+                5050, "bob", "OBF:1rwf1x1b1rwf");
+        scm = new AccurevSCM(
+                null, "test",
+                "test", "test",
+                "none", "",
+                "", "",
+                "", "",
+                false, false,
+                false, false,
+                "", "",
+                false);
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);
         descriptor = (AccurevSCM.AccurevSCMDescriptor) scm.getDescriptor();

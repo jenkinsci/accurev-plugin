@@ -859,8 +859,8 @@ public class AccurevSCM extends SCM {
         }
 
         /* Used for testing */
-        public AccurevServer(String name, String host, int port, String username, String password) {
-            this.uuid = UUID.randomUUID();
+        public AccurevServer(String uuid, String name, String host, int port, String username, String password) {
+            this.uuid = StringUtils.isEmpty(uuid) ? null : UUID.fromString(uuid);
             this.name = name;
             this.host = host;
             this.port = port;
