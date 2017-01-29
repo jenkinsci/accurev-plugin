@@ -7,6 +7,8 @@ import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOCase;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
@@ -98,22 +100,24 @@ public class CheckForChanges {
         return isTransLatestThanBuild;
     }
 
-    private static boolean changesMatchFilter(Collection<String> serverPaths, Collection<String> filters) {
+    public static boolean changesMatchFilter(Collection<String> serverPaths, Collection<String> filters) {
         if (CollectionUtils.isEmpty(filters)) {
             // No filters, so always a match.
             return true;
         }
 
-        final String[] filterArray = filters.toArray(new String[filters.size()]);
-
         for (String path : serverPaths) {
-            if (StringUtils.indexOfAny(sanitizeSlashes(path), filterArray) > -1) {
-                // Path contains one of the filters
-                return true;
+            for (String filter : filters) {
+                if (pathMatcher(path, filter)) {
+                    return true;
+                }
             }
         }
-
         return false;
+    }
+
+    public static boolean pathMatcher(String path, String wildcard) {
+        return FilenameUtils.wildcardMatch(path, wildcard, IOCase.INSENSITIVE);
     }
 
     private static Set<String> getListOfPollingFilters(String filterForPollSCM, String subPath) {
