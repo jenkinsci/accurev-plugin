@@ -107,6 +107,7 @@ public class CheckForChanges {
         }
 
         for (String path : serverPaths) {
+            path = sanitizeSlashes(path);
             for (String filter : filters) {
                 if (pathMatcher(path, filter)) {
                     return true;
