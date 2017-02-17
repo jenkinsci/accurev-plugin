@@ -10,11 +10,15 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.*;
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Launcher;
 import hudson.model.*;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.ShowDepots;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+import hudson.plugins.jetty.security.Password;
 import hudson.scm.*;
 import hudson.security.ACL;
 import hudson.util.ComboBoxModel;
@@ -76,6 +80,7 @@ public class AccurevSCM extends SCM {
     @CheckForNull
     private String accurevTool = null;
     private Job<?, ?> activeProject;
+    private String deleteWorkspaceBeforeBuildStarts;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -99,6 +104,7 @@ public class AccurevSCM extends SCM {
      * @param snapshotNameFormat snapshot name format
      * @param directoryOffset    directory offset
      * @param ignoreStreamParent ignore Parent Stream
+     * @param deleteWorkspaceBeforeBuildStarts delete Workspace Before start the new Build.
      */
     @DataBoundConstructor
     public AccurevSCM(
@@ -119,6 +125,7 @@ public class AccurevSCM extends SCM {
             String snapshotNameFormat,
             String directoryOffset,
             boolean ignoreStreamParent) {
+            String deleteWorkspaceBeforeBuildStarts) {
         super();
         this.serverUUID = serverUUID;
         this.serverName = serverName;
@@ -141,6 +148,7 @@ public class AccurevSCM extends SCM {
         useReftree = accurevMode.isReftree();
         useWorkspace = accurevMode.isWorkspace();
         noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
+        this.deleteWorkspaceBeforeBuildStarts = deleteWorkspaceBeforeBuildStarts;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -351,6 +359,10 @@ public class AccurevSCM extends SCM {
         return directoryOffset;
     }
 
+    public boolean isDeleteWorkspaceBeforeBuildStarts() {
+        return (deleteWorkspaceBeforeBuildStarts != null && deleteWorkspaceBeforeBuildStarts.equals("on")) ? true : false;
+    }
+
 // ------------------------ INTERFACE METHODS ------------------------
 // --------------------- Interface Describable ---------------------
 
@@ -492,6 +504,7 @@ public class AccurevSCM extends SCM {
     }
 
     /**
+     *
      * @param project  Running build
      * @param listener Listener that it runs the build on
      * @return Stream name tries to expand Variable reference to a String
@@ -575,6 +588,7 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public String getDisplayName() {
+
             return "AccuRev";
         }
 
@@ -646,6 +660,7 @@ public class AccurevSCM extends SCM {
                     req.getParameter("accurev.snapshotNameFormat"), //
                     req.getParameter("accurev.directoryOffset"), //
                     req.getParameter("accurev.ignoreStreamParent") != null);
+                    req.getParameter("hudson-plugins-ws_cleanup-PreBuildCleanup"));
         }
 
         /**
@@ -712,6 +727,7 @@ public class AccurevSCM extends SCM {
             return null;
         }
 
+        // This method will populate the servers in the select box
         @SuppressWarnings("unused") // Used by stapler
         public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
             ListBoxModel s = new ListBoxModel();
@@ -726,6 +742,8 @@ public class AccurevSCM extends SCM {
             return s;
         }
 
+        // This method will populate the depots in the select box depending upon the
+        // server selected.
         @SuppressWarnings("unused") // Used by stapler
         public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
             if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
@@ -804,15 +822,14 @@ public class AccurevSCM extends SCM {
 
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-                .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
+                .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote","demote_to","demote_from","purge"));
         protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
                 .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
                         "mkstream", "move", "promote", "purge", "dispatch"));
         private static final long serialVersionUID = 3270850408409304611L;
         // keep all transaction types in a set for validation
-        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
+        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote","demote_to","demote_from","purge"};
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
-        private transient static final String __OBFUSCATE = "OBF:";
         private final String name;
         private final String host;
         private final int port;
@@ -835,6 +852,7 @@ public class AccurevSCM extends SCM {
                              String host, //
                              int port, //
                              String credentialsId, //
+                             String password, //
                              String validTransactionTypes, //
                              boolean syncOperations, //
                              boolean minimiseLogins, //
@@ -848,6 +866,7 @@ public class AccurevSCM extends SCM {
             this.host = host;
             this.port = port;
             this.credentialsId = credentialsId;
+            this.password = Password.obfuscate(password);
             this.validTransactionTypes = validTransactionTypes;
             this.syncOperations = syncOperations;
             this.minimiseLogins = minimiseLogins;

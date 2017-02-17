@@ -77,4 +77,51 @@ public class History extends Command {
             return null;
         }
     }
+    
+    /**
+     * @param scm             Accurev SCM
+     * @param server          server
+     * @param accurevEnv      Accurev Enviroment
+     * @param workspace       workspace
+     * @param listener        listener
+     * @param launcher        launcher
+     * @param stream          stream
+     * @return all the transaction for a given stream
+     * @throws IOException if no transaction was found
+     */
+    public static List<AccurevTransaction> getTransactionsAfterLastTransaction(//
+                                                          final AccurevSCM scm, //
+                                                          final AccurevServer server, //
+                                                          final EnvVars accurevEnv, //
+                                                          final FilePath workspace, //
+                                                          final TaskListener listener, //
+                                                          final Launcher launcher, //
+                                                          final String stream,
+                                                          final int lastTransaction) throws IOException{
+        // initialize code that extracts the latest transaction of a certain
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add("hist");
+        addServer(cmd, server);
+        cmd.add("-fx");
+        cmd.add("-p");
+        cmd.add(scm.getDepot());
+        cmd.add("-s");
+        cmd.add(stream);
+        //Filter the history command to get all the transactions greater than the last transaction
+        if (lastTransaction > 0) {
+            cmd.add("-t");
+            cmd.add("now-" + (lastTransaction+1));
+        }
+        // execute code that extracts the latest transaction
+        XmlPullParserFactory parser = XmlParserFactory.getFactory();
+        if (parser == null) throw new IOException("No XML Parser");
+        final List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
+        final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
+                logger, parser, new ParseHistory(), transactions, true);
+        if (transactionFound == null) {
+            throw new IOException("History command failed when trying to get all the transactionse ");
+        }
+        return transactions;
+    }
+    
 }

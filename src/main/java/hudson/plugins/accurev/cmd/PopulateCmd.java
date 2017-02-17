@@ -16,6 +16,8 @@ import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
+
 public class PopulateCmd extends Command {
 
 
@@ -48,35 +50,42 @@ public class PopulateCmd extends Command {
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
-                            FilePath workspace,
-                            EnvVars accurevEnv) throws IOException {
+                            FilePath accurevWorkingSpace,
+                            EnvVars accurevEnv,
+                            String files) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
-        final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add("pop");
-        addServer(cmd, server);
+        final ArgumentListBuilder popcmd = new ArgumentListBuilder();
+        popcmd.add("pop");
+        addServer(popcmd, server);
 
         if (streamName != null) {
-            cmd.add("-v");
-            cmd.add(streamName);
+            popcmd.add("-v");
+            popcmd.add(streamName);
         }
 
-        cmd.add("-L");
-        cmd.add(workspace.getRemote());
+        popcmd.add("-L");
+        popcmd.add(accurevWorkingSpace.getRemote());
 
-        if (overwrite) cmd.add("-O");
+        //Add the list files to be populated
+        if (files != null) {
+            popcmd.add("-l");
+            popcmd.add(files);
+        }
 
-        cmd.add("-R");
+        if (overwrite) popcmd.add("-O");
+
+        popcmd.add("-R");
         if (StringUtils.isBlank(scm.getSubPath())) {
-            cmd.add(".");
+            popcmd.add(".");
         } else {
             final StringTokenizer st = new StringTokenizer(scm.getSubPath(), ",");
             while (st.hasMoreElements()) {
-                cmd.add(st.nextToken().trim());
+                popcmd.add(st.nextToken().trim());
             }
         }
         _startDateOfPopulate = new Date();
-        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
-                accurevEnv, workspace, listener, logger, new ParsePopulate(), listener.getLogger());
+        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, scm.getOptionalLock(), accurevEnv,
+                accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger());
         if (success == null || !success) {
             return false;
         }

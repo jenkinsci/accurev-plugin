@@ -5,6 +5,8 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
+import hudson.Util;
+import hudson.model.TaskListener;
 import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -26,10 +28,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import jenkins.model.Jenkins;
+
+import org.apache.commons.lang.StringUtils;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
  * Utility class that knows how to run AccuRev commands and (optionally) have
@@ -37,6 +53,25 @@ import java.util.logging.Logger;
  */
 public final class AccurevLauncher {
     private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
+    /**
+     * The default search paths for Windows clients.
+     */
+    private static final List<String> DEFAULT_WIN_CMD_LOCATIONS = Arrays.asList(
+            "C:\\opt\\accurev\\bin\\accurev.exe",
+            "C:\\Program Files\\AccuRev\\bin\\accurev.exe",
+            "C:\\Program Files (x86)\\AccuRev\\bin\\accurev.exe");
+    /**
+     * The default search paths for *nix clients
+     */
+    private static final List<String> DEFAULT_NIX_CMD_LOCATIONS = Arrays.asList(
+            "/usr/local/bin/accurev",
+            "/usr/bin/accurev",
+            "/bin/accurev",
+            "/local/bin/accurev",
+            "/opt/accurev/bin/accurev",
+            "/Applications/AccuRev/bin/accurev",
+            "/Applications/AccuRevClient/bin/accurev");
+    private static final Map<String, String> executables = new HashMap<>();
 
     /**
      * Runs a command and returns <code>true</code> if it passed,
@@ -154,6 +189,73 @@ public final class AccurevLauncher {
                 }, commandOutputParserContext);
     }
 
+    /**
+     * As
+     * {@link #runCommand(String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
+     * but uses an {@link ICmdOutputXmlParser} instead.
+     *
+     * @param <TResult>                       The type of the result returned by the parser.
+     * @param <TContext>                      The type of data to be passed to the parser. Can be
+     * @param humanReadableCommandName        Human readable command
+     * @param launcher                        launcher
+     * @param machineReadableCommand          Machine readable command
+     * @param synchronizationLockObjectOrNull Synchronization lock
+     * @param environmentVariables            Environment Variables
+     * @param directoryToRunCommandFrom       Where to run commands from
+     * @param listenerToLogFailuresTo         logging failures to listener
+     * @param loggerToLogFailuresTo           logging failures to logger
+     * @param xmlParserFactory                The {@link XmlPullParserFactory} to be used to create the
+     *                                        parser. If this is <code>null</code> then no command will be
+     *                                        executed and the function will return <code>null</code>
+     *                                        immediately.
+     * @param commandOutputParser             Command output parser
+     * @param commandOutputParserContext      Context of Command output parser
+     * @return See above.
+     * @throws IOException handle it above
+     */
+    public static <TResult, TContext> TResult runCommand(//
+                                                         @Nonnull final String humanReadableCommandName, //
+                                                         @Nonnull final Launcher launcher, //
+                                                         @Nonnull final ArgumentListBuilder machineReadableCommand, //
+                                                         @Nullable final Lock synchronizationLockObjectOrNull, //
+                                                         @Nonnull final EnvVars environmentVariables, //
+                                                         @Nonnull final FilePath directoryToRunCommandFrom, //
+                                                         @Nonnull final TaskListener listenerToLogFailuresTo, //
+                                                         @Nonnull final Logger loggerToLogFailuresTo, //
+                                                         @Nonnull final XmlPullParserFactory xmlParserFactory, //
+                                                         @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+                                                         @Nullable final TContext commandOutputParserContext,
+                                                         boolean isAll) throws IOException {
+        return runCommand(humanReadableCommandName, launcher, machineReadableCommand,
+                synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
+                listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
+                    XmlPullParser parser = null;
+                    try {
+                        parser = xmlParserFactory.newPullParser();
+                        parser.setInput(cmdOutput, null);
+                        final TResult result = commandOutputParser.parseAll(parser, context);
+                        parser.setInput(null);
+                        parser = null;
+                        return result;
+                    } catch (XmlPullParserException ex) {
+                        logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                        return null;
+                    } finally {
+                        if (parser != null) {
+                            try {
+                                parser.setInput(null);
+                            } catch (XmlPullParserException ex) {
+                                logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                        humanReadableCommandName, ex, loggerToLogFailuresTo,
+                                        listenerToLogFailuresTo);
+                            }
+                            cmdOutput.close();
+                        }
+                    }
+                }, commandOutputParserContext);
+    }
+    
     /**
      * Runs a command a parses the output, returning the result of parsing that
      * output. Returns <code>null</code> if the command failed or if parsing
@@ -426,12 +528,69 @@ public final class AccurevLauncher {
         return env;
     }
 
+    private static String separator(Launcher launcher) {
+        return launcher.isUnix() ? "/" : "\\";
+    }
+
+    @CheckForNull
+    private static synchronized String findAccurevExe(FilePath workspace, EnvVars e, Launcher launcher) {
+        Computer computer = workspace.toComputer();
+        String name = null;
+        if (null != computer) name = computer.getName();
+        String binName = "accurev";
+        String exe;
+        if (null != name && executables.containsKey(name)) {
+            return executables.get(name);
+        }
+        if (e.containsKey("ACCUREV_BIN")) {
+            exe = e.get("ACCUREV_BIN") + separator(launcher) + binName;
+            if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
+                return exe;
+            }
+        }
+        if (e.containsKey("PATH") && e.get("PATH").contains(binName)) {
+            exe = binName;
+            if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
+                return exe;
+            }
+        }
+        if (launcher.isUnix()) {
+            exe = getExistingPath(workspace, DEFAULT_NIX_CMD_LOCATIONS);
+            if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
+                return exe;
+            }
+        } else {
+            exe = getExistingPath(workspace, DEFAULT_WIN_CMD_LOCATIONS);
+            if (justAccurev(launcher, exe)) {
+                executables.put(name, exe);
+                return exe;
+            }
+        }
+        if (StringUtils.isEmpty(exe)) exe = binName;
+        return exe;
+    }
+
     private static boolean justAccurev(Launcher launcher, String exe) {
         try {
             return launcher.launch().quiet(true).cmdAsSingleString(exe).join() == 0;
         } catch (IOException | InterruptedException e1) {
             return false;
         }
+    }
+
+    private static String getExistingPath(FilePath p, List<String> paths) {
+        for (final String path : Util.fixNull(paths)) {
+            try {
+                if (new FilePath(p.getChannel(), path).exists()) {
+                    return path;
+                }
+            } catch (IOException | InterruptedException ignored) {
+            }
+        }
+        return "accurev";
     }
 
     @CheckForNull
@@ -490,6 +649,21 @@ public final class AccurevLauncher {
          * @throws XmlPullParserException        if failed to Parse
          */
         TResult parse(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException;
+
+        /**
+         * Parses all the transactions from the command's output.
+         *
+         * @param parser  The {@link XmlPullParser} that contains the output of the
+         *                command.
+         * @param context Context passed in when the command was run.
+         * @return The result of the parsing.
+         * @throws UnhandledAccurevCommandOutput if the command output was invalid.
+         * @throws IOException                   on failing IO
+         * @throws XmlPullParserException        if failed to Parse
+         */
+        default TResult parseAll(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException{
+         return null;
+        }
     }
 
     /**
