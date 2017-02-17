@@ -22,6 +22,8 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.Accurev;
+import jenkins.plugins.accurev.AccurevClient;
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
 import net.sf.json.JSONObject;
@@ -533,6 +535,45 @@ public class AccurevSCM extends SCM {
                     "Failed to expand variable reference '" + stream + "'.");
         }
         return parsedLocalStream;
+    }
+
+    public AccurevClient createClient(TaskListener listener, EnvVars env, Node node, FilePath workspace) throws IOException, InterruptedException {
+        String accurevExe = getAccurevExe(node, listener);
+        Accurev accurev = Accurev.with(listener, env).in(workspace).using(accurevExe);
+        AccurevClient c = accurev.getClient();
+        return c;
+    }
+
+    public String getAccurevExe(Node node, TaskListener listener) {
+        return getAccurevExe(node, null, listener);
+    }
+
+    public String getAccurevExe(Node node, EnvVars env, TaskListener listener) {
+        AccurevTool tool = resolveAccurevTool(listener);
+        if (node != null) {
+            try {
+                tool = tool.forNode(node, listener);
+            } catch (InterruptedException | IOException e) {
+                listener.getLogger().println("Failed to get accurev executable");
+            }
+        }
+        if (env != null) {
+            tool = tool.forEnvironment(env);
+        }
+
+        return tool.getHome();
+    }
+
+    private AccurevTool resolveAccurevTool(TaskListener listener) {
+        if (StringUtils.isBlank(accurevTool)) return AccurevTool.getDefaultInstallation();
+        AccurevTool accurev = Jenkins.getInstance()
+                .getDescriptorByType(AccurevTool.DescriptorImpl.class)
+                .getInstallation(accurevTool);
+        if (accurev == null) {
+            listener.getLogger().println("Selected Accurev installation does not exist. Using Default");
+            accurev = AccurevTool.getDefaultInstallation();
+        }
+        return accurev;
     }
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------
