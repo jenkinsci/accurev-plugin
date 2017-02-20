@@ -32,16 +32,8 @@ public class MigrateIDAndCredentialTest {
         server = new AccurevServer(null,
                 "test", "localhost",
                 5050, "bob", "OBF:1rwf1x1b1rwf");
-        scm = new AccurevSCM(
-                null, "test",
-                "test", "test",
-                "none", "",
-                "", "",
-                "", "",
-                false, false,
-                false, false,
-                "", "",
-                false);
+        scm = new AccurevSCM(null);
+        scm.setServerName("test");
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);
         descriptor = (AccurevSCM.AccurevSCMDescriptor) scm.getDescriptor();

@@ -24,13 +24,13 @@
                 <f:section title="Advanced Options">
                     <f:advanced>
                         <f:radioBlock name="accurev.wspaceORreftree" value="wspace" title="Use Workspace" checked="${scm.useWorkspace}"
-                                      help="/plugin/accurev/help/project/workspace.html">
+                                      help="/plugin/accurev/help/project/workspace.html" inline="true">
                             <f:entry title="Workspace">
                                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
                             </f:entry>
                         </f:radioBlock>			
                         <f:radioBlock name="accurev.wspaceORreftree" value="reftree" title="Use Reference Tree" checked="${scm.useReftree}"
-                                      help="/plugin/accurev/help/project/reftree.html">
+                                      help="/plugin/accurev/help/project/reftree.html" inline="true">
                             <f:entry title="Reference Tree">
                                 <f:textbox name="accurev.reftree" value="${scm.reftree}"/>
                             </f:entry>            
@@ -38,14 +38,7 @@
                                 <f:checkbox name="accurev.cleanreftree" checked="${scm.cleanreftree}"/>
                             </f:entry>
                         </f:radioBlock>
-                        <j:if test="${scm == null}">
-                            <f:radioBlock name="accurev.wspaceORreftree" value="none" title="Neither" checked="${true}" />	
-                        </j:if>
-                        <j:if test="${scm != null}">
-                            <f:radioBlock name="accurev.wspaceORreftree" value="none" title="Neither" checked="${scm.noWspaceNoReftree}" />	
-                        </j:if>
-                        <f:entry title=""></f:entry>
-                        <f:entry title=""></f:entry>			
+                        <f:radioBlock name="accurev.wspaceORreftree" value="none" title="Neither" checked="${h.ifThenElse(scm==null,true,scm.noWspaceNoReftree)}" inline="true" />
                         <f:entry title="Directory Offset" help="/plugin/accurev/help/project/directoryoffset.html">
                             <f:textbox name="accurev.directoryOffset" value="${scm.directoryOffset}" />
                         </f:entry>
@@ -57,18 +50,18 @@
                         </f:entry>
                         <f:optionalBlock title="Create and build from snapshot"
                                          help="/plugin/accurev/help/project/snapshot.html"
-                                         name="accurev.useSnapshot" checked="${scm.useSnapshot}">
+                                         name="accurev.useSnapshot" checked="${scm.useSnapshot}" inline="true">
                             <f:entry title="Snapshot Name Format" help="/plugin/accurev/help/project/snapshot-format.html">
                                 <f:textbox name="accurev.snapshotNameFormat" value="${scm.snapshotNameFormat}"/>
                             </f:entry>
                         </f:optionalBlock>
                         <f:optionalBlock title="Don't Pop Content"
                                          help="/plugin/accurev/help/project/dontPopContent.html"
-                                         name="accurev.dontPopContent" checked="${scm.dontPopContent}">
+                                         name="accurev.dontPopContent" checked="${scm.dontPopContent}" inline="true">
                         </f:optionalBlock>
                         <f:optionalBlock title="Ignore parent changes"
                                          help="/plugin/accurev/help/project/ignore-stream-parent.html"
-                                         name="accurev.ignoreStreamParent" checked="${scm.ignoreStreamParent}">
+                                         name="accurev.ignoreStreamParent" checked="${scm.ignoreStreamParent}" inline="true">
                         </f:optionalBlock>
                     </f:advanced>
                     <f:entry >

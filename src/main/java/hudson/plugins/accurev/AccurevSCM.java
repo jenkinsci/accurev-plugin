@@ -27,6 +27,7 @@ import jenkins.plugins.accurev.util.UUIDUtils;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -54,24 +55,24 @@ public class AccurevSCM extends SCM {
     public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    private final String serverName;
-    private final String depot;
-    private final String stream;
-    private final boolean ignoreStreamParent;
-    private final String wspaceORreftree;
-    private final boolean cleanreftree;
-    private final String workspace;
-    private final boolean useSnapshot;
-    private final boolean dontPopContent;
-    private final String snapshotNameFormat;
-    private final boolean synctime;
-    private final String reftree;
-    private final String subPath;
-    private final String filterForPollSCM;
-    private final String directoryOffset;
-    private final boolean useReftree;
-    private final boolean useWorkspace;
-    private final boolean noWspaceNoReftree;
+    private String serverName;
+    private String depot;
+    private String stream;
+    private boolean ignoreStreamParent;
+    private String wspaceORreftree;
+    private boolean cleanreftree;
+    private String workspace;
+    private boolean useSnapshot;
+    private boolean dontPopContent;
+    private String snapshotNameFormat;
+    private boolean synctime;
+    private String reftree;
+    private String subPath;
+    private String filterForPollSCM;
+    private String directoryOffset;
+    private boolean useReftree;
+    private boolean useWorkspace;
+    private boolean noWspaceNoReftree;
     private String serverUUID;
     @CheckForNull
     private String accurevTool = null;
@@ -79,104 +80,40 @@ public class AccurevSCM extends SCM {
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
-    /**
-     * Our constructor.
-     *
-     * @param serverUUID         Unique identifier for server
-     * @param serverName         name for the server
-     * @param depot              depot
-     * @param stream             stream
-     * @param wspaceORreftree    workspace or reftree
-     * @param workspace          workspace
-     * @param reftree            reftree
-     * @param subPath            subPath
-     * @param filterForPollSCM   filterForPollSCM
-     * @param accurevTool        Which tool to find
-     * @param synctime           synctime
-     * @param cleanreftree       cleanreftree
-     * @param useSnapshot        useSnapshot
-     * @param dontPopContent     Do not populate content
-     * @param snapshotNameFormat snapshot name format
-     * @param directoryOffset    directory offset
-     * @param ignoreStreamParent ignore Parent Stream
-     */
     @DataBoundConstructor
     public AccurevSCM(
-            String serverUUID,
-            String serverName,
-            String depot,
-            String stream,
-            String wspaceORreftree,
-            String workspace,
-            String reftree,
-            String subPath,
-            String filterForPollSCM,
-            @CheckForNull String accurevTool,
-            boolean synctime,
-            boolean cleanreftree,
-            boolean useSnapshot,
-            boolean dontPopContent,
-            String snapshotNameFormat,
-            String directoryOffset,
-            boolean ignoreStreamParent) {
-        super();
+            String serverUUID
+    ) {
         this.serverUUID = serverUUID;
-        this.serverName = serverName;
-        this.depot = depot;
-        this.stream = stream;
-        this.wspaceORreftree = wspaceORreftree;
-        this.workspace = workspace;
-        this.reftree = reftree;
-        this.subPath = subPath;
-        this.filterForPollSCM = filterForPollSCM;
-        this.synctime = synctime;
-        this.cleanreftree = cleanreftree;
-        this.useSnapshot = useSnapshot;
-        this.dontPopContent = dontPopContent;
-        this.snapshotNameFormat = snapshotNameFormat;
-        this.ignoreStreamParent = ignoreStreamParent;
-        this.directoryOffset = directoryOffset;
-        this.accurevTool = accurevTool;
-        AccurevMode accurevMode = AccurevMode.findMode(this);
-        useReftree = accurevMode.isReftree();
-        useWorkspace = accurevMode.isWorkspace();
-        noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
+        AccurevServer server = DESCRIPTOR.getServer(serverUUID);
+        if (server != null) serverName = server.getName();
+        updateMode();
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
 
-    /**
-     * Getter for property 'depot'.
-     *
-     * @return Value for property 'depot'.
-     */
     public String getDepot() {
         return depot;
     }
 
-    /**
-     * Getter for property 'serverName'.
-     *
-     * @return Value for property 'serverName'.
-     */
+    @DataBoundSetter
+    public void setDepot(String depot) {
+        this.depot = depot;
+    }
+
     public String getServerName() {
         return serverName;
     }
 
-    /**
-     * Getter for property 'serverUUID'.
-     *
-     * @return Value for property 'serverUUID'.
-     */
+    @DataBoundSetter
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
     public String getServerUUID() {
         return serverUUID;
     }
 
-    /**
-     * Setter for property 'serverUUID'.
-     *
-     * @param uuid Value for property 'serverUUID'
-     */
     public void setServerUUID(String uuid) {
         serverUUID = uuid;
     }
@@ -207,40 +144,41 @@ public class AccurevSCM extends SCM {
         return server;
     }
 
-    /**
-     * Getter for property 'stream'.
-     *
-     * @return Value for property 'stream'.
-     */
     public String getStream() {
         return stream;
     }
 
-    /**
-     * Getter for property 'wspaceORreftree'.
-     *
-     * @return Value for property 'wspaceORreftree'.
-     */
+    @DataBoundSetter
+    public void setStream(String stream) {
+        this.stream = stream;
+    }
+
     public String getWspaceORreftree() {
         return wspaceORreftree;
     }
 
-    /**
-     * Getter for property 'reftree'.
-     *
-     * @return Value for property 'reftree'.
-     */
+    @DataBoundSetter
+    public void setWspaceORreftree(String wspaceORreftree) {
+        this.wspaceORreftree = wspaceORreftree;
+        updateMode();
+    }
+
     public String getReftree() {
         return reftree;
     }
 
-    /**
-     * Getter for property 'workspace'.
-     *
-     * @return Value for property 'workspace'.
-     */
+    @DataBoundSetter
+    public void setReftree(String reftree) {
+        this.reftree = reftree;
+    }
+
     public String getWorkspace() {
         return workspace;
+    }
+
+    @DataBoundSetter
+    public void setWorkspace(String workspace) {
+        this.workspace = workspace;
     }
 
     @CheckForNull
@@ -248,107 +186,112 @@ public class AccurevSCM extends SCM {
         return accurevTool;
     }
 
-    /**
-     * Getter for property 'subPath'.
-     *
-     * @return Value for property 'subPath'.
-     */
+    @DataBoundSetter
+    public void setAccurevTool(String accurevTool) {
+        this.accurevTool = accurevTool;
+    }
+
     public String getSubPath() {
         return subPath;
     }
 
-    /**
-     * Getter for property 'filterForPollSCM'.
-     *
-     * @return Value for property 'filterForPollSCM'.
-     */
+    @DataBoundSetter
+    public void setSubPath(String subPath) {
+        this.subPath = subPath;
+    }
+
     public String getFilterForPollSCM() {
         return filterForPollSCM;
     }
 
-    /**
-     * Getter for property 'snapshotNameFormat'.
-     *
-     * @return Value for property 'snapshotNameFormat'.
-     */
+    @DataBoundSetter
+    public void setFilterForPollSCM(String filterForPollSCM) {
+        this.filterForPollSCM = filterForPollSCM;
+    }
+
     public String getSnapshotNameFormat() {
         return snapshotNameFormat;
     }
 
-    /**
-     * Getter for property 'ignoreStreamParent'.
-     *
-     * @return Value for property 'ignoreStreamParent'.
-     */
+    @DataBoundSetter
+    public void setSnapshotNameFormat(String snapshotNameFormat) {
+        this.snapshotNameFormat = snapshotNameFormat;
+    }
+
     public boolean isIgnoreStreamParent() {
         return ignoreStreamParent;
     }
 
-    /**
-     * Getter for property 'synctime'.
-     *
-     * @return Value for property 'synctime'.
-     */
+    @DataBoundSetter
+    public void setIgnoreStreamParent(boolean ignoreStreamParent) {
+        this.ignoreStreamParent = ignoreStreamParent;
+    }
+
     public boolean isSynctime() {
         return synctime;
+    }
+
+    @DataBoundSetter
+    public void setSynctime(boolean synctime) {
+        this.synctime = synctime;
     }
 
     public boolean isDontPopContent() {
         return dontPopContent;
     }
 
-    /**
-     * Getter for property 'cleanreftree'.
-     *
-     * @return Value for property 'cleanreftree'.
-     */
+    @DataBoundSetter
+    public void setDontPopContent(boolean dontPopContent) {
+        this.dontPopContent = dontPopContent;
+    }
+
     public boolean isCleanreftree() {
         return cleanreftree;
     }
 
-    /**
-     * Getter for property 'useSnapshot'.
-     *
-     * @return Value for property 'useSnapshot'.
-     */
+    @DataBoundSetter
+    public void setCleanreftree(boolean cleanreftree) {
+        this.cleanreftree = cleanreftree;
+    }
+
     public boolean isUseSnapshot() {
         return useSnapshot;
     }
 
-    /**
-     * Getter for property 'useRefTree'.
-     *
-     * @return Value for property 'useRefTree'.
-     */
+    @DataBoundSetter
+    public void setUseSnapshot(boolean useSnapshot) {
+        this.useSnapshot = useSnapshot;
+        if (!useSnapshot) {
+            snapshotNameFormat = "";
+        }
+    }
+
     public boolean isUseReftree() {
         return useReftree;
     }
 
-    /**
-     * Getter for property 'useWorkspace'.
-     *
-     * @return Value for property 'useWorkspace'.
-     */
     public boolean isUseWorkspace() {
         return useWorkspace;
     }
 
-    /**
-     * Getter for property 'noWspaceNoReftree'.
-     *
-     * @return Value for property 'noWspaceNoReftree'.
-     */
     public boolean isNoWspaceNoReftree() {
         return noWspaceNoReftree;
     }
 
-    /**
-     * Getter for property 'directoryOffset'.
-     *
-     * @return Value for property 'directoryOffset'.
-     */
     public String getDirectoryOffset() {
         return directoryOffset;
+    }
+
+    @DataBoundSetter
+    public void setDirectoryOffset(String directoryOffset) {
+        this.directoryOffset = directoryOffset;
+    }
+
+    private void updateMode() {
+        AccurevMode accurevMode = AccurevMode.findMode(this);
+        useReftree = accurevMode.isReftree();
+        useWorkspace = accurevMode.isWorkspace();
+        noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
     }
 
 // ------------------------ INTERFACE METHODS ------------------------
@@ -536,6 +479,7 @@ public class AccurevSCM extends SCM {
     }
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------
+    @Extension
     public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
         /**
@@ -606,46 +550,6 @@ public class AccurevSCM extends SCM {
             pollOnMaster = req.getParameter("descriptor.pollOnMaster") != null;
             save();
             return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @param req      request is non-null but annotated as CheckForNull due to compatibility
-         * @param formData json object
-         * @return SCM
-         * @throws hudson.model.Descriptor.FormException if form data is incorrect/incomplete
-         * @see <a href="http://javadoc.jenkins-ci.org/hudson/model/Descriptor.html#newInstance(org.kohsuke.stapler.StaplerRequest)">newInstance</a>
-         */
-        @Override
-        public SCM newInstance(@CheckForNull StaplerRequest req, @Nonnull JSONObject formData) throws FormException {
-            if (req == null) throw new FormException("No request came through", "Request");
-            String serverUUID = req.getParameter("_.serverUUID");
-            String serverName;
-            AccurevServer server = getServer(serverUUID);
-            if (null == server) {
-                throw new FormException("No server selected. Please add/select a server", "_.serverUUID");
-            } else {
-                serverName = server.getName();
-            }
-            return new AccurevSCM( //
-                    serverUUID, //
-                    serverName, //
-                    req.getParameter("_.depot"), //
-                    req.getParameter("_.stream"), //
-                    req.getParameter("accurev.wspaceORreftree"),//
-                    req.getParameter("accurev.workspace"),//
-                    req.getParameter("accurev.reftree"), //
-                    req.getParameter("accurev.subPath"), //
-                    req.getParameter("accurev.filterForPollSCM"), //
-                    req.getParameter("_.accurevTool"),
-                    req.getParameter("accurev.synctime") != null, //
-                    req.getParameter("accurev.cleanreftree") != null, //
-                    req.getParameter("accurev.useSnapshot") != null, //
-                    req.getParameter("accurev.dontPopContent") != null,
-                    req.getParameter("accurev.snapshotNameFormat"), //
-                    req.getParameter("accurev.directoryOffset"), //
-                    req.getParameter("accurev.ignoreStreamParent") != null);
         }
 
         /**

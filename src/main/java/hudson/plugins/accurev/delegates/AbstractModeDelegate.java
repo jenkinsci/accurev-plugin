@@ -100,6 +100,10 @@ public abstract class AbstractModeDelegate {
     public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
                             File changelogFile) throws IOException, InterruptedException {
 
+        if (jenkinsWorkspace != null) {
+            jenkinsWorkspace.mkdirs();
+        }
+
         setup(launcher, jenkinsWorkspace, listener);
 
         if (!accurevWorkingSpace.exists()) {
@@ -107,13 +111,11 @@ public abstract class AbstractModeDelegate {
         }
 
         if (StringUtils.isEmpty(scm.getDepot())) {
-            listener.fatalError("Must specify a depot");
-            return false;
+            throw new IllegalStateException("Must specify a depot");
         }
 
         if (StringUtils.isEmpty(scm.getStream())) {
-            listener.fatalError("Must specify a stream");
-            return false;
+            throw new IllegalStateException("Must specify a stream");
         }
 
         final EnvVars environment = build.getEnvironment(listener);
