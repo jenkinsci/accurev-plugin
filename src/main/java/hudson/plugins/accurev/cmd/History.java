@@ -77,7 +77,6 @@ public class History extends Command {
             return null;
         }
     }
-    
     /**
      * @param scm             Accurev SCM
      * @param server          server
@@ -116,12 +115,11 @@ public class History extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         final List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
-        final Boolean transactionFound = AccurevLauncher.runCommand("History command", launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
+        final Boolean transactionFound = AccurevLauncher.runCommand("History command", scm.getAccurevTool(),launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
                 logger, parser, new ParseHistory(), transactions, true);
         if (transactionFound == null) {
             throw new IOException("History command failed when trying to get all the transactionse ");
         }
         return transactions;
     }
-    
 }

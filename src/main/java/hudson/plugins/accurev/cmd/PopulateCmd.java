@@ -1,5 +1,12 @@
 package hudson.plugins.accurev.cmd;
 
+import java.io.IOException;
+import java.util.Date;
+import java.util.StringTokenizer;
+import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
+
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -9,14 +16,6 @@ import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
 import hudson.util.ArgumentListBuilder;
-import org.apache.commons.lang.StringUtils;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.StringTokenizer;
-import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
 
 public class PopulateCmd extends Command {
 
@@ -50,42 +49,42 @@ public class PopulateCmd extends Command {
                             String streamName,
                             boolean overwrite,
                             String fromMessage,
-                            FilePath accurevWorkingSpace,
+                            FilePath workspace,
                             EnvVars accurevEnv,
                             String files) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
-        final ArgumentListBuilder popcmd = new ArgumentListBuilder();
-        popcmd.add("pop");
-        addServer(popcmd, server);
+        final ArgumentListBuilder cmd = new ArgumentListBuilder();
+        cmd.add("pop");
+        addServer(cmd, server);
 
         if (streamName != null) {
-            popcmd.add("-v");
-            popcmd.add(streamName);
+            cmd.add("-v");
+            cmd.add(streamName);
         }
 
-        popcmd.add("-L");
-        popcmd.add(accurevWorkingSpace.getRemote());
+        cmd.add("-L");
+        cmd.add(workspace.getRemote());
 
-        //Add the list files to be populated
-        if (files != null) {
-            popcmd.add("-l");
-            popcmd.add(files);
-        }
+		// Add the list files to be populated
+		if (files != null) {
+			cmd.add("-l");
+			cmd.add(files);
+		}
 
-        if (overwrite) popcmd.add("-O");
+        if (overwrite) cmd.add("-O");
 
-        popcmd.add("-R");
+        cmd.add("-R");
         if (StringUtils.isBlank(scm.getSubPath())) {
-            popcmd.add(".");
+            cmd.add(".");
         } else {
             final StringTokenizer st = new StringTokenizer(scm.getSubPath(), ",");
             while (st.hasMoreElements()) {
-                popcmd.add(st.nextToken().trim());
+                cmd.add(st.nextToken().trim());
             }
         }
         _startDateOfPopulate = new Date();
-        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", launcher, popcmd, scm.getOptionalLock(), accurevEnv,
-                accurevWorkingSpace, listener, logger, new ParsePopulate(), listener.getLogger());
+        final Boolean success = AccurevLauncher.runCommand("Populate " + fromMessage + " command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
+                accurevEnv, workspace, listener, logger, new ParsePopulate(), listener.getLogger());
         if (success == null || !success) {
             return false;
         }
