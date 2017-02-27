@@ -4,6 +4,8 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import hudson.init.Initializer;
 import hudson.model.Project;
 import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.util.UUIDUtils;
 
@@ -11,6 +13,7 @@ import java.util.logging.Logger;
 
 import static hudson.init.InitMilestone.COMPLETED;
 import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
+import static hudson.init.InitMilestone.JOB_LOADED;
 
 /**
  * Initialized by josp on 21/09/16.
@@ -26,22 +29,22 @@ public class AccurevPlugin {
      *
      * @throws Exception Exceptions
      */
-    @Initializer(after = EXTENSIONS_AUGMENTED, before = COMPLETED)
+    @Initializer(after = JOB_LOADED, before = COMPLETED)
     public static void migrateJobsToServerUUID() throws Exception {
         final Jenkins jenkins = Jenkins.getInstance();
         boolean changed = false;
-        AccurevSCM.AccurevSCMDescriptor descriptor = jenkins.getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        AccurevSCMDescriptor descriptor = jenkins.getDescriptorByType(AccurevSCMDescriptor.class);
         for (Project<?, ?> p : jenkins.getAllItems(Project.class)) {
             if (p.getScm() instanceof AccurevSCM) {
                 AccurevSCM scm = (AccurevSCM) p.getScm();
                 String serverUUID = scm.getServerUUID();
                 if (UUIDUtils.isNotValid(serverUUID) || descriptor.getServer(serverUUID) == null) {
-                    AccurevSCM.AccurevServer server = descriptor.getServer(scm.getServerName());
+                    AccurevServer server = descriptor.getServer(scm.getServerName());
                     if (server == null) {
                         LOGGER.warning("No server found with that name, Project: " + p.getName() + " Server Name: " + scm.getServerName());
                     } else {
                         changed = true;
-                        String uuid = server.getUUID();
+                        String uuid = server.getUuid();
                         scm.setServerUUID(uuid);
                         p.save();
                     }
@@ -61,11 +64,14 @@ public class AccurevPlugin {
     @Initializer(after = EXTENSIONS_AUGMENTED)
     public static void migrateServersToCredentials() throws Exception {
         boolean changed = false;
-        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
+        AccurevSCMDescriptor descriptor = AccurevSCM.configuration();
         boolean migratedCredentials = false;
-        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+        for (AccurevServer server : descriptor.getServers()) {
             if (server.migrateCredentials()) changed = true;
         }
-        if (changed) SystemCredentialsProvider.getInstance().save();
+        if (changed) {
+            descriptor.save();
+            SystemCredentialsProvider.getInstance().save();
+        }
     }
 }

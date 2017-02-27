@@ -36,7 +36,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -51,13 +50,11 @@ public class AccurevSCM extends SCM {
 
 // ------------------------------ FIELDS ------------------------------
 
-    @Extension
-    public static final AccurevSCMDescriptor DESCRIPTOR = new AccurevSCMDescriptor();
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
+    private final String depot;
+    private final String stream;
     private String serverName;
-    private String depot;
-    private String stream;
     private boolean ignoreStreamParent;
     private String wspaceORreftree;
     private boolean cleanreftree;
@@ -82,23 +79,24 @@ public class AccurevSCM extends SCM {
 
     @DataBoundConstructor
     public AccurevSCM(
-            String serverUUID
+            String serverUUID, String depot, String stream
     ) {
         this.serverUUID = serverUUID;
-        AccurevServer server = DESCRIPTOR.getServer(serverUUID);
+        this.depot = depot;
+        this.stream = stream;
+        AccurevServer server = getDescriptor().getServer(serverUUID);
         if (server != null) serverName = server.getName();
         updateMode();
+    }
+
+    public static AccurevSCMDescriptor configuration() {
+        return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
 
     public String getDepot() {
         return depot;
-    }
-
-    @DataBoundSetter
-    public void setDepot(String depot) {
-        this.depot = depot;
     }
 
     public String getServerName() {
@@ -126,6 +124,7 @@ public class AccurevSCM extends SCM {
     @CheckForNull
     public AccurevServer getServer() {
         AccurevServer server;
+        AccurevSCMDescriptor descriptor = getDescriptor();
         if (serverUUID == null) {
             if (serverName == null) {
                 // No fallback
@@ -133,24 +132,19 @@ public class AccurevSCM extends SCM {
                 return null;
             }
             LOGGER.warning("Getting server by name (" + serverName + "), because UUID is not set.");
-            server = DESCRIPTOR.getServer(serverName);
+            server = descriptor.getServer(serverName);
             if (server != null) {
-                this.setServerUUID(server.getUUID());
-                DESCRIPTOR.save();
+                this.setServerUUID(server.getUuid());
+                descriptor.save();
             }
         } else {
-            server = DESCRIPTOR.getServer(serverUUID);
+            server = descriptor.getServer(serverUUID);
         }
         return server;
     }
 
     public String getStream() {
         return stream;
-    }
-
-    @DataBoundSetter
-    public void setStream(String stream) {
-        this.stream = stream;
     }
 
     public String getWspaceORreftree() {
@@ -287,6 +281,9 @@ public class AccurevSCM extends SCM {
         this.directoryOffset = directoryOffset;
     }
 
+// ------------------------ INTERFACE METHODS ------------------------
+// --------------------- Interface Describable ---------------------
+
     private void updateMode() {
         AccurevMode accurevMode = AccurevMode.findMode(this);
         useReftree = accurevMode.isReftree();
@@ -294,17 +291,14 @@ public class AccurevSCM extends SCM {
         noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
     }
 
-// ------------------------ INTERFACE METHODS ------------------------
-// --------------------- Interface Describable ---------------------
-
     /**
      * {@inheritDoc}
      *
      * @return SCMDescriptor
      */
     @Override
-    public SCMDescriptor<?> getDescriptor() {
-        return DESCRIPTOR;
+    public AccurevSCMDescriptor getDescriptor() {
+        return (AccurevSCMDescriptor) super.getDescriptor();
     }
 
 // -------------------------- OTHER METHODS --------------------------
@@ -366,7 +360,7 @@ public class AccurevSCM extends SCM {
     @Override
     public boolean requiresWorkspaceForPolling() {
         boolean requiresWorkspace = AccurevMode.findMode(this).isRequiresWorkspace();
-        if (DESCRIPTOR.isPollOnMaster() && !requiresWorkspace) {
+        if (getDescriptor().isPollOnMaster() && !requiresWorkspace) {
             // Does not require workspace if Poll On Master is enabled; unless build is using workspace
             return false;
         }
@@ -480,7 +474,7 @@ public class AccurevSCM extends SCM {
 
     //--------------------------- Inner Class - DescriptorImplementation ----------------------------
     @Extension
-    public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
+    public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
         /**
          * The accurev server has been known to crash if more than one copy of
@@ -522,6 +516,7 @@ public class AccurevSCM extends SCM {
             return "AccuRev";
         }
 
+        @SuppressWarnings("unused") // used by stapler
         public boolean showAccurevToolOptions() {
             return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
         }
@@ -546,8 +541,7 @@ public class AccurevSCM extends SCM {
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            this._servers = req.bindJSONToList(AccurevServer.class, formData.get("server"));
-            pollOnMaster = req.getParameter("descriptor.pollOnMaster") != null;
+            req.bindJSON(this, formData);
             save();
             return true;
         }
@@ -605,7 +599,7 @@ public class AccurevSCM extends SCM {
                 return null;
             }
             for (AccurevServer server : this._servers) {
-                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUUID())) {
+                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUuid())) {
                     return server;
                 } else if (uuid.equals(server.getName())) {
                     // support old server name
@@ -624,7 +618,7 @@ public class AccurevSCM extends SCM {
                 return s;
             }
             for (AccurevServer server : this._servers) {
-                s.add(server.getName(), server.getUUID());
+                s.add(server.getName(), server.getUuid());
             }
 
             return s;
@@ -632,7 +626,7 @@ public class AccurevSCM extends SCM {
 
         @SuppressWarnings("unused") // Used by stapler
         public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
+            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUuid();
             final AccurevServer server = getServer(serverUUID);
 
             if (server == null) {
@@ -661,7 +655,7 @@ public class AccurevSCM extends SCM {
         // Populating the streams
         @SuppressWarnings("unused") // Used by stapler
         public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUUID();
+            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUuid();
             final AccurevServer server = getServer(serverUUID);
             if (server == null) {
                 return new ComboBoxModel();
@@ -685,24 +679,14 @@ public class AccurevSCM extends SCM {
             return r;
         }
 
-        @SuppressWarnings("unused")
-        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
-            if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
-                return new StandardListBoxModel().includeCurrentValue(credentialsId);
-            }
-            return new StandardListBoxModel()
-                    .includeEmptyValue()
-                    .includeMatchingAs(ACL.SYSTEM,
-                            Jenkins.getInstance(),
-                            StandardUsernamePasswordCredentials.class,
-                            URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
-                            CredentialsMatchers.always()
-                    );
+        @Override
+        public boolean isApplicable(Job project) {
+            return true;
         }
     }
 
     // --------------------------- Inner Class ---------------------------------------------------
-    public static final class AccurevServer implements Serializable {
+    public static final class AccurevServer extends AbstractDescribableImpl<AccurevServer> {
 
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
@@ -710,16 +694,15 @@ public class AccurevSCM extends SCM {
         protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
                 .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
                         "mkstream", "move", "promote", "purge", "dispatch"));
-        private static final long serialVersionUID = 3270850408409304611L;
         // keep all transaction types in a set for validation
         private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
         private transient static final String __OBFUSCATE = "OBF:";
         private final String name;
         private final String host;
-        private final int port;
         transient String username;
         transient String password;
+        private int port = 5050;
         private String credentialsId;
         private UUID uuid;
         private String validTransactionTypes;
@@ -734,29 +717,11 @@ public class AccurevSCM extends SCM {
         public AccurevServer(//
                              String uuid,
                              String name, //
-                             String host, //
-                             int port, //
-                             String credentialsId, //
-                             String validTransactionTypes, //
-                             boolean syncOperations, //
-                             boolean minimiseLogins, //
-                             boolean useNonexpiringLogin, //
-                             boolean useRestrictedShowStreams,
-                             boolean useColor,
-                             boolean usePromoteListen) {
+                             String host) {
             if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
             else this.uuid = UUID.fromString(uuid);
             this.name = name;
             this.host = host;
-            this.port = port;
-            this.credentialsId = credentialsId;
-            this.validTransactionTypes = validTransactionTypes;
-            this.syncOperations = syncOperations;
-            this.minimiseLogins = minimiseLogins;
-            this.useNonexpiringLogin = useNonexpiringLogin;
-            this.useRestrictedShowStreams = useRestrictedShowStreams;
-            this.useColor = useColor;
-            this.usePromoteListen = usePromoteListen;
             AccurevPromoteTrigger.validateListeners();
         }
 
@@ -806,7 +771,7 @@ public class AccurevSCM extends SCM {
          *
          * @return Value for property 'uuid'.
          */
-        public String getUUID() {
+        public String getUuid() {
             if (uuid == null) {
                 uuid = UUID.randomUUID();
             }
@@ -840,6 +805,11 @@ public class AccurevSCM extends SCM {
             return port;
         }
 
+        @DataBoundSetter
+        public void setPort(int port) {
+            this.port = port;
+        }
+
         /**
          * Getter for property 'credentialsId'.
          *
@@ -847,6 +817,11 @@ public class AccurevSCM extends SCM {
          */
         public String getCredentialsId() {
             return credentialsId;
+        }
+
+        @DataBoundSetter
+        public void setCredentialsId(String credentialsId) {
+            this.credentialsId = credentialsId;
         }
 
         /**
@@ -902,6 +877,7 @@ public class AccurevSCM extends SCM {
          *                              are seen as valid for triggering builds and whos authors get notified
          *                              when a build fails
          */
+        @DataBoundSetter
         public void setValidTransactionTypes(String validTransactionTypes) {
             this.validTransactionTypes = validTransactionTypes;
         }
@@ -910,6 +886,7 @@ public class AccurevSCM extends SCM {
             return syncOperations;
         }
 
+        @DataBoundSetter
         public void setSyncOperations(boolean syncOperations) {
             this.syncOperations = syncOperations;
         }
@@ -918,6 +895,7 @@ public class AccurevSCM extends SCM {
             return minimiseLogins;
         }
 
+        @DataBoundSetter
         public void setMinimiseLogins(boolean minimiseLogins) {
             this.minimiseLogins = minimiseLogins;
         }
@@ -926,6 +904,7 @@ public class AccurevSCM extends SCM {
             return useNonexpiringLogin;
         }
 
+        @DataBoundSetter
         public void setUseNonexpiringLogin(boolean useNonexpiringLogin) {
             this.useNonexpiringLogin = useNonexpiringLogin;
         }
@@ -934,6 +913,7 @@ public class AccurevSCM extends SCM {
             return useRestrictedShowStreams;
         }
 
+        @DataBoundSetter
         public void setUseRestrictedShowStreams(boolean useRestrictedShowStreams) {
             this.useRestrictedShowStreams = useRestrictedShowStreams;
         }
@@ -942,6 +922,7 @@ public class AccurevSCM extends SCM {
             return useColor;
         }
 
+        @DataBoundSetter
         public void setUseColor(boolean useColor) {
             this.useColor = useColor;
         }
@@ -950,6 +931,7 @@ public class AccurevSCM extends SCM {
             return usePromoteListen;
         }
 
+        @DataBoundSetter
         public void setUsePromoteListen(boolean usePromoteListen) {
             this.usePromoteListen = usePromoteListen;
         }
@@ -1007,6 +989,36 @@ public class AccurevSCM extends SCM {
                 }
             }
             return false;
+        }
+
+        @Override
+        public DescriptorImpl getDescriptor() {
+            return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
+        }
+
+        @Extension
+        public static class DescriptorImpl extends Descriptor<AccurevServer> {
+
+            @Nonnull
+            @Override
+            public String getDisplayName() {
+                return "AccuRev Server";
+            }
+
+            @SuppressWarnings("unused")
+            public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
+                if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                    return new StandardListBoxModel().includeCurrentValue(credentialsId);
+                }
+                return new StandardListBoxModel()
+                        .includeEmptyValue()
+                        .includeMatchingAs(ACL.SYSTEM,
+                                Jenkins.getInstance(),
+                                StandardUsernamePasswordCredentials.class,
+                                URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
+                                CredentialsMatchers.always()
+                        );
+            }
         }
     }
 

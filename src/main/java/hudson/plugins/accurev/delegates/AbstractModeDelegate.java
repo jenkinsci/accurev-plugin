@@ -53,7 +53,7 @@ public abstract class AbstractModeDelegate {
         this.scm = scm;
     }
 
-    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, IllegalArgumentException {
+    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, IllegalArgumentException, InterruptedException {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
@@ -61,6 +61,9 @@ public abstract class AbstractModeDelegate {
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
+            if (!accurevWorkingSpace.exists()) {
+                accurevWorkingSpace.mkdirs();
+            }
             if (!Login.ensureLoggedInToAccurev(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
             }
@@ -100,15 +103,7 @@ public abstract class AbstractModeDelegate {
     public boolean checkout(Run<?, ?> build, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener,
                             File changelogFile) throws IOException, InterruptedException {
 
-        if (jenkinsWorkspace != null) {
-            jenkinsWorkspace.mkdirs();
-        }
-
         setup(launcher, jenkinsWorkspace, listener);
-
-        if (!accurevWorkingSpace.exists()) {
-            accurevWorkingSpace.mkdirs();
-        }
 
         if (StringUtils.isEmpty(scm.getDepot())) {
             throw new IllegalStateException("Must specify a depot");
@@ -299,7 +294,7 @@ public abstract class AbstractModeDelegate {
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
         try {
             setup(null, null, TaskListener.NULL);
-        } catch (IOException ex) {
+        } catch (IOException | InterruptedException ex) {
             logger.log(Level.SEVERE, "buildEnvVars", ex);
         }
 
