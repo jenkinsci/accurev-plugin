@@ -25,48 +25,48 @@
         <f:advanced>
           <f:section title="Advanced Options">
             <f:radioBlock name="accurev.wspaceORreftree" value="wspace" title="Use Workspace"
-                          checked="${scm.useWorkspace}"
+                          checked="${instance.useWorkspace}"
                           help="/plugin/accurev/help/project/workspace.html" inline="true">
               <f:entry title="Workspace">
-                <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
+                <f:textbox name="accurev.workspace" value="${instance.workspace}"/>
               </f:entry>
             </f:radioBlock>
             <f:radioBlock name="accurev.wspaceORreftree" value="reftree" title="Use Reference Tree"
-                          checked="${scm.useReftree}"
+                          checked="${instance.useReftree}"
                           help="/plugin/accurev/help/project/reftree.html" inline="true">
               <f:entry title="Reference Tree">
-                <f:textbox name="accurev.reftree" value="${scm.reftree}"/>
+                <f:textbox name="accurev.reftree" value="${instance.reftree}"/>
               </f:entry>
               <f:entry title="Clean Reference Tree" help="/plugin/accurev/help/project/cleanreftree.html">
-                <f:checkbox name="accurev.cleanreftree" checked="${scm.cleanreftree}"/>
+                <f:checkbox name="accurev.cleanreftree" checked="${instance.cleanreftree}"/>
               </f:entry>
             </f:radioBlock>
             <f:radioBlock name="accurev.wspaceORreftree" value="none" title="Neither"
-                          checked="${h.ifThenElse(scm==null,true,scm.noWspaceNoReftree)}" inline="true"/>
+                          checked="${h.ifThenElse(instance==null,true,instance.noWspaceNoReftree)}" inline="true"/>
             <f:entry title="Directory Offset" help="/plugin/accurev/help/project/directoryoffset.html">
-              <f:textbox name="accurev.directoryOffset" value="${scm.directoryOffset}"/>
+              <f:textbox name="accurev.directoryOffset" value="${instance.directoryOffset}"/>
             </f:entry>
             <f:entry title="Sub-path" help="/plugin/accurev/help/project/subpath.html">
-              <f:textbox name="accurev.subPath" value="${scm.subPath}"/>
+              <f:textbox name="accurev.subPath" value="${instance.subPath}"/>
             </f:entry>
             <f:entry title="Filter for Poll SCM" help="/plugin/accurev/help/project/filterforpollscm.html">
-              <f:textbox name="accurev.filterForPollSCM" value="${scm.filterForPollSCM}"/>
+              <f:textbox name="accurev.filterForPollSCM" value="${instance.filterForPollSCM}"/>
             </f:entry>
             <f:optionalBlock title="Create and build from snapshot"
                              help="/plugin/accurev/help/project/snapshot.html"
-                             name="accurev.useSnapshot" checked="${scm.useSnapshot}" inline="true">
+                             name="accurev.useSnapshot" checked="${instance.useSnapshot}" inline="true">
               <f:entry title="Snapshot Name Format"
                        help="/plugin/accurev/help/project/snapshot-format.html">
-                <f:textbox name="accurev.snapshotNameFormat" value="${scm.snapshotNameFormat}"/>
+                <f:textbox name="accurev.snapshotNameFormat" value="${instance.snapshotNameFormat}"/>
               </f:entry>
             </f:optionalBlock>
             <f:optionalBlock title="Don't Pop Content"
                              help="/plugin/accurev/help/project/dontPopContent.html"
-                             name="accurev.dontPopContent" checked="${scm.dontPopContent}" inline="true">
+                             name="accurev.dontPopContent" checked="${instance.dontPopContent}" inline="true">
             </f:optionalBlock>
             <f:optionalBlock title="Ignore parent changes"
                              help="/plugin/accurev/help/project/ignore-stream-parent.html"
-                             name="accurev.ignoreStreamParent" checked="${scm.ignoreStreamParent}"
+                             name="accurev.ignoreStreamParent" checked="${instance.ignoreStreamParent}"
                              inline="true">
             </f:optionalBlock>
           </f:section>
