@@ -3,7 +3,7 @@ package hudson.plugins.accurev;
 import hudson.model.Cause;
 
 /**
- * Created by josp on 16/09/16.
+ * Initialized by josp on 16/09/16.
  */
 public class AccurevPromoteCause extends Cause {
 

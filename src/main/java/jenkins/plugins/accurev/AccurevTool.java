@@ -50,7 +50,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
     }
 
     private static AccurevTool[] getInstallations(DescriptorImpl descriptor) {
-        AccurevTool[] installations = null;
+        AccurevTool[] installations;
         try {
             installations = descriptor.getInstallations();
         } catch (NullPointerException e) {

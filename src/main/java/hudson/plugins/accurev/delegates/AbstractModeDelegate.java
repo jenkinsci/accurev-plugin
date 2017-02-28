@@ -53,7 +53,7 @@ public abstract class AbstractModeDelegate {
         this.scm = scm;
     }
 
-    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, InterruptedException {
+    public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, IllegalArgumentException, InterruptedException {
         this.launcher = launcher;
         this.jenkinsWorkspace = jenkinsWorkspace;
         this.listener = listener;
@@ -61,6 +61,9 @@ public abstract class AbstractModeDelegate {
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
             accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
+            if (!accurevWorkingSpace.exists()) {
+                accurevWorkingSpace.mkdirs();
+            }
             if (!Login.ensureLoggedInToAccurev(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
             }
@@ -102,18 +105,12 @@ public abstract class AbstractModeDelegate {
 
         setup(launcher, jenkinsWorkspace, listener);
 
-        if (!accurevWorkingSpace.exists()) {
-            accurevWorkingSpace.mkdirs();
-        }
-
         if (StringUtils.isEmpty(scm.getDepot())) {
-            listener.fatalError("Must specify a depot");
-            return false;
+            throw new IllegalStateException("Must specify a depot");
         }
 
         if (StringUtils.isEmpty(scm.getStream())) {
-            listener.fatalError("Must specify a stream");
-            return false;
+            throw new IllegalStateException("Must specify a stream");
         }
 
         final EnvVars environment = build.getEnvironment(listener);
@@ -140,7 +137,7 @@ public abstract class AbstractModeDelegate {
 
     }
 
-    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams) throws IOException, InterruptedException {
+    private boolean captureChangeLog(Run<?, ?> build, File changelogFile, Map<String, AccurevStream> streams) throws IOException {
         try {
             AccurevTransaction latestTransaction = getLatestTransactionFromStreams(streams);
             if (latestTransaction == null) {
