@@ -24,6 +24,23 @@ public enum AccurevMode {
         }
 
     },
+    BUILD_FROM_WORKSPACE(true) {
+        @Override
+        protected AbstractModeDelegate createDelegate(AccurevSCM accurevSCM) {
+            return new BuildFromWorkspaceDelegate(accurevSCM);
+        }
+
+        @Override
+        protected boolean isMode(AccurevSCM accurevSCM) {
+            return "buildwspace".equals(accurevSCM.getWspaceORreftree());
+        }
+
+        @Override
+        public boolean isBuildFromWorkspace() {
+            return true;
+        }
+
+    },
     REF_TREE(true) {
         @Override
         protected AbstractModeDelegate createDelegate(AccurevSCM accurevSCM) {
@@ -109,6 +126,9 @@ public enum AccurevMode {
         return false;
     }
 
+    public boolean isBuildFromWorkspace() {
+        return false;
+    }
     public boolean isReftree() {
         return false;
     }

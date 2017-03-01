@@ -1,5 +1,18 @@
 package hudson.plugins.accurev;
 
+import hudson.AbortException;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Launcher.ProcStarter;
+import hudson.model.TaskListener;
+import hudson.model.Computer;
+import hudson.model.Node;
+import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
+import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
+import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
+import hudson.util.ArgumentListBuilder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,25 +26,13 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.AccurevTool;
+
 import org.apache.commons.lang.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-
-import hudson.AbortException;
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.Launcher.ProcStarter;
-import hudson.model.Computer;
-import hudson.model.Node;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
-import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
-import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
-import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
-import jenkins.plugins.accurev.AccurevTool;
 
 /**
  * Utility class that knows how to run AccuRev commands and (optionally) have
@@ -196,7 +197,7 @@ public final class AccurevLauncher {
 	 * @throws IOException
 	 *             handle it above
 	 */
-	public static <TResult, TContext> TResult runCommand(//
+	public static <TResult, TContext> TResult runHistCommandForAll(//
 			@Nonnull final String humanReadableCommandName, //
 			String accurevTool, @Nonnull final Launcher launcher, //
 			@Nonnull final ArgumentListBuilder machineReadableCommand, //
@@ -207,7 +208,7 @@ public final class AccurevLauncher {
 			@Nonnull final Logger loggerToLogFailuresTo, //
 			@Nonnull final XmlPullParserFactory xmlParserFactory, //
 			@Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
-			@Nullable final TContext commandOutputParserContext, boolean isAll) throws IOException {
+			@Nullable final TContext commandOutputParserContext) throws IOException {
 		return runCommand(humanReadableCommandName, accurevTool, launcher, machineReadableCommand,
 				synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
 				listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {

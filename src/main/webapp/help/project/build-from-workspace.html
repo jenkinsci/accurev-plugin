@@ -1,0 +1,20 @@
+<div>
+    <p>
+        By default, this plugin checks out the latest changes without using a workspace. This removes the need to
+        manually create a workspace for each project, and removes the need for the plugin to make transactions
+        while moving the workspace from slave to slave as the build migrates from slave to slave.
+    </p>
+
+    <p>
+        However, there may be situations when the use of a workspace is preferred to build . If you want to use a workspace,
+        select this option and enter the name of an existing workspace in the <b>Workspace Name</b> field. The plugin can manage
+        copy the whole workspace to the appropriate build machine with below AccuRev transactions.
+    </p>
+    <p>This needs to be triggered from a new GUI check box - Build Directly From Workspace </p>
+           <li> Finding all (modified) elements and revert them to basis (or just delete them) - The version available in their parent stream would be considered as part of build. </li>
+           <li> Finding all (external) elements and delete them - These files will not be available for build </li>
+           <li> Finding all (missing) elements and populate them. Or a recursive populate (but not Overwrite) - The version available in their parent stream would be considered as part of build.</li>
+           <li> Finding all (keep) elements, copy (overwrite) to Jenkins workspace - This kept version would be considered as part of build </li>
+           <li> Finding all (Backed) elements, excluding the kept element's from this list - This backed files would be considered as part of build.</li>
+    </p>
+</div>
