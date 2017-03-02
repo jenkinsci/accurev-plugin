@@ -35,9 +35,7 @@ public class AccurevSCMTest {
     @Before
     public void setUp() throws Exception {
         server = new AccurevServer("test", "localhost", 5050, "bob", "OBF:1rwf1x1b1rwf");
-        scm = new AccurevSCM(null, "test", "test", "test", "none",
-                "", null, "", "", "", "", false, false,
-				false, false, "", "", false, "test");
+        scm = new AccurevSCM(null, "test", "test", "test", "none", "", null, "", "", "", "", false, false, false, false, "", "", false);
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);
         descriptor = (AccurevSCM.AccurevSCMDescriptor) scm.getDescriptor();

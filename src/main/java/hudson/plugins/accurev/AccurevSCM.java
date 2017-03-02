@@ -107,7 +107,6 @@ public class AccurevSCM extends SCM {
     @CheckForNull
     private String accurevTool = null;
     private Job<?, ?> activeProject;
-    private String deleteWorkspaceBeforeBuildStarts;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -132,7 +131,6 @@ public class AccurevSCM extends SCM {
      * @param snapshotNameFormat snapshot name format
      * @param directoryOffset    directory offset
      * @param ignoreStreamParent ignore Parent Stream
-     * @param deleteWorkspaceBeforeBuildStarts delete the workspace before the build starts
      */
     @DataBoundConstructor
     public AccurevSCM(
@@ -153,8 +151,7 @@ public class AccurevSCM extends SCM {
             boolean dontPopContent,
             String snapshotNameFormat,
             String directoryOffset,
-            boolean ignoreStreamParent,
-            String deleteWorkspaceBeforeBuildStarts) {
+            boolean ignoreStreamParent) {
         super();
         this.serverUUID = serverUUID;
         this.serverName = serverName;
@@ -179,7 +176,6 @@ public class AccurevSCM extends SCM {
         useWorkspace = accurevMode.isWorkspace();
         noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
         buildFromWorkspace = accurevMode.isBuildFromWorkspace();
-        this.deleteWorkspaceBeforeBuildStarts = deleteWorkspaceBeforeBuildStarts;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -400,9 +396,7 @@ public class AccurevSCM extends SCM {
     public String getDirectoryOffset() {
         return directoryOffset;
     }
-    public boolean isDeleteWorkspaceBeforeBuildStarts() {
-        return (deleteWorkspaceBeforeBuildStarts != null && deleteWorkspaceBeforeBuildStarts.equals("on")) ? true : false;
-    }
+
 // ------------------------ INTERFACE METHODS ------------------------
 // --------------------- Interface Describable ---------------------
 
@@ -698,8 +692,7 @@ public class AccurevSCM extends SCM {
                     req.getParameter("accurev.dontPopContent") != null,
                     req.getParameter("accurev.snapshotNameFormat"), //
                     req.getParameter("accurev.directoryOffset"), //
-                    req.getParameter("accurev.ignoreStreamParent") != null,
-                    req.getParameter("hudson-plugins-ws_cleanup-PreBuildCleanup"));
+                    req.getParameter("accurev.ignoreStreamParent") != null);
         }
 
         /**
