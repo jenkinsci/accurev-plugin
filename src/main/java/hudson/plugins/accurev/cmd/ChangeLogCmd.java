@@ -71,7 +71,7 @@ public class ChangeLogCmd {
         cmd.add(dateRange); // if this breaks windows there's going to be fun
         final String commandDescription = "Changelog command";
         final Boolean success = AccurevLauncher.runCommand(commandDescription, scm.getAccurevTool(), launcher, cmd,
-                scm.getOptionalLock(), accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
+            scm.getOptionalLock(), accurevEnv, workspace, listener, logger, new ParseOutputToFile(), changelogFile);
         if (success == null || !success) {
             return false;
         }
@@ -117,8 +117,8 @@ public class ChangeLogCmd {
         if (parser == null) throw new IOException("No XML Parser");
 
         return AccurevLauncher.runCommand("Get config to fetch webURL",
-                scm.getAccurevTool(), launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
-                parser, new ParseGetConfig(), null);
+            scm.getAccurevTool(), launcher, getConfigCmd, scm.getOptionalLock(), accurevEnv, workspace, listener, logger,
+            parser, new ParseGetConfig(), null);
 
     }
 

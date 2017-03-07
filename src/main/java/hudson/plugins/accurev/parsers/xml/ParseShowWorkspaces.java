@@ -12,7 +12,7 @@ import java.util.Map;
 
 public final class ParseShowWorkspaces implements ICmdOutputXmlParser<Map<String, AccurevWorkspace>, Void> {
     public Map<String, AccurevWorkspace> parse(XmlPullParser parser, Void context)
-            throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+        throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         final Map<String, AccurevWorkspace> workspaces = new HashMap<>();
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "Element".equalsIgnoreCase(parser.getName())) {

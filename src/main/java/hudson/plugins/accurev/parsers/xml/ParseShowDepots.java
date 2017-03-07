@@ -12,7 +12,7 @@ import java.util.List;
 
 public final class ParseShowDepots implements ICmdOutputXmlParser<List<String>, Void> {
     public List<String> parse(XmlPullParser parser, Void context) throws UnhandledAccurevCommandOutput,
-            IOException, XmlPullParserException {
+        IOException, XmlPullParserException {
         final List<String> depots = new ArrayList<>();
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {

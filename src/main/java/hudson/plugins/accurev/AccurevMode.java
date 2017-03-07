@@ -50,8 +50,8 @@ public enum AccurevMode {
         @Override
         protected boolean isMode(AccurevSCM accurevSCM) {
             return !WORKSPACE.isMode(accurevSCM)
-                    && !REF_TREE.isMode(accurevSCM)
-                    && accurevSCM.isUseSnapshot();
+                && !REF_TREE.isMode(accurevSCM)
+                && accurevSCM.isUseSnapshot();
         }
 
         public boolean isNoWorkspaceOrRefTree() {
@@ -68,8 +68,8 @@ public enum AccurevMode {
         @Override
         protected boolean isMode(AccurevSCM accurevSCM) {
             return !WORKSPACE.isMode(accurevSCM)
-                    && !REF_TREE.isMode(accurevSCM)
-                    && !accurevSCM.isUseSnapshot();
+                && !REF_TREE.isMode(accurevSCM)
+                && !accurevSCM.isUseSnapshot();
         }
 
         @Override

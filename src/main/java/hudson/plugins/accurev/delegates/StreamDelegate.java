@@ -69,7 +69,7 @@ public class StreamDelegate extends AbstractModeDelegate {
             return PollingResult.NO_CHANGES;
         }
         final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server,
-                accurevEnv, jenkinsWorkspace, listener, launcher);
+            accurevEnv, jenkinsWorkspace, listener, launcher);
         if (streams == null) {
             listener.getLogger().println("Could not retrieve any Streams from Accurev, please check credentials");
             return PollingResult.NO_CHANGES;
@@ -83,7 +83,7 @@ public class StreamDelegate extends AbstractModeDelegate {
         // There may be changes in a parent stream that we need to factor in.
         do {
             if (CheckForChanges.checkStreamForChanges(server, accurevEnv, jenkinsWorkspace, listener, launcher, stream,
-                    buildDate, logger, scm)) {
+                buildDate, logger, scm)) {
                 return PollingResult.BUILD_NOW;
             }
             stream = stream.getParent();

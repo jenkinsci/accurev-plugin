@@ -63,7 +63,7 @@ public class Update extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         Boolean transactionFound = AccurevLauncher.runCommand("Update command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, parser, new ParseUpdate(), files);
+            logger, parser, new ParseUpdate(), files);
         if (transactionFound != null && transactionFound) {
             String filterForPollSCM = scm.getFilterForPollSCM();
             String subPath = scm.getSubPath();
@@ -110,8 +110,8 @@ public class Update extends Command {
                                         File changelogFile) throws IOException {
         final ArgumentListBuilder cmd = createCommand(server, false, reftree, false);
         final Boolean result = AccurevLauncher.runCommand("Update command", scm.getAccurevTool(), launcher,
-                cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, new ParseOutputToFile(), changelogFile);
+            cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
+            logger, new ParseOutputToFile(), changelogFile);
         if (result == null) return false;
         return result;
 

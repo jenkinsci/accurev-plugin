@@ -1,24 +1,24 @@
 <div>
-    <p>
-        If the <b>Create and build from snapshot</b> check box is marked, you can specify the naming conventions for the
-        snapshot in this field. The format you specify configures
-        the manner in which the snapshot is named and it allows the use of environment variables using the same syntax
-        as Apache Ant uses for property expansion. For example, a
-        literal <code>$</code> must be escaped by using <code>$$</code>, and <code>${</code><i>name</i><code>}</code>
-        resolves to the value of environment variable "<i>name</i>".
-    </p>
+  <p>
+    If the <b>Create and build from snapshot</b> check box is marked, you can specify the naming conventions for the
+    snapshot in this field. The format you specify configures
+    the manner in which the snapshot is named and it allows the use of environment variables using the same syntax
+    as Apache Ant uses for property expansion. For example, a
+    literal <code>$</code> must be escaped by using <code>$$</code>, and <code>${</code><i>name</i><code>}</code>
+    resolves to the value of environment variable "<i>name</i>".
+  </p>
 
-    <p>
-        The <b>Snapshot Name Format</b> can be set to any combination of literal text and environment variables, subject
-        to naming restrictions for AccuRev snapshots. Specifically,
-        the snapshot name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a
-        backslash (\). For example, "<code>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</code>"
-        would take the name of the stream being built, append an underscore, append the build number and, finally,
-        append "_Snapshot", which would result in a snapshot name of the
-        form "MyStreamName_1234_Snapshot".
-    </p>
+  <p>
+    The <b>Snapshot Name Format</b> can be set to any combination of literal text and environment variables, subject
+    to naming restrictions for AccuRev snapshots. Specifically,
+    the snapshot name must begin with a non-digit other than dot (.), and must not include either a slash (/) or a
+    backslash (\). For example, "<code>${ACCUREV_STREAM}_${BUILD_NUMBER}_Snapshot</code>"
+    would take the name of the stream being built, append an underscore, append the build number and, finally,
+    append "_Snapshot", which would result in a snapshot name of the
+    form "MyStreamName_1234_Snapshot".
+  </p>
 
-    <p>
-        If this option is not set, the snapshot name defaults to "<code>${JOB_NAME}_${BUILD_NUMBER}</code>".
-    </p>
+  <p>
+    If this option is not set, the snapshot name defaults to "<code>${JOB_NAME}_${BUILD_NUMBER}</code>".
+  </p>
 </div>

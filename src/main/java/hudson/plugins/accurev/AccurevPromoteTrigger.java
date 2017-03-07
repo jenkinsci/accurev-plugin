@@ -282,7 +282,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         @SuppressWarnings("unused") // Used by Jetty
         public void writeLogTo(XMLOutput out) throws IOException {
             new AnnotatedLargeText<>(getLogFile(), UTF_8, true, this)
-                    .writeHtmlTo(0, out.asWriter());
+                .writeHtmlTo(0, out.asWriter());
         }
     }
 

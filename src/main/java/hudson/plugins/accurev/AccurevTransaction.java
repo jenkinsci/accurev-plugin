@@ -188,15 +188,15 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     @Override
     public String toString() {
         return '[' + //
-                "id" + EQ + id + //
-                FIELD_SEPARATOR + //
-                "date" + EQ + date + //
-                FIELD_SEPARATOR + //
-                "author" + EQ + author + //
-                FIELD_SEPARATOR + //
-                "action" + EQ + action + //
-                FIELD_SEPARATOR + //
-                "msg" + EQ + getMsg() + //
-                ']';
+            "id" + EQ + id + //
+            FIELD_SEPARATOR + //
+            "date" + EQ + date + //
+            FIELD_SEPARATOR + //
+            "author" + EQ + author + //
+            FIELD_SEPARATOR + //
+            "action" + EQ + action + //
+            FIELD_SEPARATOR + //
+            "msg" + EQ + getMsg() + //
+            ']';
     }
 }

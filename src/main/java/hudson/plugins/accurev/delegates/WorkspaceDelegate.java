@@ -48,7 +48,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         String _accurevWorkspace = scm.getWorkspace();
         Map<String, AccurevWorkspace> workspaces = getWorkspaces();
         Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener,
-                launcher);
+            launcher);
 
         if (workspaces == null) {
             throw new IllegalArgumentException("Cannot determine workspace configuration information");
@@ -70,7 +70,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
                     workspaceStream.setParent(streams.get(workspaceBasisStream));
                 } else {
                     Map<String, AccurevStream> workspaceBasis = ShowStreams.getStreams(scm, workspaceBasisStream, server, accurevEnv, jenkinsWorkspace, listener,
-                            launcher);
+                        launcher);
                     if (workspaceBasis == null) {
                         throw new IllegalArgumentException("Could not determine the workspace basis stream");
                     }
@@ -118,7 +118,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Show workspaces command", accurevTool, launcher, cmd, scm.getOptionalLock(),
-                accurevEnv, jenkinsWorkspace, listener, logger, parser, new ParseShowWorkspaces(), null);
+            accurevEnv, jenkinsWorkspace, listener, logger, parser, new ParseShowWorkspaces(), null);
     }
 
     @Override
@@ -189,8 +189,8 @@ public class WorkspaceDelegate extends ReftreeDelegate {
             @Override
             protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
                 String oldStorage = accurevWorkspace.getStorage()
-                        .replace("/", remoteDetails.getFileSeparator())
-                        .replace("\\", remoteDetails.getFileSeparator());
+                    .replace("/", remoteDetails.getFileSeparator())
+                    .replace("\\", remoteDetails.getFileSeparator());
                 return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
             }
 

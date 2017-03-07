@@ -9,7 +9,7 @@ import java.io.OutputStream;
 
 public final class ParseOutputToStream implements AccurevLauncher.ICmdOutputParser<Boolean, OutputStream> {
     public Boolean parse(InputStream cmdOutput, OutputStream streamToCopyOutputTo)
-            throws UnhandledAccurevCommandOutput, IOException {
+        throws UnhandledAccurevCommandOutput, IOException {
         final byte[] buffer = new byte[4096];
         int bytesRead = cmdOutput.read(buffer);
         while (bytesRead > 0) {

@@ -14,7 +14,7 @@ import java.util.Map;
 public class ParseGetConfig implements ICmdOutputXmlParser<Map<String, GetConfigWebURL>, Void> {
 
     public Map<String, GetConfigWebURL> parse(XmlPullParser parser, Void context)
-            throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+        throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         final Map<String, GetConfigWebURL> getConfig = new HashMap<>();
         getConfig.put("webuiURL", new GetConfigWebURL(""));
         try {

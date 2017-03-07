@@ -37,6 +37,6 @@ public class ShowDepots extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("show depots command", "", launcher, cmd, null,
-                accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, parser, new ParseShowDepots(), null);
+            accurevEnv, jenkins.getRootPath(), listener, descriptorLogger, parser, new ParseShowDepots(), null);
     }
 }

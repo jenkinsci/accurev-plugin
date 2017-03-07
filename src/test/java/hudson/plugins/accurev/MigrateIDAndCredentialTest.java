@@ -30,8 +30,8 @@ public class MigrateIDAndCredentialTest {
     @Before
     public void setUp() throws Exception {
         AccurevServer server = new AccurevServer(null,
-                "test", "localhost",
-                5050, "bob", "OBF:1rwf1x1b1rwf");
+            "test", "localhost",
+            5050, "bob", "OBF:1rwf1x1b1rwf");
         scm = new AccurevSCM(null, "test", "test");
         scm.setServerName("test");
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
@@ -47,11 +47,11 @@ public class MigrateIDAndCredentialTest {
         AccurevServer server = AccurevSCM.configuration().getServers().get(0);
         boolean migrated = server.migrateCredentials();
         StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
-                CredentialsProvider
-                        .lookupCredentials(StandardUsernamePasswordCredentials.class,
-                                Jenkins.getInstance(), ACL.SYSTEM,
-                                URIRequirementBuilder.fromUri("").withHostnamePort("localhost", 5050).build()),
-                CredentialsMatchers.withUsername("bob"));
+            CredentialsProvider
+                .lookupCredentials(StandardUsernamePasswordCredentials.class,
+                    Jenkins.getInstance(), ACL.SYSTEM,
+                    URIRequirementBuilder.fromUri("").withHostnamePort("localhost", 5050).build()),
+            CredentialsMatchers.withUsername("bob"));
         assertTrue(migrated);
         assertNotNull(server.getCredentialsId());
         assertNotNull(server.getCredentials());

@@ -11,9 +11,7 @@ import jenkins.plugins.accurev.util.UUIDUtils;
 
 import java.util.logging.Logger;
 
-import static hudson.init.InitMilestone.COMPLETED;
-import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
-import static hudson.init.InitMilestone.JOB_LOADED;
+import static hudson.init.InitMilestone.*;
 
 /**
  * Initialized by josp on 21/09/16.
