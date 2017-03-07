@@ -67,7 +67,7 @@ public class ShowStreams extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", accurevTool, launcher, cmd, lock, accurevEnv,
-                workspace, listener, LOGGER, parser, new ParseShowStreams(), depot);
+            workspace, listener, LOGGER, parser, new ParseShowStreams(), depot);
         setParents(streams);
         return streams;
     }
@@ -116,16 +116,16 @@ public class ShowStreams extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Restricted show streams command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
-                accurevEnv, workspace, listener, LOGGER, parser, new ParseShowStreams(), scm.getDepot());
+            accurevEnv, workspace, listener, LOGGER, parser, new ParseShowStreams(), scm.getDepot());
     }
 
     private static void setParents(Map<String, AccurevStream> streams) {
         //build the tree
         if (streams != null && streams.size() > 1)
             streams.values()
-                    .stream()
-                    .filter(stream -> stream.getBasisName() != null)
-                    .forEach(stream -> stream.setParent(streams.get(stream.getBasisName())));
+                .stream()
+                .filter(stream -> stream.getBasisName() != null)
+                .forEach(stream -> stream.setParent(streams.get(stream.getBasisName())));
     }
 
     //Populating streams dynamically in the global config page
@@ -143,11 +143,11 @@ public class ShowStreams extends Command {
         if (allStreams == null) return cbm;
         if (allStreams.isEmpty()) return cbm;
         List<String> streamNames = allStreams
-                .values()
-                .stream()
-                .filter(stream -> stream.getType() != AccurevStream.StreamType.WORKSPACE)
-                .map(AccurevStream::getName)
-                .collect(Collectors.toList());
+            .values()
+            .stream()
+            .filter(stream -> stream.getType() != AccurevStream.StreamType.WORKSPACE)
+            .map(AccurevStream::getName)
+            .collect(Collectors.toList());
         cbm.addAll(streamNames);
         Collections.sort(cbm);
         return cbm;

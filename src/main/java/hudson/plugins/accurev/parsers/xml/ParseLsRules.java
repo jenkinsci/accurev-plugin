@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 final class ParseLsRules implements ICmdOutputXmlParser<HashMap<String, String>, Void> {
     public HashMap<String, String> parse(final XmlPullParser parser, final Void context)
-            throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+        throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         // Parse the 'accurev lsrules' command, and build up the
         // include/exclude rules map
         final HashMap<String, String> locationToKindMap = new HashMap<>();

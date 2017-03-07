@@ -72,16 +72,16 @@ public final class AccurevLauncher {
                                      @Nullable final boolean... optionalFlagToCopyAllOutputToTaskListener) throws IOException {
         final Boolean result;
         final boolean shouldLogEverything = optionalFlagToCopyAllOutputToTaskListener != null
-                && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
+            && optionalFlagToCopyAllOutputToTaskListener.length > 0 && optionalFlagToCopyAllOutputToTaskListener[0];
         if (shouldLogEverything) {
             result = runCommand(humanReadableCommandName, accurevTool, launcher,
-                    machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
-                    directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo,
-                    new ParseOutputToStream(), listenerToLogFailuresTo.getLogger());
+                machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
+                directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo,
+                new ParseOutputToStream(), listenerToLogFailuresTo.getLogger());
         } else {
             result = runCommand(humanReadableCommandName, accurevTool, launcher,
-                    machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
-                    directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
+                machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
+                directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo, new ParseIgnoreOutput(), null);
         }
         if (result == null) return false;
         return result;
@@ -125,33 +125,33 @@ public final class AccurevLauncher {
                                                          @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
                                                          @Nullable final TContext commandOutputParserContext) throws IOException {
         return runCommand(humanReadableCommandName, accurevTool, launcher,
-                machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
-                directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
-                    XmlPullParser parser = null;
-                    try {
-                        parser = xmlParserFactory.newPullParser();
-                        parser.setInput(cmdOutput, null);
-                        final TResult result = commandOutputParser.parse(parser, context);
-                        parser.setInput(null);
-                        parser = null;
-                        return result;
-                    } catch (XmlPullParserException ex) {
-                        logCommandException(machineReadableCommand, directoryToRunCommandFrom,
-                                humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
-                        return null;
-                    } finally {
-                        if (parser != null) {
-                            try {
-                                parser.setInput(null);
-                            } catch (XmlPullParserException ex) {
-                                logCommandException(machineReadableCommand, directoryToRunCommandFrom,
-                                        humanReadableCommandName, ex, loggerToLogFailuresTo,
-                                        listenerToLogFailuresTo);
-                            }
-                            cmdOutput.close();
+            machineReadableCommand, synchronizationLockObjectOrNull, environmentVariables,
+            directoryToRunCommandFrom, listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
+                XmlPullParser parser = null;
+                try {
+                    parser = xmlParserFactory.newPullParser();
+                    parser.setInput(cmdOutput, null);
+                    final TResult result = commandOutputParser.parse(parser, context);
+                    parser.setInput(null);
+                    parser = null;
+                    return result;
+                } catch (XmlPullParserException ex) {
+                    logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                        humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                    return null;
+                } finally {
+                    if (parser != null) {
+                        try {
+                            parser.setInput(null);
+                        } catch (XmlPullParserException ex) {
+                            logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                humanReadableCommandName, ex, loggerToLogFailuresTo,
+                                listenerToLogFailuresTo);
                         }
+                        cmdOutput.close();
                     }
-                }, commandOutputParserContext);
+                }
+            }, commandOutputParserContext);
     }
 
     /**
@@ -197,22 +197,22 @@ public final class AccurevLauncher {
             final OutputStream stdoutStream = stdout.getOutput();
             final OutputStream stderrStream = stderr.getOutput();
             final ProcStarter starter = createProcess(launcher, machineReadableCommand,
-                    environmentVariables, directoryToRunCommandFrom, listenerToLogFailuresTo, stdoutStream, stderrStream, accurevTool);
+                environmentVariables, directoryToRunCommandFrom, listenerToLogFailuresTo, stdoutStream, stderrStream, accurevTool);
             logCommandExecution(humanReadableCommandName, machineReadableCommand, directoryToRunCommandFrom, loggerToLogFailuresTo,
-                    listenerToLogFailuresTo);
+                listenerToLogFailuresTo);
             try {
                 final int commandExitCode = runCommandToCompletion(starter, synchronizationLockObjectOrNull);
                 final InputStream outputFromCommand = stdout.getInput();
                 final InputStream errorFromCommand = stderr.getInput();
                 if (commandExitCode != 0) {
                     logCommandFailure(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName,
-                            commandExitCode, outputFromCommand, errorFromCommand, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                        commandExitCode, outputFromCommand, errorFromCommand, loggerToLogFailuresTo, listenerToLogFailuresTo);
                     return null;
                 }
                 return commandOutputParser.parse(outputFromCommand, commandOutputParserContext);
             } catch (Exception ex) {
                 logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName, ex,
-                        loggerToLogFailuresTo, listenerToLogFailuresTo);
+                    loggerToLogFailuresTo, listenerToLogFailuresTo);
                 return null;
             }
         } catch (InterruptedException | IOException ex) {
@@ -271,13 +271,13 @@ public final class AccurevLauncher {
     }
 
     private static ProcStarter createProcess(
-            @Nonnull final Launcher launcher,
-            @Nonnull final ArgumentListBuilder machineReadableCommand,
-            @Nonnull final EnvVars environmentVariables,
-            @Nonnull final FilePath directoryToRunCommandFrom,
-            @Nonnull TaskListener listener,
-            @Nonnull final OutputStream stdoutStream,
-            @Nonnull final OutputStream stderrStream, String accurevTool) throws IllegalStateException, IOException, InterruptedException {
+        @Nonnull final Launcher launcher,
+        @Nonnull final ArgumentListBuilder machineReadableCommand,
+        @Nonnull final EnvVars environmentVariables,
+        @Nonnull final FilePath directoryToRunCommandFrom,
+        @Nonnull TaskListener listener,
+        @Nonnull final OutputStream stdoutStream,
+        @Nonnull final OutputStream stderrStream, String accurevTool) throws IllegalStateException, IOException, InterruptedException {
         String accurevPath = getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener);
         if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
         if (!accurevPath.equals(machineReadableCommand.toCommandArray()[0]))
@@ -314,10 +314,10 @@ public final class AccurevLauncher {
             stderr = getCommandErrorOutput(commandStdoutOrNull, commandStderrOrNull);
         } catch (IOException ex) {
             logCommandException(command, directoryToRunCommandFrom, commandDescription, ex, loggerToLogFailuresTo,
-                    taskListener);
+                taskListener);
         }
         if (loggerToLogFailuresTo != null
-                && (loggerToLogFailuresTo.isLoggable(Level.WARNING) || loggerToLogFailuresTo.isLoggable(Level.INFO))) {
+            && (loggerToLogFailuresTo.isLoggable(Level.WARNING) || loggerToLogFailuresTo.isLoggable(Level.INFO))) {
             final String hostname = getRemoteHostname(directoryToRunCommandFrom);
             loggerToLogFailuresTo.warning(hostname + ": " + msg);
             if (stderr != null) {
@@ -367,7 +367,7 @@ public final class AccurevLauncher {
                                             final TaskListener taskListener) throws IOException {
         final String hostname = getRemoteHostname(directoryToRunCommandFrom);
         final String msg = hostname + ": " + commandDescription + " (" + command.toString() + ")"
-                + " failed with " + exception.toString();
+            + " failed with " + exception.toString();
         logException(msg, exception, loggerToLogFailuresTo, taskListener);
     }
 

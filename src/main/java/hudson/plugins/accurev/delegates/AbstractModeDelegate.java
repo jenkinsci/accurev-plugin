@@ -119,7 +119,7 @@ public abstract class AbstractModeDelegate {
 
         listener.getLogger().println("Getting a list of streams...");
         final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener,
-                launcher);
+            launcher);
         if (streams == null) {
             throw new IllegalStateException("Stream(s) not found");
         }
@@ -161,7 +161,7 @@ public abstract class AbstractModeDelegate {
         }
 
         listener.getLogger().println(
-                "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
+            "Calculating changelog" + (scm.isIgnoreStreamParent() ? ", ignoring changes in parent" : "") + "...");
 
         final Calendar startTime;
         Run<?, ?> previousBuild = null;
@@ -178,8 +178,8 @@ public abstract class AbstractModeDelegate {
         if (stream == null) {
             // if there was a problem, fall back to simple stream check
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher,
-                    startDateOfPopulate, startTime.getTime(),
-                    localStream, changelogFile, logger, scm, webURL);
+                startDateOfPopulate, startTime.getTime(),
+                localStream, changelogFile, logger, scm, webURL);
         }
 
         // Too confusing reading it
@@ -189,7 +189,7 @@ public abstract class AbstractModeDelegate {
         // High potential for simple rewrite!
         if (!getChangesFromStreams(startTime, stream, changelogFile, webURL)) {
             return ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher, startDateOfPopulate,
-                    startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
+                startTime.getTime(), localStream, changelogFile, logger, scm, webURL);
         }
         return true;
     }
@@ -205,7 +205,7 @@ public abstract class AbstractModeDelegate {
         do {
             File streamChangeLog = XmlConsolidateStreamChangeLog.getStreamChangeLogFile(changelogFile, stream);
             capturedChangelog = ChangeLogCmd.captureChangelog(server, accurevEnv, accurevWorkingSpace, listener, launcher,
-                    startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog, logger, scm, webURL);
+                startDateOfPopulate, startTime == null ? null : startTime.getTime(), stream.getName(), streamChangeLog, logger, scm, webURL);
             if (capturedChangelog) {
                 changedStreams.add(streamChangeLog.getName());
             }
@@ -222,7 +222,7 @@ public abstract class AbstractModeDelegate {
         AccurevStream stream = streams.get(getChangeLogStream());
         do {
             AccurevTransaction other = History.getLatestTransaction(scm,
-                    server, accurevEnv, accurevWorkingSpace, listener, launcher, stream.getName(), null);
+                server, accurevEnv, accurevWorkingSpace, listener, launcher, stream.getName(), null);
             if (null == transaction && null != other) transaction = other;
             else if ((null != transaction && null != other) && Integer.parseInt(other.getId()) > Integer.parseInt(transaction.getId())) {
                 transaction = other;

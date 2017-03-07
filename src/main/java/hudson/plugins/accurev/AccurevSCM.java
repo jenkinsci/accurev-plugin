@@ -79,7 +79,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundConstructor
     public AccurevSCM(
-            String serverUUID, String depot, String stream
+        String serverUUID, String depot, String stream
     ) {
         this.serverUUID = serverUUID;
         this.depot = depot;
@@ -438,11 +438,11 @@ public class AccurevSCM extends SCM {
         String parsedLocalStream;
         if (hasStringVariableReference(stream)) {
             ParametersDefinitionProperty paramDefProp = project
-                    .getProperty(ParametersDefinitionProperty.class);
+                .getProperty(ParametersDefinitionProperty.class);
 
             if (paramDefProp == null) {
                 throw new IllegalArgumentException(
-                        "Polling is not supported when stream name has a variable reference '" + stream + "'.");
+                    "Polling is not supported when stream name has a variable reference '" + stream + "'.");
             }
 
             Map<String, String> keyValues = new TreeMap<>();
@@ -467,7 +467,7 @@ public class AccurevSCM extends SCM {
 
         if (hasStringVariableReference(parsedLocalStream)) {
             throw new IllegalArgumentException(
-                    "Failed to expand variable reference '" + stream + "'.");
+                "Failed to expand variable reference '" + stream + "'.");
         }
         return parsedLocalStream;
     }
@@ -690,10 +690,10 @@ public class AccurevSCM extends SCM {
 
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-                .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
+            .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
         protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
-                .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
-                        "mkstream", "move", "promote", "purge", "dispatch"));
+            .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
+                "mkstream", "move", "promote", "purge", "dispatch"));
         // keep all transaction types in a set for validation
         private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
@@ -834,11 +834,11 @@ public class AccurevSCM extends SCM {
             if (StringUtils.isBlank(credentialsId)) return null;
             else {
                 return CredentialsMatchers.firstOrNull(
-                        CredentialsProvider
-                                .lookupCredentials(StandardUsernamePasswordCredentials.class,
-                                        Jenkins.getInstance(), ACL.SYSTEM,
-                                        URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build()),
-                        CredentialsMatchers.withId(credentialsId)
+                    CredentialsProvider
+                        .lookupCredentials(StandardUsernamePasswordCredentials.class,
+                            Jenkins.getInstance(), ACL.SYSTEM,
+                            URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build()),
+                    CredentialsMatchers.withId(credentialsId)
                 );
             }
         }
@@ -953,14 +953,14 @@ public class AccurevSCM extends SCM {
                 String secret = deobfuscate(password);
                 String credentialsId = "";
                 List<DomainRequirement> domainRequirements = Util.fixNull(URIRequirementBuilder
-                        .fromUri("")
-                        .withHostnamePort(host, port)
-                        .build());
+                    .fromUri("")
+                    .withHostnamePort(host, port)
+                    .build());
                 List<StandardUsernamePasswordCredentials> credentials = CredentialsMatchers.filter(
-                        CredentialsProvider.lookupCredentials(
-                                StandardUsernamePasswordCredentials.class,
-                                Jenkins.getInstance(), ACL.SYSTEM, domainRequirements),
-                        CredentialsMatchers.withUsername(username)
+                    CredentialsProvider.lookupCredentials(
+                        StandardUsernamePasswordCredentials.class,
+                        Jenkins.getInstance(), ACL.SYSTEM, domainRequirements),
+                    CredentialsMatchers.withUsername(username)
                 );
                 for (StandardUsernamePasswordCredentials cred : credentials) {
                     if (StringUtils.equals(secret, Secret.toString(cred.getPassword()))) {
@@ -974,7 +974,7 @@ public class AccurevSCM extends SCM {
                     // If we couldn't find any existing credentials,
                     // create new credentials with the principal and secret and use it.
                     StandardUsernamePasswordCredentials newCredentials = new UsernamePasswordCredentialsImpl(
-                            CredentialsScope.SYSTEM, null, "Migrated by Accurev Plugin", username, secret);
+                        CredentialsScope.SYSTEM, null, "Migrated by Accurev Plugin", username, secret);
                     SystemCredentialsProvider.getInstance().getCredentials().add(newCredentials);
                     credentialsId = newCredentials.getId();
                     this.credentialsId = credentialsId;
@@ -1011,13 +1011,13 @@ public class AccurevSCM extends SCM {
                     return new StandardListBoxModel().includeCurrentValue(credentialsId);
                 }
                 return new StandardListBoxModel()
-                        .includeEmptyValue()
-                        .includeMatchingAs(ACL.SYSTEM,
-                                Jenkins.getInstance(),
-                                StandardUsernamePasswordCredentials.class,
-                                URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
-                                CredentialsMatchers.always()
-                        );
+                    .includeEmptyValue()
+                    .includeMatchingAs(ACL.SYSTEM,
+                        Jenkins.getInstance(),
+                        StandardUsernamePasswordCredentials.class,
+                        URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
+                        CredentialsMatchers.always()
+                    );
             }
         }
     }

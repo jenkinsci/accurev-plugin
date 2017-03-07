@@ -12,7 +12,7 @@ import java.nio.charset.Charset;
  */
 public final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStream> {
     public Boolean parse(InputStream cmdOutput, OutputStream streamToCopyOutputTo)
-            throws UnhandledAccurevCommandOutput, IOException {
+        throws UnhandledAccurevCommandOutput, IOException {
         final String lineStartDirectory = "Creating dir:";
         final String lineStartElement = "Populating element";
         int countOfDirectories = 0;

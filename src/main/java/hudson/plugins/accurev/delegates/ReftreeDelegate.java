@@ -109,8 +109,8 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Show ref trees command", accurevTool,
-                launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
-                parser, new ParseShowReftrees(), null);
+            launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
+            parser, new ParseShowReftrees(), null);
     }
 
     @Override
@@ -161,7 +161,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         relocation.appendCommands(relocateCommand);
 
         return AccurevLauncher.runCommand("relocation command", accurevTool, launcher,
-                relocateCommand, scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true);
+            relocateCommand, scm.getOptionalLock(), accurevEnv, accurevWorkingSpace, listener, logger, true);
     }
 
     protected ArgumentListBuilder getRelocateCommand() {
@@ -205,8 +205,8 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             @Override
             protected boolean isRequired(AccurevReferenceTree accurevReftree, RemoteWorkspaceDetails remoteDetails) {
                 String oldStorage = accurevReftree.getStorage()
-                        .replace("/", remoteDetails.getFileSeparator())
-                        .replace("\\", remoteDetails.getFileSeparator());
+                    .replace("/", remoteDetails.getFileSeparator())
+                    .replace("\\", remoteDetails.getFileSeparator());
                 return !new File(oldStorage).equals(new File(remoteDetails.getPath()));
             }
 

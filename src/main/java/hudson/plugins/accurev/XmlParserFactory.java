@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 public class XmlParserFactory {
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     private static final Map<Object, XmlPullParserFactory> PARSER_FACTORY_CACHE = new WeakHashMap<>(
-            1);
+        1);
 
     /**
      * Gets a new {@link XmlPullParser} configured for parsing Accurev XML
@@ -53,7 +53,7 @@ public class XmlParserFactory {
                 newFactory = XmlPullParserFactory.newInstance();
             } catch (XmlPullParserException ex) {
                 AccurevLauncher.logException("Unable to create new " + XmlPullParserFactory.class.getSimpleName(), ex,
-                        logger, null);
+                    logger, null);
                 return null;
             }
             newFactory.setNamespaceAware(false);

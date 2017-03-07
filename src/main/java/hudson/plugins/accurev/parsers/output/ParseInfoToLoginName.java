@@ -27,6 +27,6 @@ public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void
             }
         }
         throw new UnhandledAccurevCommandOutput("Output did not contain " + usernameHeading + " "
-                + controlCharsOrSpaceRegex + " <username>");
+            + controlCharsOrSpaceRegex + " <username>");
     }
 }

@@ -63,7 +63,7 @@ public class XmlConsolidateStreamChangeLog {
             streamWriter.writeEndDocument();
         } catch (FileNotFoundException | XMLStreamException ex) {
             AccurevLauncher.logException("Unable to create consolidated changelog " + XmlConsolidateStreamChangeLog.class.getSimpleName(), ex,
-                    logger, null);
+                logger, null);
         }
 
     }

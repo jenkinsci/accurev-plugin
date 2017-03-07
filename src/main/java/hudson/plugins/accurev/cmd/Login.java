@@ -38,7 +38,7 @@ public class Login extends Command {
         addServer(cmd, server);
         // returns username
         return AccurevLauncher.runCommand(commandDescription, accurevTool, launcher, cmd, null,
-                accurevEnv, workspace, listener, logger, new ParseInfoToLoginName(), null);
+            accurevEnv, workspace, listener, logger, new ParseInfoToLoginName(), null);
     }
 
     public static boolean ensureLoggedInToAccurev(AccurevSCM scm, AccurevServer server, EnvVars accurevEnv, FilePath pathToRunCommandsIn, TaskListener listener,
@@ -64,7 +64,7 @@ public class Login extends Command {
                 } else {
                     loginRequired = !currentUsername.equals(requiredUsername);
                     listener.getLogger().println(
-                            "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
+                        "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
                 }
             } else {
                 loginRequired = true;

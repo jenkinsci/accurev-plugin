@@ -52,8 +52,8 @@ public class CheckForChanges {
             validTransactionTypes = AccurevServer.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
         }
         listener.getLogger().println(//
-                "Checking transactions of type " + String.join(", ", validTransactionTypes) + //
-                        " in stream [" + stream.getName() + "]");
+            "Checking transactions of type " + String.join(", ", validTransactionTypes) + //
+                " in stream [" + stream.getName() + "]");
         boolean isTransLatestThanBuild = false;
 
         Collection<String> serverPaths;
@@ -62,10 +62,10 @@ public class CheckForChanges {
         for (final String transactionType : validTransactionTypes) {
             try {
                 final AccurevTransaction tempTransaction = History.getLatestTransaction(scm, server, accurevEnv, workspace,
-                        listener, launcher, stream.getName(), transactionType);
+                    listener, launcher, stream.getName(), transactionType);
                 if (tempTransaction != null) {
                     listener.getLogger().println(
-                            "Last transaction of type [" + transactionType + "] is " + tempTransaction);
+                        "Last transaction of type [" + transactionType + "] is " + tempTransaction);
 
                     if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
                         //check the affected

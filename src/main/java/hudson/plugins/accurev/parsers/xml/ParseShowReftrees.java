@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class ParseShowReftrees implements ICmdOutputXmlParser<Map<String, AccurevReferenceTree>, Void> {
     public Map<String, AccurevReferenceTree> parse(XmlPullParser parser, Void context)
-            throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+        throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         final Map<String, AccurevReferenceTree> reftrees = new HashMap<>();
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "Element".equalsIgnoreCase(parser.getName())) {

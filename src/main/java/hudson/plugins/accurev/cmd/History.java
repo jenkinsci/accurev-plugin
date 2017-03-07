@@ -66,7 +66,7 @@ public class History extends Command {
         if (parser == null) throw new IOException("No XML Parser");
         final List<AccurevTransaction> transaction = new ArrayList<>(1);
         final Boolean transactionFound = AccurevLauncher.runCommand("History command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
-                logger, parser, new ParseHistory(), transaction);
+            logger, parser, new ParseHistory(), transaction);
         if (transactionFound == null) {
             final String msg = "History command failed when trying to get the latest transaction of type " + transactionType;
             throw new IOException(msg);

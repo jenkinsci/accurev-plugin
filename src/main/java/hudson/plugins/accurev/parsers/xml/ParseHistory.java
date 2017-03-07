@@ -12,7 +12,7 @@ import java.util.List;
 
 public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
     public Boolean parse(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput,
-            IOException, XmlPullParserException {
+        IOException, XmlPullParserException {
         AccurevTransaction resultTransaction = null;
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG) {
@@ -22,7 +22,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     resultTransaction.setId((parser.getAttributeValue("", "id")));
                     resultTransaction.setAction(parser.getAttributeValue("", "type"));
                     resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
-                            "time")));
+                        "time")));
                     resultTransaction.setUser(parser.getAttributeValue("", "user"));
                 } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
                     // parse comments

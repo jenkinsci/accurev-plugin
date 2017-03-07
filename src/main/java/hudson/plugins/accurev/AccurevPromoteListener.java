@@ -68,10 +68,10 @@ public class AccurevPromoteListener implements MqttCallback {
                 Map<String, AccurevStream> streams = ShowStreams.getAllStreams(null, server, promoteDepot, null, env, path, listener, launcher);
 
                 triggers.stream()
-                        //Filter promote triggers based on matching depot and stream
-                        .filter(t -> t.checkForChanges(promoteDepot, promoteStream, promoteTrans, streams))
-                        //Schedule triggers with matching depot and stream
-                        .forEach(t -> t.scheduleBuild(promoteAuthor, promoteStream));
+                    //Filter promote triggers based on matching depot and stream
+                    .filter(t -> t.checkForChanges(promoteDepot, promoteStream, promoteTrans, streams))
+                    //Schedule triggers with matching depot and stream
+                    .forEach(t -> t.scheduleBuild(promoteAuthor, promoteStream));
             } catch (JSONException ex) {
                 LOGGER.warning("Failed to convert to JSON: " + ex.getMessage());
             } catch (Exception ex) {
