@@ -337,14 +337,14 @@ public abstract class AbstractModeDelegate {
             logger.info("Last transaction from jenkin " + lastTransaction);
             String stream = getPopulateStream();
             PopulateCmd pop = new PopulateCmd();
-            if (lastTransaction == 0) {
+            if (lastTransaction == 0 || scm.isDeleteWorkspaceBeforeBuildStarts()) {
                 if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv,
                         null))
                     startDateOfPopulate = pop.get_startDateOfPopulate();
                 else
                     return false;
             }
-            else {
+            else if (lastTransaction > 0) {
                 String filePath = getFileRevisionsTobePopulated(build, lastTransaction, stream);
                 logger.info("populate file path " + filePath);
                 if (filePath != null) {
@@ -359,7 +359,9 @@ public abstract class AbstractModeDelegate {
                 }
             }
             if (scm.isBuildFromWorkspace()) {
-                populateFileFromWorkspace(build);
+                int workspaceTransaction = NumberUtils.toInt(WorkspaceTransaction.getWorkspaceLastTransaction(build.getParent()), 0);
+                logger.info("Last transaction from workspace  " + workspaceTransaction);
+                buildDirectlyFromWorkspace(build, workspaceTransaction);
             }
         }
         else {
@@ -520,16 +522,15 @@ public abstract class AbstractModeDelegate {
      * Build directly from the workspace which will take all the promote versions from stream and all the keep versions from the workspace
      * for build.
      * 
+     * @param lastTransaction
      * @return
      * @throws IOException
      */
-    private void populateFileFromWorkspace(Run<?, ?> build) throws IOException {
-        int workspaceTransaction = NumberUtils.toInt(WorkspaceTransaction.getWorkspaceLastTransaction(build.getParent()), 0);
-        logger.info("Last transaction from workspace  " + workspaceTransaction);
+    private void buildDirectlyFromWorkspace(Run<?, ?> build, int lastTransaction) throws IOException {
         String workspaceName = scm.getWorkspaceName();
         PopulateCmd pop = new PopulateCmd();
         // populate all the keep versions from the workspace.
-        String filePath = getFileRevisionsTobePopulated(build, workspaceTransaction, workspaceName);
+        String filePath = getFileRevisionsTobePopulated(build, lastTransaction, workspaceName);
         if (filePath != null) {
             if (pop.populate(scm, launcher, listener, server, scm.getWorkspaceName(), true, getPopulateFromMessage(), accurevWorkingSpace,
                     accurevEnv, filePath))
