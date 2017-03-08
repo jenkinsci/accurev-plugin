@@ -5,6 +5,8 @@ import hudson.Util;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import hudson.model.listeners.ItemListener;
+import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.StreamTaskListener;
@@ -37,15 +39,15 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         super();
     }
 
-    public synchronized static void initServer(String host, AccurevSCM.AccurevServer server) {
+    public synchronized static void initServer(String host, AccurevServer server) {
         if (!listeners.containsKey(host) && server.isUsePromoteListen()) {
             listeners.put(host, new AccurevPromoteListener(server));
         }
     }
 
     public synchronized static void validateListeners() {
-        AccurevSCM.AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCM.AccurevSCMDescriptor.class);
-        for (AccurevSCM.AccurevServer server : descriptor.getServers()) {
+        AccurevSCMDescriptor descriptor = Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
+        for (AccurevServer server : descriptor.getServers()) {
             initServer(server.getHost(), server);
         }
         for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
@@ -87,7 +89,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
     @Override
     public void start(AbstractProject<?, ?> project, boolean newInstance) {
         super.start(project, newInstance);
-        AccurevSCM.AccurevServer server = getServer();
+        AccurevServer server = getServer();
         String host = server.getHost();
         if (StringUtils.isNotEmpty(host)) {
             initServer(host, server);
@@ -135,7 +137,7 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
         return scm == null ? "" : scm.getStream();
     }
 
-    public AccurevSCM.AccurevServer getServer() {
+    public AccurevServer getServer() {
         AccurevSCM scm = getScm();
         if (null != scm) {
             return scm.getServer();

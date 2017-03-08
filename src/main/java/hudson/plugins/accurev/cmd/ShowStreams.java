@@ -13,7 +13,6 @@ import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ComboBoxModel;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import javax.annotation.CheckForNull;
@@ -27,7 +26,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class ShowStreams extends Command {
-    private static final Logger logger = Logger.getLogger(ShowStreams.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ShowStreams.class.getName());
 
     @CheckForNull
     public static Map<String, AccurevStream> getStreams(//
@@ -68,7 +67,7 @@ public class ShowStreams extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", accurevTool, launcher, cmd, lock, accurevEnv,
-                workspace, listener, logger, parser, new ParseShowStreams(), depot);
+                workspace, listener, LOGGER, parser, new ParseShowStreams(), depot);
         setParents(streams);
         return streams;
     }
@@ -117,7 +116,7 @@ public class ShowStreams extends Command {
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
         return AccurevLauncher.runCommand("Restricted show streams command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
-                accurevEnv, workspace, listener, logger, parser, new ParseShowStreams(), scm.getDepot());
+                accurevEnv, workspace, listener, LOGGER, parser, new ParseShowStreams(), scm.getDepot());
     }
 
     private static void setParents(Map<String, AccurevStream> streams) {
@@ -136,14 +135,14 @@ public class ShowStreams extends Command {
                                                           final String depot,
                                                           final ComboBoxModel cbm
     ) throws IOException {
-
-        if (StringUtils.isEmpty(depot)) return cbm;
-
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);
         EnvVars accurevEnv = new EnvVars();
-        List<String> streamNames = getAllStreams(null, server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher)
+        Map<String, AccurevStream> allStreams = getAllStreams(null, server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher);
+        if (allStreams == null) return cbm;
+        if (allStreams.isEmpty()) return cbm;
+        List<String> streamNames = allStreams
                 .values()
                 .stream()
                 .filter(stream -> stream.getType() != AccurevStream.StreamType.WORKSPACE)

@@ -2,63 +2,67 @@
   Displays the Subversion change log.
 -->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
-         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <j:choose>
-        <j:when test="${it.emptySet}">
-            <h2>No changes</h2>
-        </j:when>
-        <j:otherwise>
-            <h2>Summary</h2>
-            <ol>
-                <j:forEach var="cs" items="${it.items}">
-                    <li>
-                        <st:out value="${cs.msg}"/>
-                    </li>
-                </j:forEach>
-            </ol>
-            <table class="pane" style="border:none">
-                <j:forEach var="cs" items="${it.items}" varStatus="loop">
-                    <tr class="pane">
-                        <td colspan="2" class="changeset">
-                            <a name="detail${loop.index}"></a>
-                            <div class="changeset-message">
-								
-								<j:choose>
-									<j:when test="${!empty(cs.issueNum) &amp;&amp; empty(cs.webuiURLforIssue)}">
-										<b>AccuWork Issue Number - ${cs.issueNum}</b>
-										<br/>
-									</j:when>
-									<j:when test="${!empty(cs.issueNum) &amp;&amp; !empty(cs.webuiURLforIssue)}">
-										<b>AccuWork Issue Number - <a href="${cs.webuiURLforIssue}">${cs.issueNum}</a></b>
-										<br/>
-									</j:when>
-									<j:otherwise></j:otherwise>									
-								</j:choose>								
-                                <b>Transaction 
-								<j:choose>
-									<j:when test="${empty(cs.webuiURLforTrans)}">${cs.id}</j:when>									
-									<j:otherwise><a href="${cs.webuiURLforTrans}">${cs.id}</a></j:otherwise>
-								</j:choose>
-								 by
-                                    <a href="${rootURL}/${cs.author.url}/">${cs.author}</a>
-                                    :
-                                </b>
-                                <br/>
-                                ${cs.msgAnnotated}
-                            </div>
-                        </td>
-                        <j:forEach var="p" items="${cs.affectedPaths}">
-                            <tr>
-                                <td>
-                                    <t:editTypeIcon type="${cs.editType}"/>
-                                </td>
-                                <td>${p}</td>
-                            </tr>
-                        </j:forEach>						
-                    </tr>
-                </j:forEach>
-            </table>
-        </j:otherwise>
-    </j:choose>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+         xmlns:t="/lib/hudson">
+  <j:choose>
+    <j:when test="${it.emptySet}">
+      <h2>No changes</h2>
+    </j:when>
+    <j:otherwise>
+      <h2>Summary</h2>
+      <ol>
+        <j:forEach var="cs" items="${it.items}">
+          <li>
+            <st:out value="${cs.msg}"/>
+          </li>
+        </j:forEach>
+      </ol>
+      <table class="pane" style="border:none">
+        <j:forEach var="cs" items="${it.items}" varStatus="loop">
+          <tr class="pane">
+            <td colspan="2" class="changeset">
+              <a name="detail${loop.index}"></a>
+              <div class="changeset-message">
+
+                <j:choose>
+                  <j:when test="${!empty(cs.issueNum) &amp;&amp; empty(cs.webuiURLforIssue)}">
+                    <b>AccuWork Issue Number - ${cs.issueNum}</b>
+                    <br/>
+                  </j:when>
+                  <j:when test="${!empty(cs.issueNum) &amp;&amp; !empty(cs.webuiURLforIssue)}">
+                    <b>AccuWork Issue Number -
+                      <a href="${cs.webuiURLforIssue}">${cs.issueNum}</a>
+                    </b>
+                    <br/>
+                  </j:when>
+                  <j:otherwise></j:otherwise>
+                </j:choose>
+                <b>Transaction
+                  <j:choose>
+                    <j:when test="${empty(cs.webuiURLforTrans)}">${cs.id}</j:when>
+                    <j:otherwise>
+                      <a href="${cs.webuiURLforTrans}">${cs.id}</a>
+                    </j:otherwise>
+                  </j:choose>
+                  by
+                  <a href="${rootURL}/${cs.author.url}/">${cs.author}</a>
+                  :
+                </b>
+                <br/>
+                ${cs.msgAnnotated}
+              </div>
+            </td>
+            <j:forEach var="p" items="${cs.affectedPaths}">
+              <tr>
+                <td>
+                  <t:editTypeIcon type="${cs.editType}"/>
+                </td>
+                <td>${p}</td>
+              </tr>
+            </j:forEach>
+          </tr>
+        </j:forEach>
+      </table>
+    </j:otherwise>
+  </j:choose>
 </j:jelly>

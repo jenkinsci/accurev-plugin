@@ -36,17 +36,17 @@ import java.util.logging.Logger;
 public class ChangeLogCmd {
 
     public static boolean captureChangelog(AccurevServer server,
-                                           EnvVars accurevEnv,
-                                           FilePath workspace,
-                                           TaskListener listener,
-                                           Launcher launcher,
-                                           Date buildDate,
-                                           Date startDate,
-                                           String stream,
-                                           File changelogFile,
-                                           Logger logger,
-                                           AccurevSCM scm,
-                                           Map<String, GetConfigWebURL> webURL) throws IOException {
+            EnvVars accurevEnv,
+            FilePath workspace,
+            TaskListener listener,
+            Launcher launcher,
+            Date buildDate,
+            Date startDate,
+            String stream,
+            File changelogFile,
+            Logger logger,
+            AccurevSCM scm,
+            Map<String, GetConfigWebURL> webURL) throws IOException {
         final String accurevACSYNCEnvVar = "AC_SYNC";
         if (!accurevEnv.containsKey(accurevACSYNCEnvVar)) {
             final String accurevACSYNC = "IGNORE";
@@ -65,7 +65,8 @@ public class ChangeLogCmd {
         String dateRange = formatter.format(buildDate);
         if (startDate != null) {
             dateRange += "-" + formatter.format(startDate);
-        } else {
+        }
+        else {
             dateRange += ".100";
         }
         cmd.add(dateRange); // if this breaks windows there's going to be fun
@@ -75,13 +76,13 @@ public class ChangeLogCmd {
         if (success == null || !success) {
             return false;
         }
-        //==============================================================================================
-        //See the content of changelogfile
+        // ==============================================================================================
+        // See the content of changelogfile
 
         if (changelogFile != null) {
             applyWebURL(webURL, changelogFile, scm);
         }
-        //=============================================================================================
+        // =============================================================================================
         listener.getLogger().println("Changelog calculated successfully.");
         return true;
     }

@@ -41,6 +41,7 @@ public class PopulateCmd extends Command {
      * @param fromMessage from Messge
      * @param workspace   Accurev Workspace
      * @param accurevEnv  Accurev Environment
+     * @param files       list of files to be populated
      * @return boolean
      * @throws IOException Handle it above
      */
