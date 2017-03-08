@@ -1,6 +1,6 @@
 # Jenkins Accurev Plugin
 
-Read more: [https://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin](https://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin)
+Read more: [https://plugins.jenkins.io/accurev](https://plugins.jenkins.io/accurev)
 
 #Bug Reports
 
