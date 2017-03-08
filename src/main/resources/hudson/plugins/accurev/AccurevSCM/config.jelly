@@ -28,12 +28,6 @@
                             <f:entry title="Workspace">
                                 <f:textbox name="accurev.workspace" value="${scm.workspace}"/>
                             </f:entry>
-                        </f:radioBlock>	
-                        <f:radioBlock name="accurev.wspaceORreftree" value="buildwspace" title="Build Directly From Workspace" checked="${scm.buildFromWorkspace}"
-                                      help="/plugin/accurev/help/project/build-from-workspace.html">
-                            <f:entry title="Workspace Name">
-                                <f:textbox name="accurev.workspaceName" value="${scm.workspaceName}"/>
-                            </f:entry>
                         </f:radioBlock>			
                         <f:radioBlock name="accurev.wspaceORreftree" value="reftree" title="Use Reference Tree" checked="${scm.useReftree}"
                                       help="/plugin/accurev/help/project/reftree.html">

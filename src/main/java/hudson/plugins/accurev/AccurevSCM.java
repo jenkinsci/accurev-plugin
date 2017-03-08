@@ -1,34 +1,5 @@
 package hudson.plugins.accurev;
 
-import hudson.EnvVars;
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.Util;
-import hudson.model.ModelObject;
-import hudson.model.ParameterValue;
-import hudson.model.TaskListener;
-import hudson.model.AbstractBuild;
-import hudson.model.Job;
-import hudson.model.ParameterDefinition;
-import hudson.model.ParametersDefinitionProperty;
-import hudson.model.Run;
-import hudson.model.StringParameterValue;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.ShowDepots;
-import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.delegates.AbstractModeDelegate;
-import hudson.scm.ChangeLogParser;
-import hudson.scm.PollingResult;
-import hudson.scm.SCMDescriptor;
-import hudson.scm.SCMRevisionState;
-import hudson.scm.SCM;
-import hudson.security.ACL;
-import hudson.util.ComboBoxModel;
-import hudson.util.FormValidation;
-import hudson.util.Secret;
-import hudson.util.ListBoxModel;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -51,11 +22,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import jenkins.model.Jenkins;
-import jenkins.plugins.accurev.AccurevTool;
-import jenkins.plugins.accurev.util.UUIDUtils;
-import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -70,6 +36,39 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+
+import hudson.EnvVars;
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Util;
+import hudson.model.AbstractBuild;
+import hudson.model.Job;
+import hudson.model.ModelObject;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Run;
+import hudson.model.StringParameterValue;
+import hudson.model.TaskListener;
+import hudson.plugins.accurev.cmd.Login;
+import hudson.plugins.accurev.cmd.ShowDepots;
+import hudson.plugins.accurev.cmd.ShowStreams;
+import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+import hudson.scm.ChangeLogParser;
+import hudson.scm.PollingResult;
+import hudson.scm.SCM;
+import hudson.scm.SCMDescriptor;
+import hudson.scm.SCMRevisionState;
+import hudson.security.ACL;
+import hudson.util.ComboBoxModel;
+import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+import hudson.util.Secret;
+import jenkins.model.Jenkins;
+import jenkins.plugins.accurev.AccurevTool;
+import jenkins.plugins.accurev.util.UUIDUtils;
+import net.sf.json.JSONObject;
 
 /**
  * @author connollys
@@ -90,7 +89,6 @@ public class AccurevSCM extends SCM {
     private final String wspaceORreftree;
     private final boolean cleanreftree;
     private final String workspace;
-    private final String workspaceName;
     private final boolean useSnapshot;
     private final boolean dontPopContent;
     private final String snapshotNameFormat;
@@ -101,7 +99,6 @@ public class AccurevSCM extends SCM {
     private final String directoryOffset;
     private final boolean useReftree;
     private final boolean useWorkspace;
-    private final boolean buildFromWorkspace;
     private final boolean noWspaceNoReftree;
     private String serverUUID;
     @CheckForNull
@@ -120,7 +117,6 @@ public class AccurevSCM extends SCM {
      * @param stream             stream
      * @param wspaceORreftree    workspace or reftree
      * @param workspace          workspace
-     * @param workspaceName      workspace Name
      * @param reftree            reftree
      * @param subPath            subPath
      * @param filterForPollSCM   filterForPollSCM
@@ -132,7 +128,6 @@ public class AccurevSCM extends SCM {
      * @param snapshotNameFormat snapshot name format
      * @param directoryOffset    directory offset
      * @param ignoreStreamParent ignore Parent Stream
-     * @param deleteWorkspaceBeforeBuildStarts delete the workspace before the build starts
      */
     @DataBoundConstructor
     public AccurevSCM(
@@ -142,7 +137,6 @@ public class AccurevSCM extends SCM {
             String stream,
             String wspaceORreftree,
             String workspace,
-            String workspaceName,
             String reftree,
             String subPath,
             String filterForPollSCM,
@@ -162,7 +156,6 @@ public class AccurevSCM extends SCM {
         this.stream = stream;
         this.wspaceORreftree = wspaceORreftree;
         this.workspace = workspace;
-        this.workspaceName = workspaceName;
         this.reftree = reftree;
         this.subPath = subPath;
         this.filterForPollSCM = filterForPollSCM;
@@ -178,8 +171,7 @@ public class AccurevSCM extends SCM {
         useReftree = accurevMode.isReftree();
         useWorkspace = accurevMode.isWorkspace();
         noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
-        buildFromWorkspace = accurevMode.isBuildFromWorkspace();
-        this.deleteWorkspaceBeforeBuildStarts = deleteWorkspaceBeforeBuildStarts;
+		this.deleteWorkspaceBeforeBuildStarts = deleteWorkspaceBeforeBuildStarts;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -287,9 +279,6 @@ public class AccurevSCM extends SCM {
         return accurevTool;
     }
 
-   public String getWorkspaceName() {
-        return workspaceName;
-    }
     /**
      * Getter for property 'subPath'.
      *
@@ -373,14 +362,6 @@ public class AccurevSCM extends SCM {
      */
     public boolean isUseWorkspace() {
         return useWorkspace;
-    }
-    /**
-     * Getter for property 'buildFromWorkspace'.
-     *
-     * @return Value for property 'buildFromWorkspace'.
-     */
-    public boolean isBuildFromWorkspace() {
-        return buildFromWorkspace;
     }
 
     /**
@@ -687,7 +668,6 @@ public class AccurevSCM extends SCM {
                     req.getParameter("_.stream"), //
                     req.getParameter("accurev.wspaceORreftree"),//
                     req.getParameter("accurev.workspace"),//
-                    req.getParameter("accurev.workspaceName"),//
                     req.getParameter("accurev.reftree"), //
                     req.getParameter("accurev.subPath"), //
                     req.getParameter("accurev.filterForPollSCM"), //

@@ -123,7 +123,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             if (!relocate(relocation)) {
                 return false;
             }
-            if (!populate(build, popRequired)) {
+            if (!populate(popRequired)) {
                 return false;
             }
         }
