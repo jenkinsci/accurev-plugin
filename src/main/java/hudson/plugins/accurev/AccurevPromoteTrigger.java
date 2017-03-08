@@ -113,11 +113,14 @@ public class AccurevPromoteTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public void stop() {
-        String host = getServer().getHost();
-        if (StringUtils.isNotEmpty(host)) {
-            AccurevPromoteListener listener = listeners.get(host);
-            if (listener != null) {
-                listener.removeTrigger(this);
+        AccurevServer server = getServer();
+        if (server != null) {
+            String host = server.getHost();
+            if (StringUtils.isNotEmpty(host)) {
+                AccurevPromoteListener listener = listeners.get(host);
+                if (listener != null) {
+                    listener.removeTrigger(this);
+                }
             }
         }
         super.stop();
