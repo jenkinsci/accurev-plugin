@@ -316,11 +316,12 @@ public abstract class AbstractModeDelegate {
                     if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace,
                             accurevEnv, filePath)) {
                         startDateOfPopulate = pop.get_startDateOfPopulate();
-                        // Delete the temporary populate file information.
                         deletePopulateFile(filePath);
                     }
-                    else
+                    else {
+                        deletePopulateFile(filePath);
                         return false;
+                    }
                 }
                 startDateOfPopulate = new Date();
             }
@@ -434,13 +435,13 @@ public abstract class AbstractModeDelegate {
     private String getFileRevisionsTobePopulated(Run<?, ?> build, int lastTransaction, String stream) throws IOException {
         List<AccurevTransaction> transactions = History.getTransactionsAfterLastTransaction(scm, server, accurevEnv,
                 accurevWorkingSpace, listener, launcher, stream, lastTransaction);
-     // collect all the files from the list of transactions and remove duplicates from the list of files.
-        List<String> fileRevisions = transactions.stream().filter(t -> t != null).map(t -> t.getAffectedPaths())
-                                     .flatMap(Collection<String>::stream).collect(Collectors.toList())
-                                     .parallelStream().distinct().collect(Collectors.toList());
+        // collect all the files from the list of transactions and remove duplicates from the list of files.
+        List<String> fileRevisions = transactions.stream().filter(t -> t != null && !(t.getAction().equals("defunct")))
+                .map(t -> t.getAffectedPaths()).flatMap(Collection<String>::stream).collect(Collectors.toList())
+                .parallelStream().distinct().collect(Collectors.toList());
         return (!fileRevisions.isEmpty()) ? getPopulateFilePath(build, fileRevisions) : null;
     }
-    
+
     /**
      * Create a text file to keep the list of files to be populated.
      * @param fileRevisions
@@ -475,11 +476,9 @@ public abstract class AbstractModeDelegate {
         return filepath;
     }
 
-    private void deletePopulateFile(String filePath){
-        if (filePath != null) {
-            File populateFile = new File(filePath);
-            boolean deleted = populateFile.delete();
-            logger.info("temporary file deleted " + deleted);
-        }
+    private void deletePopulateFile(String filePath) {
+        File populateFile = new File(filePath);
+        boolean deleted = populateFile.delete();
+        logger.info("temporary file deleted " + deleted);
     }
 }
