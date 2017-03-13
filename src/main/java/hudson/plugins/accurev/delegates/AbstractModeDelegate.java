@@ -13,13 +13,20 @@ import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Performs actual SCM operations
@@ -38,6 +45,8 @@ public abstract class AbstractModeDelegate {
     private static final String ACCUREV_LATEST_TRANSACTION_ID = "ACCUREV_LATEST_TRANSACTION_ID";
     private static final String ACCUREV_LATEST_TRANSACTION_DATE = "ACCUREV_LATEST_TRANSACTION_DATE";
     private static final String ACCUREV_HOME = "ACCUREV_HOME";
+    private static final String ACCUREVLASTTRANSFILENAME = "AccurevLastTrans.txt";
+    private static final String POPULATE_FILES = "PopulateFiles.txt";
     public final AccurevSCM scm;
     protected Launcher launcher;
     protected AccurevSCM.AccurevServer server;
@@ -133,7 +142,7 @@ public abstract class AbstractModeDelegate {
             setStreamColor();
         }
 
-        return checkout(build, changelogFile) && populate() && captureChangeLog(build, changelogFile, streams);
+        return checkout(build, changelogFile) && populate(build) && captureChangeLog(build, changelogFile, streams);
 
     }
 
@@ -264,31 +273,45 @@ public abstract class AbstractModeDelegate {
 
     private void setStreamColor() throws IOException {
         if (isSteamColorEnabled()) {
-            //For AccuRev 6.0.x versions
-            SetProperty.setproperty(scm, accurevWorkingSpace, listener, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "style");
-
-            //For AccuRev 6.1.x onwards
-            SetProperty.setproperty(scm, accurevWorkingSpace, listener, launcher, accurevEnv, server, getStreamColorStream(), getStreamColor(), "streamStyle");
+            SetProperty.setproperty(scm, accurevWorkingSpace, listener, launcher, accurevEnv, server, getStreamColorStream(),
+                getStreamColor(), getStreamTypeParameter());
         }
     }
 
-    protected boolean populate(boolean populateRequired) throws IOException {
+    protected boolean populate(Run<?, ?> build, boolean populateRequired) throws IOException {
         if (populateRequired) {
+            String stream = getPopulateStream();
+            int lastTransaction = NumberUtils.toInt(getLastBuildTransaction(build), 0);
             PopulateCmd pop = new PopulateCmd();
-            if (pop.populate(scm, launcher, listener, server, getPopulateStream(), true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv)) {
-                startDateOfPopulate = pop.get_startDateOfPopulate();
+            if (lastTransaction == 0) {
+                if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv,
+                    null))
+                    startDateOfPopulate = pop.get_startDateOfPopulate();
+                else
+                    return false;
             } else {
-                return false;
+                String filePath = getFileRevisionsTobePopulated(build, lastTransaction, stream);
+                logger.info("populate file path " + filePath);
+                if (filePath != null) {
+                    if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace,
+                        accurevEnv, filePath)) {
+                        startDateOfPopulate = pop.get_startDateOfPopulate();
+                        deletePopulateFile(filePath);
+                    } else {
+                        deletePopulateFile(filePath);
+                        return false;
+                    }
+                }
+                startDateOfPopulate = new Date();
             }
         } else {
             startDateOfPopulate = new Date();
         }
         return true;
-
     }
 
-    protected boolean populate() throws IOException {
-        return populate(isPopulateRequired());
+    protected boolean populate(Run<?, ?> build) throws IOException {
+        return populate(build, isPopulateRequired());
     }
 
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
@@ -346,5 +369,95 @@ public abstract class AbstractModeDelegate {
 
     protected void buildEnvVarsCustom(AbstractBuild<?, ?> build, Map<String, String> env) {
         // override to put implementation specific values
+    }
+
+    /**
+     * get color type parameter from the AccuRev Version If version less than 6 or equal to 6.0.x the color parameter will be style if
+     * version greater than 6 like 6.1.x or 7 then color parameter will streamStyle
+     *
+     * @return
+     */
+    private String getStreamTypeParameter() {
+        String fullVersion = GetAccuRevVersion.getAccuRevVersion().trim();
+        String partialversion = fullVersion.substring(fullVersion.indexOf(" ") + 1);
+        String version = partialversion.substring(0, partialversion.indexOf(" "));
+        String[] versionSplits = version.split("\\.");
+        String type = ((Integer.parseInt(versionSplits[0]) < 6) || (Integer.parseInt(versionSplits[0]) == 6 && Integer
+            .parseInt(versionSplits[1]) < 1)) ? "style" : "streamStyle";
+        logger.info("Current AccuRev version " + fullVersion + " color type parameter " + type);
+        return type;
+    }
+
+    /**
+     * Get last transaction build from the jenkins for the currently running project
+     *
+     * @return
+     * @throws IOException
+     */
+    private String getLastBuildTransaction(Run<?, ?> build) throws IOException {
+        File f = new File(build.getParent().getRootDir(), ACCUREVLASTTRANSFILENAME);
+        if (!f.exists()) {
+            return null;
+        }
+        try (BufferedReader br = Files.newBufferedReader(f.toPath(), UTF_8)) {
+            return br.readLine();
+        }
+    }
+
+    /**
+     * Get list of new files to be added into the jenkins build from a given a transaction.
+     *
+     * @param lastTransaction
+     * @param stream
+     * @return
+     * @throws IOException
+     */
+
+    private String getFileRevisionsTobePopulated(Run<?, ?> build, int lastTransaction, String stream) throws IOException {
+        List<AccurevTransaction> transactions = History.getTransactionsAfterLastTransaction(scm, server, accurevEnv,
+            accurevWorkingSpace, listener, launcher, stream, lastTransaction);
+        // collect all the files from the list of transactions and remove duplicates from the list of files.
+        List<String> fileRevisions = transactions.stream().filter(t -> t != null && !(t.getAction().equals("defunct")))
+            .map(t -> t.getAffectedPaths()).flatMap(Collection<String>::stream).collect(Collectors.toList())
+            .parallelStream().distinct().collect(Collectors.toList());
+        return (!fileRevisions.isEmpty()) ? getPopulateFilePath(build, fileRevisions) : null;
+    }
+
+    /**
+     * Create a text file to keep the list of files to be populated.
+     *
+     * @param fileRevisions
+     * @return
+     */
+    private String getPopulateFilePath(Run<?, ?> build, List<String> fileRevisions) {
+        BufferedWriter bw = null;
+        File populateFile = null;
+        String filepath = null;
+        try {
+            populateFile = new File(build.getParent().getRootDir(), POPULATE_FILES);
+            filepath = populateFile.getAbsolutePath();
+            logger.info("populate file path is " + populateFile.getAbsolutePath());
+            bw = Files.newBufferedWriter(populateFile.toPath(), UTF_8);
+            for (String filePath : fileRevisions) {
+                bw.write(filePath);
+                bw.newLine();
+            }
+        } catch (IOException exe) {
+            logger.info("Exception happend to write in a file." + exe);
+        } finally {
+            try {
+                if (bw != null)
+                    bw.close();
+            } catch (IOException ex) {
+                logger.info("Exception happend to close the buffered writer." + ex);
+            }
+        }
+        return filepath;
+    }
+
+    private void deletePopulateFile(String filePath) {
+        File populateFile = new File(filePath);
+        boolean deleted = populateFile.delete();
+        logger.info("temporary file deleted " + deleted);
     }
 }

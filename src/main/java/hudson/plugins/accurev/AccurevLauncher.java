@@ -155,6 +155,72 @@ public final class AccurevLauncher {
     }
 
     /**
+     * As
+     * {@link #runCommand(String, String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath, TaskListener, Logger, ICmdOutputParser, Object)}
+     * but uses an {@link ICmdOutputXmlParser} instead.
+     *
+     * @param <TResult>                       The type of the result returned by the parser.
+     * @param <TContext>                      The type of data to be passed to the parser. Can be
+     * @param humanReadableCommandName        Human readable command
+     * @param accurevTool                     Which tool to find
+     * @param launcher                        launcher
+     * @param machineReadableCommand          Machine readable command
+     * @param synchronizationLockObjectOrNull Synchronization lock
+     * @param environmentVariables            Environment Variables
+     * @param directoryToRunCommandFrom       Where to run commands from
+     * @param listenerToLogFailuresTo         logging failures to listener
+     * @param loggerToLogFailuresTo           logging failures to logger
+     * @param xmlParserFactory                The {@link XmlPullParserFactory} to be used to create the
+     *                                        parser. If this is <code>null</code> then no command will be
+     *                                        executed and the function will return <code>null</code>
+     *                                        immediately.
+     * @param commandOutputParser             Command output parser
+     * @param commandOutputParserContext      Context of Command output parser
+     * @return See above.
+     * @throws IOException handle it above
+     */
+    public static <TResult, TContext> TResult runHistCommandForAll(//
+                                                                   @Nonnull final String humanReadableCommandName, //
+                                                                   String accurevTool, @Nonnull final Launcher launcher, //
+                                                                   @Nonnull final ArgumentListBuilder machineReadableCommand, //
+                                                                   @Nullable final Lock synchronizationLockObjectOrNull, //
+                                                                   @Nonnull final EnvVars environmentVariables, //
+                                                                   @Nonnull final FilePath directoryToRunCommandFrom, //
+                                                                   @Nonnull final TaskListener listenerToLogFailuresTo, //
+                                                                   @Nonnull final Logger loggerToLogFailuresTo, //
+                                                                   @Nonnull final XmlPullParserFactory xmlParserFactory, //
+                                                                   @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+                                                                   @Nullable final TContext commandOutputParserContext) throws IOException {
+        return runCommand(humanReadableCommandName, accurevTool, launcher, machineReadableCommand,
+            synchronizationLockObjectOrNull, environmentVariables, directoryToRunCommandFrom,
+            listenerToLogFailuresTo, loggerToLogFailuresTo, (cmdOutput, context) -> {
+                XmlPullParser parser = null;
+                try {
+                    parser = xmlParserFactory.newPullParser();
+                    parser.setInput(cmdOutput, null);
+                    final TResult result = commandOutputParser.parseAll(parser, context);
+                    parser.setInput(null);
+                    parser = null;
+                    return result;
+                } catch (XmlPullParserException ex) {
+                    logCommandException(machineReadableCommand, directoryToRunCommandFrom, humanReadableCommandName,
+                        ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                    return null;
+                } finally {
+                    if (parser != null) {
+                        try {
+                            parser.setInput(null);
+                        } catch (XmlPullParserException ex) {
+                            logCommandException(machineReadableCommand, directoryToRunCommandFrom,
+                                humanReadableCommandName, ex, loggerToLogFailuresTo, listenerToLogFailuresTo);
+                        }
+                        cmdOutput.close();
+                    }
+                }
+            }, commandOutputParserContext);
+    }
+
+    /**
      * Runs a command a parses the output, returning the result of parsing that
      * output. Returns <code>null</code> if the command failed or if parsing
      * failed. Failures are logged.
@@ -490,6 +556,21 @@ public final class AccurevLauncher {
          * @throws XmlPullParserException        if failed to Parse
          */
         TResult parse(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException;
+
+        /**
+         * Parses all the transactions from the command's output.
+         *
+         * @param parser  The {@link XmlPullParser} that contains the output of the
+         *                command.
+         * @param context Context passed in when the command was run.
+         * @return The result of the parsing.
+         * @throws UnhandledAccurevCommandOutput if the command output was invalid.
+         * @throws IOException                   on failing IO
+         * @throws XmlPullParserException        if failed to Parse
+         */
+        default TResult parseAll(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+            return null;
+        }
     }
 
     /**

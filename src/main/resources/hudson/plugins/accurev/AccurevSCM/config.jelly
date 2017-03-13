@@ -13,7 +13,7 @@
                  field="depot" help="/plugin/accurev/help/project/depot.html">
           <f:select/>
         </f:entry>
-        <f:entry title="Stream ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
+        <f:entry title="Stream/Workspace ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="stream" help="/plugin/accurev/help/project/stream.html">
           <f:combobox/>
         </f:entry>

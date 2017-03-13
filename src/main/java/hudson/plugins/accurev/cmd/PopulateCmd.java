@@ -40,6 +40,7 @@ public class PopulateCmd extends Command {
      * @param fromMessage from Messge
      * @param workspace   Accurev Workspace
      * @param accurevEnv  Accurev Environment
+     * @param files       list of files to be populated
      * @return boolean
      * @throws IOException Handle it above
      */
@@ -49,7 +50,8 @@ public class PopulateCmd extends Command {
                             boolean overwrite,
                             String fromMessage,
                             FilePath workspace,
-                            EnvVars accurevEnv) throws IOException {
+                            EnvVars accurevEnv,
+                            String files) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("pop");
@@ -62,6 +64,12 @@ public class PopulateCmd extends Command {
 
         cmd.add("-L");
         cmd.add(workspace.getRemote());
+
+        // Add the list files to be populated
+        if (files != null) {
+            cmd.add("-l");
+            cmd.add(files);
+        }
 
         if (overwrite) cmd.add("-O");
 

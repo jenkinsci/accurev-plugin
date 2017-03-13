@@ -75,13 +75,13 @@ public class ChangeLogCmd {
         if (success == null || !success) {
             return false;
         }
-        //==============================================================================================
-        //See the content of changelogfile
+        // ==============================================================================================
+        // See the content of changelogfile
 
         if (changelogFile != null) {
             applyWebURL(webURL, changelogFile, scm);
         }
-        //=============================================================================================
+        // =============================================================================================
         listener.getLogger().println("Changelog calculated successfully.");
         return true;
     }

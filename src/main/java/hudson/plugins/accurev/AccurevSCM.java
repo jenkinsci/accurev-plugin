@@ -690,12 +690,12 @@ public class AccurevSCM extends SCM {
 
         // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
         protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-            .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote"));
+            .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"));
         protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
             .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
                 "mkstream", "move", "promote", "purge", "dispatch"));
         // keep all transaction types in a set for validation
-        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote"};
+        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"};
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
         private transient static final String __OBFUSCATE = "OBF:";
         private final String name;

@@ -145,7 +145,6 @@ public class ShowStreams extends Command {
         List<String> streamNames = allStreams
             .values()
             .stream()
-            .filter(stream -> stream.getType() != AccurevStream.StreamType.WORKSPACE)
             .map(AccurevStream::getName)
             .collect(Collectors.toList());
         cbm.addAll(streamNames);
