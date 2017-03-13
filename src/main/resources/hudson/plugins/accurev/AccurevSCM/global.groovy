@@ -8,9 +8,9 @@ f.section(title: "AccuRev") {
     }
     f.entry(title: _("AccuRev Servers")) {
         f.repeatableHeteroProperty(
-                field: "servers",
-                hasHeader: "true",
-                addCaption: _("Add AccuRev Server")
+            field: "servers",
+            hasHeader: "true",
+            addCaption: _("Add AccuRev Server")
         )
     }
 }
