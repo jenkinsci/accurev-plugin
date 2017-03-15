@@ -23,12 +23,12 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "stream".equalsIgnoreCase(parser.getName())) {
                 final String streamName = parser.getAttributeValue("", "name");
-
-                final String streamNumberStr = parser.getAttributeValue("", "streamNumber");
                 final String basisStreamName = parser.getAttributeValue("", "basis");
                 final String basisStreamNumberStr = parser.getAttributeValue("", "basisStreamNumber");
-                final String streamTypeStr = parser.getAttributeValue("", "type");
+                final String depotNameStr = parser.getAttributeValue("", "depotName");
+                final String streamNumberStr = parser.getAttributeValue("", "streamNumber");
                 final String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
+                final String streamTypeStr = parser.getAttributeValue("", "type");
                 final String streamTimeString = parser.getAttributeValue("", "time");
                 final Date streamTime = streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
                 final String streamStartTimeString = parser.getAttributeValue("", "startTime");
@@ -41,7 +41,7 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                     final AccurevStream stream = new AccurevStream(//
                         streamName, //
                         streamNumber, //
-                        depot, //
+                        depotNameStr, //
                         basisStreamName, //
                         basisStreamNumber, //
                         isDynamic, //

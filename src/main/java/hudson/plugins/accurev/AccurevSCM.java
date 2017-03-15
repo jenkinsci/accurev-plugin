@@ -65,7 +65,11 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 
+import jenkins.plugins.accurev.Accurev;
+import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.AccurevException;
 import jenkins.plugins.accurev.AccurevTool;
+import jenkins.plugins.accurev.util.AccurevUtils;
 import jenkins.plugins.accurev.util.UUIDUtils;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 
@@ -81,6 +85,7 @@ public class AccurevSCM extends SCM {
 
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
+    public static boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
     private final String depot;
     private final String stream;
     private String serverName;
@@ -100,9 +105,10 @@ public class AccurevSCM extends SCM {
     private boolean useWorkspace;
     private boolean noWspaceNoReftree;
     private String serverUUID;
+
+    // --------------------------- CONSTRUCTORS ---------------------------
     @CheckForNull
     private String accurevTool = null;
-    private Job<?, ?> activeProject;
 
     @DataBoundConstructor
     public AccurevSCM(
@@ -117,6 +123,8 @@ public class AccurevSCM extends SCM {
         }
         updateMode();
     }
+
+// --------------------- GETTER / SETTER METHODS ---------------------
 
     public static AccurevSCMDescriptor configuration() {
         return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
@@ -304,6 +312,9 @@ public class AccurevSCM extends SCM {
         return directoryOffset;
     }
 
+// ------------------------ INTERFACE METHODS ------------------------
+// --------------------- Interface Describable ---------------------
+
     @DataBoundSetter
     public void setDirectoryOffset(String directoryOffset) {
         this.directoryOffset = fixEmpty(directoryOffset);
@@ -315,6 +326,8 @@ public class AccurevSCM extends SCM {
         useWorkspace = accurevMode.isWorkspace();
         noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
     }
+
+// -------------------------- OTHER METHODS --------------------------
 
     /**
      * {@inheritDoc}
@@ -361,18 +374,105 @@ public class AccurevSCM extends SCM {
      * @param workspace     jenkins workspace
      * @param listener      listener
      * @param changelogFile change log file
-     * @param baseline      SCMRevisionState
+     * @param scmrs         SCMRevisionState
      * @throws java.io.IOException            on failing IO
      * @throws java.lang.InterruptedException on failing interrupt
      */
 
     public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
-                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
+                         @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
-        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
-        if (checkout) listener.getLogger().println("Checkout done");
-        else listener.getLogger().println("Checkout failed");
+        Run<?, ?> lastBuild = build.getPreviousBuild();
+        final AccurevSCMRevisionState baseline;
+        if (scmrs instanceof AccurevSCMRevisionState)
+            baseline = (AccurevSCMRevisionState) scmrs;
+        else if (lastBuild != null)
+            baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(lastBuild, workspace, launcher, listener);
+        else
+            baseline = new AccurevSCMRevisionState(1); // Accurev specifies transaction start from one
+        EnvVars environment = build.getEnvironment(listener);
+        AccurevClient accurev = createClient(listener, environment, build, workspace);
+        //int latestTransaction = baseline.getTransaction();
+        listener.getLogger().println(accurev.getVersion());
+        listener.getLogger().println(accurev.getDepots());
+        listener.getLogger().println(accurev.getStreams());
+        accurev.update().stream("accurevPlugin").range(40, baseline.getTransaction()).execute();
+
+//        // Before checkout extensions
+//        int latestTransaction = 0;
+//
+//        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
+//        if (checkout) listener.getLogger().println("Checkout done");
+//        else listener.getLogger().println("Checkout failed");
+//
+//        build.addAction(new AccurevSCMRevisionState(latestTransaction));
+    }
+
+    private AccurevClient createClient(TaskListener listener, EnvVars environment, Run<?, ?> build, FilePath workspace) throws IOException, InterruptedException {
+        FilePath ws = workingDirectory(build.getParent(), workspace, environment, listener);
+
+        if (ws != null) {
+            ws.mkdirs();
+        }
+        return createClient(listener, environment, build.getParent(), AccurevUtils.workspaceToNode(workspace), ws);
+    }
+
+    private FilePath workingDirectory(Job<?, ?> parent, FilePath workspace, EnvVars environment, TaskListener listener) {
+        if (workspace == null) {
+            return null;
+        }
+
+        // TODO extension effecting workspace
+        return workspace;
+    }
+
+    private AccurevClient createClient(TaskListener listener, EnvVars environment, Job parent, Node node, FilePath ws) throws InterruptedException, IOException {
+        AccurevServer server = getServer();
+        if (server == null) {
+            throw new AccurevException("No server, selected");
+        }
+        StandardUsernamePasswordCredentials credentials = server.getCredentials();
+        if (credentials == null) {
+            throw new AccurevException("No credentials provided");
+        }
+        String accurevExe = getAccurevExe(node, listener);
+        Accurev accurev = Accurev.with(listener, environment).in(ws).using(accurevExe).on(server.getUrl());
+
+        // TODO extension decorate scm and client;
+
+        AccurevClient c = accurev.getClient();
+        c.login().username(credentials.getUsername()).password(credentials.getPassword()).execute();
+        return c;
+    }
+
+    private String getAccurevExe(Node node, TaskListener listener) {
+        return getAccurevExe(node, null, listener);
+    }
+
+    private String getAccurevExe(Node node, EnvVars env, TaskListener listener) {
+        AccurevTool tool = resolveAccurevTool(listener);
+        if (node != null) {
+            try {
+                tool = tool.forNode(node, listener);
+            } catch (InterruptedException | IOException e) {
+                listener.getLogger().println("Failed to get Accurev Executable");
+            }
+        }
+        if (env != null) {
+            tool.forEnvironment(env);
+        }
+        return tool.getHome();
+    }
+
+    private AccurevTool resolveAccurevTool(TaskListener listener) {
+        if (StringUtils.isBlank(accurevTool)) return AccurevTool.getDefaultInstallation();
+        AccurevTool accurev = AccurevTool.configuration().getInstallation(accurevTool);
+        if (accurev == null) {
+            listener.getLogger().println("Selected Accurev installation does not exist. Using Default");
+            accurev = AccurevTool.getDefaultInstallation();
+        }
+        return accurev;
     }
 
     /**
@@ -392,14 +492,11 @@ public class AccurevSCM extends SCM {
             return false;
         }
 
-        if (activeProject != null && !activeProject.isBuilding()) {
-            // Check if project is no longer active.
-            activeProject = null;
-        }
-
-        // Return true if activeProject null and it does require a workspace, otherwise false.
-        return requiresWorkspace && activeProject == null;
-
+        /*
+        This is true when Jenkins workspace is set to use and move, Accurev Workspace or Accurev Reference tree
+        to the building Jenkins node.
+        */
+        return requiresWorkspace;
     }
 
     /**
@@ -431,21 +528,72 @@ public class AccurevSCM extends SCM {
     @Override
     public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
                                                    @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        return SCMRevisionState.NONE;
+        AccurevSCMRevisionState scmrs = build.getAction(AccurevSCMRevisionState.class);
+        if (scmrs == null) {
+            for (Run<?, ?> b = build; b != null; b = b.getPreviousBuild()) {
+                scmrs = b.getAction(AccurevSCMRevisionState.class);
+                if (scmrs != null) {
+                    break;
+                }
+            }
+        }
+        return scmrs == null ? new AccurevSCMRevisionState(1) : scmrs;
     }
 
     @Override
     public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
                                                    @Nullable FilePath workspace, @Nonnull TaskListener listener,
-                                                   @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        if (activeProject != null && activeProject.isBuilding()) {
-            // Skip polling while there is an active project.
-            // This will prevent waiting for the workspace to become available.
+                                                   @Nonnull SCMRevisionState scmrs) throws IOException, InterruptedException {
+        if (project.isInQueue()) {
+            listener.getLogger().println("[poll] Build is currently in queue.");
             return PollingResult.NO_CHANGES;
         }
-        activeProject = project;
+        // If workspace is required and project is building then please stop
+        if (workspace != null && project.isBuilding()) {
+            listener.getLogger().println("[poll] Build requires workspace and is currently building. Halting poll.");
+            return PollingResult.NO_CHANGES;
+        } else {
+            workspace = new FilePath(project.getRootDir());
+            launcher = Jenkins.getInstance().createLauncher(listener);
+        }
+
+        final AccurevSCMRevisionState baseline;
+        Run<?, ?> lastBuild = project.getLastBuild();
+
+        if (scmrs instanceof AccurevSCMRevisionState)
+            baseline = (AccurevSCMRevisionState) scmrs;
+        else if (lastBuild != null)
+            baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(lastBuild, workspace, launcher, listener);
+        else
+            baseline = new AccurevSCMRevisionState(1); // Accurev specifies transaction start from one
+
+        if (lastBuild == null || baseline == null) {
+            listener.getLogger().println("[poll] No previous build, so lets start the build.");
+            return PollingResult.NO_CHANGES; // TODO remove after testing
+        }
+
+        final Node node = AccurevUtils.workspaceToNode(workspace);
+        final EnvVars environment = project.getEnvironment(node, listener);
+
+        AccurevClient accurev = createClient(listener, environment, project, node, workspace);
+
+        // Run update command - check using reference tree or stream name
+        // command.update(scm, client)
+
+        // Filter ignored file changes
+
+        List<String> paths = new ArrayList<>();
+        accurev.update().preview(paths);
+
+        if (isUseReftree()) {
+            // build if any changes
+        }
+
+
+        // Filter parent changes - use hist command to see if transaction
+        if (isIgnoreStreamParent()) {
+
+        }
 
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
@@ -925,6 +1073,10 @@ public class AccurevSCM extends SCM {
         @Override
         public DescriptorImpl getDescriptor() {
             return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
+        }
+
+        public String getUrl() {
+            return getHost() + ":" + getPort();
         }
 
         @Extension
