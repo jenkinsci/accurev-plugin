@@ -2,6 +2,7 @@ package hudson.plugins.accurev;
 
 import java.io.Serializable;
 
+@Deprecated
 public class AccurevReferenceTree implements Serializable {
     private final String depot;
     private final Long streamNumber;
