@@ -7,14 +7,14 @@ Read more: [https://plugins.jenkins.io/accurev](https://plugins.jenkins.io/accur
 
 File bug reports [here](http://issues.jenkins-ci.org/secure/IssueNavigator.jspa?mode=hide&reset=true&jqlQuery=project+%3D+JENKINS+AND+status+in+%28Open%2C+%22In+Progress%22%2C+Reopened%29+AND+component+%3D+%27accurev-plugin%27)
 
-#Development
+# Development
 
 Start the local Jenkins instance:
 
     mvn hpi:run
 
 
-##How to install
+## How to install
 
 Run
 
@@ -30,13 +30,13 @@ To install:
 2. or use the plugin management console (http://example.com:8080/pluginManager/advanced) to upload the hpi file. You have to restart Jenkins in order to find the pluing in the installed plugins list.
 
 
-#Plugin releases
+# Plugin releases
 
 
 	mvn release:prepare release:perform -B
 
 
-##License
+## License
 
 MIT License
 
