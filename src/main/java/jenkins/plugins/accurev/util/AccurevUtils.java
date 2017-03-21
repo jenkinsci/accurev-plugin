@@ -3,9 +3,7 @@ package jenkins.plugins.accurev.util;
 import hudson.FilePath;
 import hudson.model.Computer;
 import hudson.model.Node;
-import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
-import jenkins.plugins.accurev.AccurevClient;
 
 import java.util.Date;
 
@@ -14,13 +12,6 @@ import java.util.Date;
  */
 public class AccurevUtils {
     private static final long MILLIS_PER_SECOND = 1000L;
-    AccurevClient accurev;
-    TaskListener listener;
-
-    public AccurevUtils(TaskListener listener, AccurevClient accurev) {
-        this.accurev = accurev;
-        this.listener = listener;
-    }
 
     public static Node workspaceToNode(FilePath workspace) {
         Computer computer = workspace.toComputer();

@@ -348,13 +348,17 @@ public class AccurevSCM extends SCM {
                          @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
         Run<?, ?> lastBuild = build.getPreviousBuild();
-        final AccurevSCMRevisionState baseline;
+        AccurevSCMRevisionState baseline;
         if (scmrs instanceof AccurevSCMRevisionState)
             baseline = (AccurevSCMRevisionState) scmrs;
         else if (lastBuild != null)
             baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(lastBuild, workspace, launcher, listener);
         else
             baseline = new AccurevSCMRevisionState(1); // Accurev specifies transaction start from one
+
+        if (baseline == null) {
+            throw new AccurevException("Baseline cannot be null");
+        }
         EnvVars environment = build.getEnvironment(listener);
         AccurevClient accurev = createClient(listener, environment, build, workspace);
         //int latestTransaction = baseline.getTransaction();
@@ -424,7 +428,7 @@ public class AccurevSCM extends SCM {
             }
         }
         if (env != null) {
-            tool.forEnvironment(env);
+            tool = tool.forEnvironment(env);
         }
         return tool.getHome();
     }
