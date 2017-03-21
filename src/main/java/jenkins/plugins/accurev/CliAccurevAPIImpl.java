@@ -1,6 +1,5 @@
 package jenkins.plugins.accurev;
 
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -32,7 +31,6 @@ public class CliAccurevAPIImpl implements AccurevClient {
     EnvVars environment;
     FilePath workspace;
     String url;
-    private StandardUsernamePasswordCredentials credentials;
 
     public CliAccurevAPIImpl(String accurevExe, FilePath workspace, TaskListener listener, EnvVars environment, String url) {
         this.accurevExe = accurevExe;
@@ -91,13 +89,13 @@ public class CliAccurevAPIImpl implements AccurevClient {
                 }
                 ArgumentListBuilder args = new ArgumentListBuilder();
                 args.add("update", "-H", url, "-fx");
-                if (stream != null && (latestTransaction != 0 || previousTransaction != 0)) {
+                if (latestTransaction != 0 || previousTransaction != 0) {
                     args.add(
                         "-s", stream,
                         "-t", latestTransaction + "-" + previousTransaction
                     );
-                } else if (stream != null) {
-                    args.add("-s", stream);
+                } else {
+                    throw new AccurevException("Cannot execute command without transaction numbers specified");
                 }
                 if (preview) args.add("-i");
 

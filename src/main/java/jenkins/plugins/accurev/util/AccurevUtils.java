@@ -11,6 +11,7 @@ import hudson.model.Node;
 import jenkins.model.Jenkins;
 
 public class AccurevUtils {
+    private static final long MILLIS_PER_SECOND = 1000L;
 
     public static String cleanAccurevPath(String str) {
         return str.replace("\\", "/").replaceFirst("^/[.]/", "");
