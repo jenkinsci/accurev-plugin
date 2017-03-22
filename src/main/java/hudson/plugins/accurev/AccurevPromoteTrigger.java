@@ -57,13 +57,16 @@ public class AccurevPromoteTrigger extends Trigger<Job> {
         for (Project<?, ?> p : Jenkins.getInstance().getAllItems(Project.class)) {
             AccurevPromoteTrigger t = p.getTrigger(AccurevPromoteTrigger.class);
             if (t != null) {
-                for (AccurevSCM scm : t.getSCMs()) {
-                    if (scm.getServer().isUsePromoteListen()) {
-                        String host = scm.getServer().getHost();
-                        if (StringUtils.isNotEmpty(host)) {
-                            AccurevPromoteListener listener = listeners.get(host);
-                            if (null != listener) {
-                                listener.addTrigger(t);
+                for (AccurevSCM scm : Util.fixNull(t.getSCMs())) {
+                    AccurevServer server = scm.getServer();
+                    if (server != null) {
+                        if (server.isUsePromoteListen()) {
+                            String host = server.getHost();
+                            if (StringUtils.isNotEmpty(host)) {
+                                AccurevPromoteListener listener = listeners.get(host);
+                                if (null != listener) {
+                                    listener.addTrigger(t);
+                                }
                             }
                         }
                     }
@@ -95,7 +98,7 @@ public class AccurevPromoteTrigger extends Trigger<Job> {
     @Override
     public void start(Job project, boolean newInstance) {
         super.start(project, newInstance);
-        for (AccurevSCM scm : getSCMs()) {
+        for (AccurevSCM scm : Util.fixNull(getSCMs())) {
             AccurevServer server = scm.getServer();
             if (server != null) {
                 String host = server.getHost();
@@ -125,7 +128,7 @@ public class AccurevPromoteTrigger extends Trigger<Job> {
 
     @Override
     public void stop() {
-        for (AccurevSCM scm : getSCMs()) {
+        for (AccurevSCM scm : Util.fixNull(getSCMs())) {
             AccurevServer server = scm.getServer();
             if (server != null) {
                 String host = server.getHost();
