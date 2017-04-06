@@ -10,7 +10,7 @@
 
   <artifactId>accurev</artifactId>
   <packaging>hpi</packaging>
-  <version>0.7.12-SNAPSHOT</version>
+  <version>0.7.12</version>
   <name>Jenkins AccuRev plugin</name>
   <description>This plugin allows you to use AccuRev as a SCM.</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin</url>
@@ -48,7 +48,7 @@
     <connection>scm:git:git://github.com/jenkinsci/accurev-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/accurev-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/accurev-plugin</url>
-    <tag>HEAD</tag>
+    <tag>accurev-0.7.12</tag>
   </scm>
 
   <distributionManagement>
