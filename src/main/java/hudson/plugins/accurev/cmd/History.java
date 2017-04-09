@@ -116,7 +116,7 @@ public class History extends Command {
         // execute code that extracts the latest transaction
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        final List<AccurevTransaction> transactions = new ArrayList<AccurevTransaction>();
+        final List<AccurevTransaction> transactions = new ArrayList<>();
         final Boolean transactionFound = AccurevLauncher.runHistCommandForAll("History command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(), accurevEnv, workspace, listener,
             logger, parser, new ParseHistory(), transactions);
         if (transactionFound == null) {

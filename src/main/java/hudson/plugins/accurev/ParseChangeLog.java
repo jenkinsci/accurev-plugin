@@ -82,7 +82,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     }
                     if (includeTransaction) {
                         filteredTransactions.add(transaction);
-                        rawPaths.forEach(filteredFiles::remove);
+                        filteredFiles.removeAll(rawPaths);
                     }
                 }
                 if (!filteredFiles.isEmpty()) {

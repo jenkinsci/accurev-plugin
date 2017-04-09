@@ -564,11 +564,10 @@ public final class AccurevLauncher {
          *                command.
          * @param context Context passed in when the command was run.
          * @return The result of the parsing.
-         * @throws UnhandledAccurevCommandOutput if the command output was invalid.
-         * @throws IOException                   on failing IO
-         * @throws XmlPullParserException        if failed to Parse
+         * @throws IOException            on failing IO
+         * @throws XmlPullParserException if failed to Parse
          */
-        default TResult parseAll(XmlPullParser parser, TContext context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+        default TResult parseAll(XmlPullParser parser, TContext context) throws IOException, XmlPullParserException {
             return null;
         }
     }
