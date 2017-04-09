@@ -375,7 +375,7 @@ public abstract class AbstractModeDelegate {
      * get color type parameter from the AccuRev Version If version less than 6 or equal to 6.0.x the color parameter will be style if
      * version greater than 6 like 6.1.x or 7 then color parameter will streamStyle
      *
-     * @return
+     * @return String
      */
     private String getStreamTypeParameter() {
         String fullVersion = GetAccuRevVersion.getAccuRevVersion().trim();
@@ -391,8 +391,8 @@ public abstract class AbstractModeDelegate {
     /**
      * Get last transaction build from the jenkins for the currently running project
      *
-     * @return
-     * @throws IOException
+     * @return String
+     * @throws IOException Failing to read file
      */
     private String getLastBuildTransaction(Run<?, ?> build) throws IOException {
         File f = new File(build.getParent().getRootDir(), ACCUREVLASTTRANSFILENAME);
@@ -407,31 +407,37 @@ public abstract class AbstractModeDelegate {
     /**
      * Get list of new files to be added into the jenkins build from a given a transaction.
      *
-     * @param lastTransaction
-     * @param stream
-     * @return
-     * @throws IOException
+     * @param lastTransaction the last transaction stored
+     * @param stream          stream populate from
+     * @return String
+     * @throws IOException failed to open file
      */
 
     private String getFileRevisionsTobePopulated(Run<?, ?> build, int lastTransaction, String stream) throws IOException {
         List<AccurevTransaction> transactions = History.getTransactionsAfterLastTransaction(scm, server, accurevEnv,
             accurevWorkingSpace, listener, launcher, stream, lastTransaction);
         // collect all the files from the list of transactions and remove duplicates from the list of files.
-        List<String> fileRevisions = transactions.stream().filter(t -> t != null && !(t.getAction().equals("defunct")))
-            .map(t -> t.getAffectedPaths()).flatMap(Collection<String>::stream).collect(Collectors.toList())
-            .parallelStream().distinct().collect(Collectors.toList());
+        List<String> fileRevisions = transactions
+            .stream()
+            .filter(t -> t != null && !(t.getAction().equals("defunct")))
+            .map(AccurevTransaction::getAffectedPaths)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList())
+            .parallelStream()
+            .distinct()
+            .collect(Collectors.toList());
         return (!fileRevisions.isEmpty()) ? getPopulateFilePath(build, fileRevisions) : null;
     }
 
     /**
      * Create a text file to keep the list of files to be populated.
      *
-     * @param fileRevisions
-     * @return
+     * @param fileRevisions current file revisions
+     * @return String
      */
     private String getPopulateFilePath(Run<?, ?> build, List<String> fileRevisions) {
         BufferedWriter bw = null;
-        File populateFile = null;
+        File populateFile;
         String filepath = null;
         try {
             populateFile = new File(build.getParent().getRootDir(), POPULATE_FILES);

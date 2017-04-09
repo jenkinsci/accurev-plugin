@@ -512,6 +512,7 @@ public class AccurevSCM extends SCM {
          * @return String
          */
         @Override
+        @Nonnull
         public String getDisplayName() {
             return "AccuRev";
         }

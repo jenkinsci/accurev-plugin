@@ -44,7 +44,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
         return resultTransaction != null;
     }
 
-    public Boolean parseAll(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
+    public Boolean parseAll(XmlPullParser parser, List<AccurevTransaction> context) throws IOException, XmlPullParserException {
         AccurevTransaction resultTransaction = null;
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG) {

@@ -1,7 +1,10 @@
 package hudson.plugins.accurev.AccurevSCM.AccurevServer
 
-def f = namespace(lib.FormTagLib);
-def c = namespace(lib.CredentialsTagLib)
+import lib.CredentialsTagLib
+import lib.FormTagLib
+
+def f = namespace(FormTagLib)
+def c = namespace(CredentialsTagLib)
 
 f.entry(field: "name", title: _("Name")) {
     f.textbox()

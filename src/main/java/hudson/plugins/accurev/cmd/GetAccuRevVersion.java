@@ -2,6 +2,7 @@ package hudson.plugins.accurev.cmd;
 
 import org.apache.log4j.Logger;
 
+import javax.annotation.CheckForNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,10 +28,8 @@ public class GetAccuRevVersion {
             accuRevVersion = reader.readLine();
         } catch (InterruptedException e) {
             logger.info("InterruptedException occured to invoke accurev version command. " + e);
-            return accuRevVersion;
         } catch (IOException exe) {
             logger.info("IOException occured to invoke accurev version command. " + exe);
-            return accuRevVersion;
         } finally {
             try {
                 if (input != null)
