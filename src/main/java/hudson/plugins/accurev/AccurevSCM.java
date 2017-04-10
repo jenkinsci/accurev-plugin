@@ -120,6 +120,15 @@ public class AccurevSCM extends SCM {
         serverUUID = uuid;
     }
 
+    @Nonnull
+    @Override
+    public String getKey() {
+        StringBuilder b = new StringBuilder("accurev");
+        // TODO should handle multiple repos
+        b.append(' ').append(getServer().getUrl());
+        return b.toString();
+    }
+
     /**
      * Getter for Accurev server
      *
@@ -346,7 +355,7 @@ public class AccurevSCM extends SCM {
     public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
+        // TODO Implement SCMRevisionState?
         Run<?, ?> lastBuild = build.getPreviousBuild();
         AccurevSCMRevisionState baseline;
         if (scmrs instanceof AccurevSCMRevisionState)
@@ -361,20 +370,19 @@ public class AccurevSCM extends SCM {
         }
         EnvVars environment = build.getEnvironment(listener);
         AccurevClient accurev = createClient(listener, environment, build, workspace);
-        //int latestTransaction = baseline.getTransaction();
-        listener.getLogger().println(accurev.getVersion());
-        listener.getLogger().println(accurev.getDepots());
-        listener.getLogger().println(accurev.getStreams());
-        accurev.update().stream("accurevPlugin").range(40, baseline.getTransaction()).execute();
 
-//        // Before checkout extensions
-//        int latestTransaction = 0;
+        int latestTransaction = baseline.getTransaction();
+        int actualTransaction = accurev.getLatestTransaction(getDepot()).getTransaction();
+        if (actualTransaction != 0) latestTransaction = actualTransaction;
+
+        accurev.update().stream(getStream()).range(latestTransaction, baseline.getTransaction()).execute();
+
 //
 //        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
 //        if (checkout) listener.getLogger().println("Checkout done");
 //        else listener.getLogger().println("Checkout failed");
 //
-//        build.addAction(new AccurevSCMRevisionState(latestTransaction));
+        build.addAction(new AccurevSCMRevisionState(latestTransaction));
     }
 
     private AccurevClient createClient(TaskListener listener, EnvVars environment, Run<?, ?> build, FilePath workspace) throws IOException, InterruptedException {

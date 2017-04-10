@@ -13,7 +13,7 @@ public interface UpdateCommand extends AccurevCommand {
      * @param stream a {@link hudson.plugins.accurev.AccurevStream} object
      * @return a {@link jenkins.plugins.accurev.UpdateCommand} object
      */
-    UpdateCommand stream(String stream); // TODO AccurevStream?
+    UpdateCommand stream(String stream);
 
     /**
      * accurev transaction range to get a list of file changes, in reverse since accurev behaves that way.

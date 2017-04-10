@@ -6,6 +6,8 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevDepots;
 import hudson.plugins.accurev.AccurevStreams;
+import hudson.plugins.accurev.AccurevTransaction;
+import hudson.plugins.accurev.AccurevTransactions;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.Secret;
 import jenkins.plugins.accurev.util.AccurevUtils;
@@ -179,6 +181,12 @@ public class CliAccurevAPIImpl implements AccurevClient {
     @Override
     public void syncTime() throws AccurevException, InterruptedException {
         launchCommand("synctime", "-H", url);
+    }
+
+    @Override
+    public AccurevTransaction getLatestTransaction(String depot) throws InterruptedException {
+        String result = launchCommand("accurev", "hist", "-fx", "-H", url, "-p", depot, "-t", "now.1");
+        return (new AccurevTransactions(result)).get(0);
     }
 
     private String launchCommand(String... args) throws AccurevException, InterruptedException {

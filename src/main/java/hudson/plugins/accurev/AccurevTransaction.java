@@ -4,6 +4,7 @@ import hudson.model.User;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -175,6 +176,18 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     public String getId() {
         return id;
     }
+
+    /**
+     * Getter for id
+     * Enables logging with AccuRev transaction id
+     *
+     * @return transaction id of the AccuRev transaction
+     */
+    @Exported
+    public int getTransaction() {
+        return NumberUtils.toInt(id, 1);
+    }
+
 
     /**
      * Setter for id
