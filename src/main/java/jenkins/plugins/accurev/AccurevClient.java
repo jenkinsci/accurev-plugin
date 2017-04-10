@@ -2,6 +2,7 @@ package jenkins.plugins.accurev;
 
 import hudson.plugins.accurev.AccurevDepots;
 import hudson.plugins.accurev.AccurevStreams;
+import hudson.plugins.accurev.AccurevTransaction;
 
 /**
  * Initialized by josep on 04-03-2017.
@@ -24,4 +25,6 @@ public interface AccurevClient {
     String getVersion() throws AccurevException, InterruptedException;
 
     void syncTime() throws AccurevException, InterruptedException;
+
+    AccurevTransaction getLatestTransaction(String depot) throws InterruptedException;
 }

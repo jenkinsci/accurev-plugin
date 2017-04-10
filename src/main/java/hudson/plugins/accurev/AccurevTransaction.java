@@ -178,6 +178,18 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
     }
 
     /**
+     * Getter for id
+     * Enables logging with AccuRev transaction id
+     *
+     * @return transaction id of the AccuRev transaction
+     */
+    @Exported
+    public int getTransaction() {
+        return NumberUtils.toInt(id, 1);
+    }
+
+
+    /**
      * Setter for id
      *
      * @param id transaction id of the AccuRev transaction
