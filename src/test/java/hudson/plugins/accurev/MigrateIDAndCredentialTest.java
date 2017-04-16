@@ -26,14 +26,14 @@ public class MigrateIDAndCredentialTest {
 
     private AccurevSCMDescriptor descriptor;
     private AccurevSCM scm;
+    private AccurevServer server;
 
     @Before
     public void setUp() throws Exception {
-        AccurevServer server = new AccurevServer(null,
+        server = new AccurevServer(null,
             "test", "localhost",
             5050, "bob", "OBF:1rwf1x1b1rwf");
-        scm = new AccurevSCM(url, "test", "test");
-        scm.setServerName("test");
+        scm = new AccurevSCM(server, "test", "test");
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);
         descriptor = scm.getDescriptor();
@@ -57,18 +57,19 @@ public class MigrateIDAndCredentialTest {
         assertNotNull(server.getCredentials());
         assertEquals(server.getCredentials().getUsername(), credentials.getUsername());
         assertEquals(server.getCredentials().getPassword(), credentials.getPassword());
-        assertNull(server.username);
-        assertNull(server.password);
+        assertNull(server.getUsername());
+        assertNull(server.getPassword());
     }
 
     @Test
-    public void testMigrateToServerUUID() throws Exception {
-        AccurevPlugin.migrateJobsToServerUUID();
+    public void testMigrationFromGlobalConfigToJobConfigOfServer() throws Exception {
         AccurevServer server = AccurevSCM.configuration().getServers().get(0);
-        assertTrue(StringUtils.equals(server.getUuid(), scm.getServerUUID()));
-        assertNotNull(descriptor.getServer(scm.getServerUUID()));
-        assertNotNull(scm.getServer());
-        assertEquals(descriptor.getServer(scm.getServerUUID()), scm.getServer());
+        boolean migrated = server.migrateCredentials();
+        AccurevPlugin.migrateServersToJobs();
+        assertTrue(migrated);
+        assertEquals(AccurevSCM.configuration().getServers().size(), 0);
+        assertEquals(scm.getUrl(), server.getUrl());
+        assertTrue(StringUtils.isNotBlank(scm.getCredentialsId()));
     }
 
 
