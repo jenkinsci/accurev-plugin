@@ -4,10 +4,7 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevDepots;
-import hudson.plugins.accurev.AccurevStreams;
-import hudson.plugins.accurev.AccurevTransaction;
-import hudson.plugins.accurev.AccurevTransactions;
+import hudson.plugins.accurev.*;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.Secret;
 import jenkins.plugins.accurev.util.AccurevUtils;
@@ -16,6 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import javax.annotation.CheckForNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -157,29 +155,38 @@ public class CliAccurevAPIImpl implements AccurevClient {
     }
 
     @Override
-    public AccurevDepots getDepots() throws AccurevException, InterruptedException {
+    public AccurevDepots getDepots() throws InterruptedException {
         String result = launchCommand("show", "-H", url, "-fx", "depots");
         return new AccurevDepots(result);
     }
 
     @Override
+    @CheckForNull
+    public AccurevStreams getStream(String stream) throws InterruptedException {
+        String result = launchCommand("show", "-H", url, "-fx", "-s", stream, "streams");
+        return new AccurevStreams(result);
+    }
+
+    @Override
+    @CheckForNull
     public AccurevStreams getStreams() throws InterruptedException {
         String result = launchCommand("show", "-H", url, "-fx", "streams");
         return new AccurevStreams(result);
     }
 
     @Override
+    @CheckForNull
     public AccurevStreams getStreams(String depot) throws InterruptedException {
         String result = launchCommand("show", "-H", url, "-fx", "-p", depot, "streams");
         return new AccurevStreams(result);
     }
 
-    public String getVersion() throws AccurevException, InterruptedException {
+    public String getVersion() throws InterruptedException {
         return launchCommand().split(" ")[1];
     }
 
     @Override
-    public void syncTime() throws AccurevException, InterruptedException {
+    public void syncTime() throws InterruptedException {
         launchCommand("synctime", "-H", url);
     }
 

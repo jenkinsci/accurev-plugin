@@ -85,7 +85,7 @@ public class AccurevSCM extends SCM {
 
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    public static boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
+    public static final boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
     private final String depot;
     private final String stream;
     private String serverName;
@@ -155,7 +155,9 @@ public class AccurevSCM extends SCM {
     public String getKey() {
         StringBuilder b = new StringBuilder("accurev");
         // TODO should handle multiple repos
-        b.append(' ').append(getServer().getUrl());
+        AccurevServer server = getServer();
+        if (server != null)
+        b.append(' ').append(server.getUrl());
         return b.toString();
     }
 
@@ -391,7 +393,15 @@ public class AccurevSCM extends SCM {
     public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
-        // TODO Implement SCMRevisionState?
+
+        String depot = Util.fixEmpty(this.depot);
+        String stream = Util.fixEmpty(this.stream);
+
+        if (depot == null)
+            throw new AccurevException("Depot must be specified");
+        if (stream == null)
+            throw new AccurevException("Stream must be specified");
+
         Run<?, ?> lastBuild = build.getPreviousBuild();
         AccurevSCMRevisionState baseline;
         if (scmrs instanceof AccurevSCMRevisionState)
@@ -412,6 +422,17 @@ public class AccurevSCM extends SCM {
         if (actualTransaction != 0) latestTransaction = actualTransaction;
 
         accurev.update().stream(getStream()).range(latestTransaction, baseline.getTransaction()).execute();
+
+        AccurevStreams streams;
+        if (ignoreStreamParent) streams = accurev.getStream(stream);
+        else streams = accurev.getStreams(depot);
+
+        if (streams == null)
+            throw new AccurevException("Stream(s) not found");
+
+        // Check if stream is NOT fetched from Accurev.
+        if (!streams.containsKey(stream))
+            throw new AccurevException("Stream does not exists in the fetched result");
 
 //
 //        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
@@ -455,6 +476,9 @@ public class AccurevSCM extends SCM {
 
         AccurevClient c = accurev.getClient();
         c.login().username(credentials.getUsername()).password(credentials.getPassword()).execute();
+        if (this.isSynctime()) {
+            c.syncTime();
+        }
         return c;
     }
 
