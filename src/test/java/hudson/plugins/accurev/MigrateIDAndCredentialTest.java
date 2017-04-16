@@ -33,6 +33,7 @@ public class MigrateIDAndCredentialTest {
 
     private AccurevSCMDescriptor descriptor;
     private AccurevSCM scm;
+    private AccurevServer server;
 
     @Before
     public void setUp() throws Exception {
@@ -65,18 +66,19 @@ public class MigrateIDAndCredentialTest {
         assertNotNull(server.getCredentials());
         assertEquals(server.getCredentials().getUsername(), credentials.getUsername());
         assertEquals(server.getCredentials().getPassword(), credentials.getPassword());
-        assertNull(server.username);
-        assertNull(server.password);
+        assertNull(server.getUsername());
+        assertNull(server.getPassword());
     }
 
     @Test
-    public void testMigrateToServerUUID() throws Exception {
-        AccurevPlugin.migrateJobsToServerUUID();
+    public void testMigrationFromGlobalConfigToJobConfigOfServer() throws Exception {
         AccurevServer server = AccurevSCM.configuration().getServers().get(0);
-        assertTrue(StringUtils.equals(server.getUuid(), scm.getServerUUID()));
-        assertNotNull(descriptor.getServer(scm.getServerUUID()));
-        assertNotNull(scm.getServer());
-        assertEquals(descriptor.getServer(scm.getServerUUID()), scm.getServer());
+        boolean migrated = server.migrateCredentials();
+        AccurevPlugin.migrateServersToJobs();
+        assertTrue(migrated);
+        assertEquals(AccurevSCM.configuration().getServers().size(), 0);
+        assertEquals(scm.getUrl(), server.getUrl());
+        assertTrue(StringUtils.isNotBlank(scm.getCredentialsId()));
     }
 
 

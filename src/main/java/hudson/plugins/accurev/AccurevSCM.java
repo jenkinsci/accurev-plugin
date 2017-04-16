@@ -46,6 +46,7 @@ import hudson.model.Node;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Project;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
@@ -64,7 +65,6 @@ import jenkins.plugins.accurev.AccurevException;
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.UpdateCommand;
 import jenkins.plugins.accurev.util.AccurevUtils;
-import jenkins.plugins.accurev.util.UUIDUtils;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
@@ -74,6 +74,7 @@ import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
  */
 public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
+    public static final boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
     protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
     protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
 
@@ -93,9 +94,10 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    private final String url;
-    private final String depot;
-    private final String stream;
+    private String url;
+    private String depot;
+    private String stream;
+    private String credentialsId;
     private DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> extensions;
 
     @CheckForNull
@@ -103,9 +105,16 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     @DataBoundConstructor
     public AccurevSCM(
-        String url, String depot, String stream
+        String url, String depot, String stream, String credentialsId
     ) {
         this.url = url;
+        this.depot = depot;
+        this.stream = stream;
+        this.credentialsId = credentialsId;
+    }
+
+    public AccurevSCM(AccurevServer server, String depot, String stream) {
+        super(server);
         this.depot = depot;
         this.stream = stream;
     }
@@ -116,6 +125,10 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     public String getUrl() {
         return url;
+    }
+
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
     public String getDepot() {
@@ -134,8 +147,6 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
     public String getStream() {
         return stream;
     }
-
-
 
     @CheckForNull
     public String getAccurevTool() {
@@ -385,11 +396,6 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             return PollingResult.NO_CHANGES;
         }
 
-        if (project.getLastBuild() == null) {
-            listener.getLogger().println("[poll] No previous build, so lets start the build.");
-            return PollingResult.NO_CHANGES;
-        }
-
         final AccurevSCMRevisionState baseline;
 
         if (scmrs instanceof AccurevSCMRevisionState)
@@ -399,6 +405,11 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
                 launcher != null ? workspace : null, launcher, listener);
         else
             baseline = new AccurevSCMRevisionState(1); // Accurev specifies transaction start from one
+
+        if (project.getLastBuild() == null || baseline == null) {
+            listener.getLogger().println("[poll] No previous build, so lets start the build.");
+            return PollingResult.NO_CHANGES;
+        }
 
         Node node;
         if (workspace != null && !getDescriptor().isPollOnMaster()) {
@@ -436,6 +447,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
     }
+
     public boolean hasStringVariableReference(final String str) {
         return StringUtils.isNotEmpty(str) && str.startsWith("$");
     }
@@ -482,6 +494,17 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
                 "Failed to expand variable reference '" + stream + "'.");
         }
         return parsedLocalStream;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void migrate(Project p) {
+        AccurevServer server = getServer();
+        if (server != null) {
+            url = server.getUrl();
+            credentialsId = server.getCredentialsId();
+        }
+        super.migrate(p);
     }
 
     @Extension
@@ -577,7 +600,9 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             return this._servers;
         }
 
-
+        public void setServers(List<AccurevServer> servers) {
+            this._servers = servers;
+        }
 
         /**
          * Getter for property 'pollOnMaster'.
@@ -591,7 +616,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         /**
          * Setter for property 'pollOnMaster'.
          *
-         * @param pollOnMaster poll on aster
+         * @param pollOnMaster poll on master
          */
         public void setPollOnMaster(boolean pollOnMaster) {
             this.pollOnMaster = pollOnMaster;
@@ -604,7 +629,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
                 return null;
             }
             for (AccurevServer server : this._servers) {
-                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUuid())) {
+                if (uuid.equals(server.getUuid())) {
                     return server;
                 } else if (uuid.equals(server.getName())) {
                     // support old server name
@@ -657,6 +682,10 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"};
         private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
 
+        /* Used for testing migration */
+        public AccurevServer(String uuid, String name, String host, int port, String username, String password) {
+            super(uuid, name, host, port, username, password);
+        }
     }
 
     /**

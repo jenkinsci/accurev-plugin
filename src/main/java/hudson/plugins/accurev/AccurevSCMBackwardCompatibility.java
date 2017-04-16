@@ -9,25 +9,23 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.Util;
+import hudson.model.Project;
 import hudson.scm.SCM;
 import hudson.security.ACL;
-import hudson.util.FormValidation;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.CheckForNull;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 public abstract class AccurevSCMBackwardCompatibility extends SCM implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-
+    private static final long serialVersionUID = 1L;
     private transient String serverName;
     private transient boolean ignoreStreamParent;
     private transient String wspaceORreftree;
@@ -44,7 +42,14 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     private transient boolean useWorkspace;
     private transient boolean noWspaceNoReftree;
     private transient String serverUUID;
-    private static final long serialVersionUID = 1L;
+
+    public AccurevSCMBackwardCompatibility(AccurevSCM.AccurevServer server) {
+        serverName = server.getName();
+        serverUUID = server.getUuid();
+    }
+
+    protected AccurevSCMBackwardCompatibility() {
+    }
 
     public String getServerName() {
         return serverName;
@@ -134,12 +139,16 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
         return server;
     }
 
+    public void migrate(Project p) {
+
+    }
+
     public abstract static class AccurevServerBackwardCompatibility {
         private transient static final String __OBFUSCATE = "OBF:";
+        private transient String username;
+        private transient String password;
         private transient String name;
         private transient String host;
-        transient String username;
-        transient String password;
         private transient int port = 5050;
         private transient String credentialsId;
         private transient UUID uuid;
@@ -150,6 +159,15 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
         private transient boolean useRestrictedShowStreams;
         private transient boolean useColor;
         private transient boolean usePromoteListen;
+
+        public AccurevServerBackwardCompatibility(String uuid, String name, String host, int port, String username, String password) {
+            this.uuid = StringUtils.isEmpty(uuid) ? null : UUID.fromString(uuid);
+            this.name = name;
+            this.host = host;
+            this.port = port;
+            this.username = username;
+            this.password = password;
+        }
 
         private static String deobfuscate(String s) {
             if (s.startsWith(__OBFUSCATE))
@@ -255,8 +273,7 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
          * @return Value for property 'username'.
          */
         public String getUsername() {
-            StandardUsernamePasswordCredentials credentials = getCredentials();
-            return credentials == null ? "jenkins" : credentials.getUsername();
+            return username;
         }
 
         /**
@@ -265,8 +282,7 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
          * @return Value for property 'password'.
          */
         public String getPassword() {
-            StandardUsernamePasswordCredentials credentials = getCredentials();
-            return credentials == null ? "" : Secret.toString(credentials.getPassword());
+            return password;
         }
 
         /**
