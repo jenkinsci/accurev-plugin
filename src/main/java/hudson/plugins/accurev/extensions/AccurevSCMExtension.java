@@ -1,11 +1,16 @@
 package hudson.plugins.accurev.extensions;
 
 import hudson.model.AbstractDescribableImpl;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevTransaction;
 import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.AccurevException;
+import jenkins.plugins.accurev.UpdateCommand;
+
+import java.io.IOException;
 
 public abstract class AccurevSCMExtension extends AbstractDescribableImpl<AccurevSCMExtension> {
     /**
@@ -25,6 +30,10 @@ public abstract class AccurevSCMExtension extends AbstractDescribableImpl<Accure
     }
 
     public void onCheckoutCompleted(AccurevSCM scm, Run<?, ?> build, AccurevClient accurev, TaskListener listener) {
+
+    }
+
+    public void decorateUpdateCommand(AccurevSCM scm, Job project, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) throws IOException, InterruptedException, AccurevException {
 
     }
 
