@@ -1,7 +1,6 @@
 package jenkins.plugins.accurev;
 
 import hudson.plugins.accurev.AccurevDepots;
-import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevStreams;
 import hudson.plugins.accurev.AccurevTransaction;
 
