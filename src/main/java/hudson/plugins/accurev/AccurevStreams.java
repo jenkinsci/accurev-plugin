@@ -13,6 +13,11 @@ import java.util.HashMap;
 public class AccurevStreams extends HashMap<String, AccurevStream> {
     public AccurevStreams(String result) {
         parse(result);
+        if (this.size() > 1) {
+            this.values().stream()
+                .filter(stream -> stream.getBasisName() != null)
+                .forEach(stream -> stream.setParent(this.get(stream.getBasisName())));
+        }
     }
 
     private void parse(String result) {

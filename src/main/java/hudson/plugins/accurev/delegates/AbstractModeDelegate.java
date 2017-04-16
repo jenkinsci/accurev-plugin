@@ -161,7 +161,6 @@ public abstract class AbstractModeDelegate {
             EnvVars envVars = new EnvVars();
             envVars.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
             envVars.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
-            AccurevPromoteTrigger.setLastTransaction(build.getParent(), latestTransactionID);
             build.addAction(new AccuRevHiddenParametersAction(envVars));
 
         } catch (Exception e) {
