@@ -11,13 +11,12 @@ import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.*;
 import hudson.model.*;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.ShowDepots;
-import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+import hudson.plugins.accurev.extensions.AccurevSCMExtension;
+import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
 import hudson.scm.*;
 import hudson.security.ACL;
-import hudson.util.ComboBoxModel;
+import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
@@ -54,9 +53,9 @@ public class AccurevSCM extends SCM {
 
 // ------------------------------ FIELDS ------------------------------
 
+    public static final boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    public static final boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
     private final String depot;
     private final String stream;
     private String serverName;
@@ -77,7 +76,8 @@ public class AccurevSCM extends SCM {
     private boolean noWspaceNoReftree;
     private String serverUUID;
 
-    // --------------------------- CONSTRUCTORS ---------------------------
+    private DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> extensions;
+
     @CheckForNull
     private String accurevTool = null;
 
@@ -92,8 +92,6 @@ public class AccurevSCM extends SCM {
         if (server != null) serverName = server.getName();
         updateMode();
     }
-
-// --------------------- GETTER / SETTER METHODS ---------------------
 
     public static AccurevSCMDescriptor configuration() {
         return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
@@ -127,7 +125,7 @@ public class AccurevSCM extends SCM {
         // TODO should handle multiple repos
         AccurevServer server = getServer();
         if (server != null)
-        b.append(' ').append(server.getUrl());
+            b.append(' ').append(server.getUrl());
         return b.toString();
     }
 
@@ -358,8 +356,8 @@ public class AccurevSCM extends SCM {
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
 
-        String depot = Util.fixEmpty(this.depot);
-        String stream = Util.fixEmpty(this.stream);
+        String depot = Util.fixEmptyAndTrim(this.depot);
+        String stream = Util.fixEmptyAndTrim(this.stream);
 
         if (depot == null)
             throw new AccurevException("Depot must be specified");
@@ -486,17 +484,12 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
-        boolean requiresWorkspace = AccurevMode.findMode(this).isRequiresWorkspace();
-        if (getDescriptor().isPollOnMaster() && !requiresWorkspace) {
-            // Does not require workspace if Poll On Master is enabled; unless build is using workspace
-            return false;
-        }
+        return getExtensions().stream()
+            .anyMatch(AccurevSCMExtension::requiresWorkspaceForPolling);
+    }
 
-        /*
-        This is true when Jenkins workspace is set to use and move, Accurev Workspace or Accurev Reference tree
-        to the building Jenkins node.
-        */
-        return requiresWorkspace;
+    public DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> getExtensions() {
+        return extensions;
     }
 
     /**
@@ -787,72 +780,27 @@ public class AccurevSCM extends SCM {
         }
 
         @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
-            ListBoxModel s = new ListBoxModel();
-            if (this._servers == null) {
-                DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
-                return s;
-            }
-            for (AccurevServer server : this._servers) {
-                s.add(server.getName(), server.getUuid());
-            }
-
-            return s;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUuid();
-            final AccurevServer server = getServer(serverUUID);
-
-            if (server == null) {
-                return new ListBoxModel();
-            }
-
-            List<String> depots = new ArrayList<>();
-
-            // Execute the login command first & upon success of that run show depots
-            // command. If any of the command's exitvalue is 1 proper error message is
-            // logged
-            if (Login.accurevLoginFromGlobalConfig(server)) {
-                depots = ShowDepots.getDepots(server, DESCRIPTORLOGGER);
-            }
-
-            ListBoxModel d = new ListBoxModel();
-            for (String dname : depots) {
-                d.add(dname, dname);
-            }
-            // Below while loop is for to retain the selected item when you open the
-            // Job to reconfigure
-            d.stream().filter(o -> depot.equals(o.name)).forEach(o -> o.selected = true);
-            return d;
-        }
-
-        // Populating the streams
-        @SuppressWarnings("unused") // Used by stapler
-        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUuid();
-            final AccurevServer server = getServer(serverUUID);
-            if (server == null) {
-                return new ComboBoxModel();
-            }
-            ComboBoxModel cbm = new ComboBoxModel();
-            if (Login.accurevLoginFromGlobalConfig(server)) {
-                if (StringUtils.isBlank(depot)) {
-                    depot = Util.fixNull(ShowDepots.getDepots(server, DESCRIPTORLOGGER)).get(0);
-                }
-                cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
-            }
-            return cbm;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
         public ListBoxModel doFillAccurevToolItems() {
             ListBoxModel r = new ListBoxModel();
             for (AccurevTool accurev : getAccurevTools()) {
                 r.add(accurev.getName());
             }
             return r;
+        }
+
+        @SuppressWarnings("unused") // Used by stapler
+        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                return new StandardListBoxModel().includeCurrentValue(credentialsId);
+            }
+            return new StandardListBoxModel()
+                .includeEmptyValue()
+                .includeMatchingAs(ACL.SYSTEM,
+                    Jenkins.getInstance(),
+                    StandardUsernamePasswordCredentials.class,
+                    URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
+                    CredentialsMatchers.always()
+                );
         }
 
         @Override
@@ -1186,20 +1134,6 @@ public class AccurevSCM extends SCM {
                 return "AccuRev Server";
             }
 
-            @SuppressWarnings("unused")
-            public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
-                if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
-                    return new StandardListBoxModel().includeCurrentValue(credentialsId);
-                }
-                return new StandardListBoxModel()
-                    .includeEmptyValue()
-                    .includeMatchingAs(ACL.SYSTEM,
-                        Jenkins.getInstance(),
-                        StandardUsernamePasswordCredentials.class,
-                        URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
-                        CredentialsMatchers.always()
-                    );
-            }
         }
     }
 
