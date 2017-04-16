@@ -32,7 +32,7 @@ public class MigrateIDAndCredentialTest {
         AccurevServer server = new AccurevServer(null,
             "test", "localhost",
             5050, "bob", "OBF:1rwf1x1b1rwf");
-        scm = new AccurevSCM(null, "test", "test");
+        scm = new AccurevSCM(url, "test", "test");
         scm.setServerName("test");
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);

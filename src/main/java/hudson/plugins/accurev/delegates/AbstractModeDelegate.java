@@ -76,13 +76,6 @@ public abstract class AbstractModeDelegate {
             if (!Login.ensureLoggedInToAccurev(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
             }
-
-            if (scm.isSynctime()) {
-                listener.getLogger().println("Synchronizing clock with the server...");
-                if (!Synctime.synctime(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
-                    throw new IllegalArgumentException("Synchronizing clock failure");
-                }
-            }
         }
     }
 
