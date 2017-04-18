@@ -167,6 +167,11 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     }
 
     @Override
+    protected String getPopulateStream() {
+        return scm.getWorkspace();
+    }
+
+    @Override
     protected void buildEnvVarsCustom(AbstractBuild<?, ?> build, Map<String, String> env) {
         env.put("ACCUREV_WORKSPACE", scm.getWorkspace());
     }
