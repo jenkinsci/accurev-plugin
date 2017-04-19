@@ -278,19 +278,19 @@ public abstract class AbstractModeDelegate {
         }
     }
 
-    protected boolean populate(Run<?, ?> build, boolean populateRequired) throws IOException {
+    protected boolean populate(Run<?, ?> build, boolean populateRequired) throws IOException, InterruptedException {
         if (populateRequired) {
             String stream = getPopulateStream();
             int lastTransaction = NumberUtils.toInt(getLastBuildTransaction(build), 0);
             PopulateCmd pop = new PopulateCmd();
-            if (lastTransaction == 0) {
+            if (lastTransaction == 0 || accurevWorkingSpace.list("*", ".accurev").length == 0) {
                 if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace, accurevEnv,
                     null))
                     startDateOfPopulate = pop.get_startDateOfPopulate();
                 else
                     return false;
             } else {
-                String filePath = getFileRevisionsTobePopulated(build, lastTransaction, stream);
+                String filePath = getFileRevisionsTobePopulated(build, lastTransaction, getChangeLogStream());
                 logger.info("populate file path " + filePath);
                 if (filePath != null) {
                     if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace,
@@ -310,7 +310,7 @@ public abstract class AbstractModeDelegate {
         return true;
     }
 
-    protected boolean populate(Run<?, ?> build) throws IOException {
+    protected boolean populate(Run<?, ?> build) throws IOException, InterruptedException {
         return populate(build, isPopulateRequired());
     }
 
