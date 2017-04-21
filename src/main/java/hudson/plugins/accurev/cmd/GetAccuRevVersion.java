@@ -2,7 +2,6 @@ package hudson.plugins.accurev.cmd;
 
 import org.apache.log4j.Logger;
 
-import javax.annotation.CheckForNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

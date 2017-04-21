@@ -5,7 +5,7 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevStream.StreamType;
-import hudson.plugins.accurev.ParseChangeLog;
+import jenkins.plugins.accurev.util.AccurevUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -21,16 +21,16 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.getEventType() == XmlPullParser.START_TAG && "stream".equalsIgnoreCase(parser.getName())) {
                 final String streamName = parser.getAttributeValue("", "name");
-
-                final String streamNumberStr = parser.getAttributeValue("", "streamNumber");
                 final String basisStreamName = parser.getAttributeValue("", "basis");
                 final String basisStreamNumberStr = parser.getAttributeValue("", "basisStreamNumber");
-                final String streamTypeStr = parser.getAttributeValue("", "type");
+                final String depotNameStr = parser.getAttributeValue("", "depotName");
+                final String streamNumberStr = parser.getAttributeValue("", "streamNumber");
                 final String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
+                final String streamTypeStr = parser.getAttributeValue("", "type");
                 final String streamTimeString = parser.getAttributeValue("", "time");
-                final Date streamTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamTimeString);
+                final Date streamTime = streamTimeString == null ? null : AccurevUtils.convertAccurevTimestamp(streamTimeString);
                 final String streamStartTimeString = parser.getAttributeValue("", "startTime");
-                final Date streamStartTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
+                final Date streamStartTime = streamTimeString == null ? null : AccurevUtils.convertAccurevTimestamp(streamStartTimeString);
                 try {
                     final Long streamNumber = streamNumberStr == null ? null : Long.valueOf(streamNumberStr);
                     final Long basisStreamNumber = basisStreamNumberStr == null ? null : Long.valueOf(basisStreamNumberStr);
@@ -39,7 +39,7 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                     final AccurevStream stream = new AccurevStream(//
                         streamName, //
                         streamNumber, //
-                        depot, //
+                        depotNameStr, //
                         basisStreamName, //
                         basisStreamNumber, //
                         isDynamic, //

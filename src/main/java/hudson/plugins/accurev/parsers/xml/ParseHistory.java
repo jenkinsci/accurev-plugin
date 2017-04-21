@@ -3,7 +3,7 @@ package hudson.plugins.accurev.parsers.xml;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevTransaction;
-import hudson.plugins.accurev.ParseChangeLog;
+import jenkins.plugins.accurev.util.AccurevUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -21,7 +21,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     // parse transaction-values
                     resultTransaction.setId((parser.getAttributeValue("", "id")));
                     resultTransaction.setAction(parser.getAttributeValue("", "type"));
-                    resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
+                    resultTransaction.setDate(AccurevUtils.convertAccurevTimestamp(parser.getAttributeValue("",
                         "time")));
                     resultTransaction.setUser(parser.getAttributeValue("", "user"));
                 } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
@@ -53,7 +53,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     // parse transaction-values
                     resultTransaction.setId((parser.getAttributeValue("", "id")));
                     resultTransaction.setAction(parser.getAttributeValue("", "type"));
-                    resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
+                    resultTransaction.setDate(AccurevUtils.convertAccurevTimestamp(parser.getAttributeValue("",
                         "time")));
                     resultTransaction.setUser(parser.getAttributeValue("", "user"));
                 } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {

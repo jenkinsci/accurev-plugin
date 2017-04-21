@@ -69,19 +69,12 @@ public abstract class AbstractModeDelegate {
         server = scm.getServer();
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
-            accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
+            accurevWorkingSpace = jenkinsWorkspace;
             if (!accurevWorkingSpace.exists()) {
                 accurevWorkingSpace.mkdirs();
             }
             if (!Login.ensureLoggedInToAccurev(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
-            }
-
-            if (scm.isSynctime()) {
-                listener.getLogger().println("Synchronizing clock with the server...");
-                if (!Synctime.synctime(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
-                    throw new IllegalArgumentException("Synchronizing clock failure");
-                }
             }
         }
     }
@@ -161,7 +154,6 @@ public abstract class AbstractModeDelegate {
             EnvVars envVars = new EnvVars();
             envVars.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
             envVars.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
-            AccurevPromoteTrigger.setLastTransaction(build.getParent(), latestTransactionID);
             build.addAction(new AccuRevHiddenParametersAction(envVars));
 
         } catch (Exception e) {

@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.accurev.AccurevSCM" plugin="accurev@0.7.13-SNAPSHOT">
+    <depot>accurevPlugin</depot>
+    <stream>accurevPlugin</stream>
+    <serverName>accurevOldServer</serverName>
+    <ignoreStreamParent>true</ignoreStreamParent>
+    <wspaceORreftree>none</wspaceORreftree>
+    <cleanreftree>false</cleanreftree>
+    <workspace></workspace>
+    <useSnapshot>false</useSnapshot>
+    <dontPopContent>false</dontPopContent>
+    <snapshotNameFormat></snapshotNameFormat>
+    <synctime>false</synctime>
+    <reftree></reftree>
+    <subPath></subPath>
+    <filterForPollSCM></filterForPollSCM>
+    <directoryOffset></directoryOffset>
+    <useReftree>false</useReftree>
+    <useWorkspace>false</useWorkspace>
+    <noWspaceNoReftree>true</noWspaceNoReftree>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders/>
+  <publishers/>
+  <buildWrappers/>
+</project>
