@@ -39,12 +39,18 @@ import java.util.logging.Logger;
 public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     public static final boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
+    protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
+        .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"));
+    protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
+        .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
+            "mkstream", "move", "promote", "purge", "dispatch"));
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
     private String url;
     private String depot;
     private String stream;
     private String credentialsId;
+
     private DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> extensions;
 
     @CheckForNull
@@ -287,6 +293,11 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         return extensions;
     }
 
+    @DataBoundSetter
+    public void setExtensions(List<AccurevSCMExtension> extensions) {
+        this.extensions = new DescribableList<>(Saveable.NOOP, Util.fixNull(extensions));
+    }
+
     /**
      * Gets the lock to be used on "normal" accurev commands, or
      * <code>null</code> if command synchronization is switched off.
@@ -439,15 +450,26 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         return parsedLocalStream;
     }
 
+    public Object readResolve() throws IOException {
+        migrate();
+        return this;
+    }
+
     @SuppressWarnings("deprecation")
-    @Override
-    public void migrate(Project p) {
+    void migrate() throws IOException {
+        // Migrate data
         AccurevServer server = getServer();
         if (server != null) {
+            server.migrateCredentials();
             url = server.getUrl();
             credentialsId = server.getCredentialsId();
+            LOGGER.info("Migrated server URL and credentials to job successfully");
         }
-        super.migrate(p);
+
+        if (extensions == null)
+            extensions = new DescribableList<>(Saveable.NOOP);
+
+        migrate(server);
     }
 
     @Extension
@@ -483,11 +505,6 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             ACCUREV_LOCK.unlock();
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @return String
-         */
         @Override
         @Nonnull
         public String getDisplayName() {
@@ -496,17 +513,31 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
         @SuppressWarnings("unused") // used by stapler
         public boolean showAccurevToolOptions() {
-            return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
+            return AccurevTool.configuration().getInstallations().length > 1;
         }
 
-        /**
-         * Lists available tool installations.
-         *
-         * @return list of available accurev tools
-         */
-        public List<AccurevTool> getAccurevTools() {
-            AccurevTool[] accurevToolInstallations = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations();
-            return Arrays.asList(accurevToolInstallations);
+        @SuppressWarnings("unused") // Used by stapler
+        public ListBoxModel doFillAccurevToolItems() {
+            ListBoxModel r = new ListBoxModel();
+            for (AccurevTool accurev : AccurevTool.configuration().getInstallations()) {
+                r.add(accurev.getName());
+            }
+            return r;
+        }
+
+        @SuppressWarnings("unused") // Used by stapler
+        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String url, @QueryParameter String credentialsId) {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                return new StandardListBoxModel().includeCurrentValue(credentialsId);
+            }
+            return new StandardListBoxModel()
+                .includeEmptyValue()
+                .includeMatchingAs(ACL.SYSTEM,
+                    Jenkins.getInstance(),
+                    StandardUsernamePasswordCredentials.class,
+                    URIRequirementBuilder.fromUri(url).build(),
+                    CredentialsMatchers.always()
+                );
         }
 
         /**
@@ -522,47 +553,6 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             req.bindJSON(this, formData);
             save();
             return true;
-        }
-
-        /**
-         * Getter for property 'servers'.
-         *
-         * @return Value for property 'servers'.
-         */
-        @Nonnull
-        public List<AccurevServer> getServers() {
-            if (this._servers == null) {
-                this._servers = new ArrayList<>();
-            }
-            // We put this here to maintain backwards compatibility
-            // because we changed the name of the 'servers' field to '_servers'
-            if (this.servers != null) {
-                this._servers.addAll(servers);
-                servers = null;
-            }
-            return this._servers;
-        }
-
-        public void setServers(List<AccurevServer> servers) {
-            this._servers = servers;
-        }
-
-        /**
-         * Getter for property 'pollOnMaster'.
-         *
-         * @return Value for property 'pollOnMaster'.
-         */
-        public boolean isPollOnMaster() {
-            return pollOnMaster;
-        }
-
-        /**
-         * Setter for property 'pollOnMaster'.
-         *
-         * @param pollOnMaster poll on master
-         */
-        public void setPollOnMaster(boolean pollOnMaster) {
-            this.pollOnMaster = pollOnMaster;
         }
 
         @CheckForNull
@@ -583,47 +573,45 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             return null;
         }
 
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillAccurevToolItems() {
-            ListBoxModel r = new ListBoxModel();
-            for (AccurevTool accurev : getAccurevTools()) {
-                r.add(accurev.getName());
-            }
-            return r;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
-            if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
-                return new StandardListBoxModel().includeCurrentValue(credentialsId);
-            }
-            return new StandardListBoxModel()
-                .includeEmptyValue()
-                .includeMatchingAs(ACL.SYSTEM,
-                    Jenkins.getInstance(),
-                    StandardUsernamePasswordCredentials.class,
-                    URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
-                    CredentialsMatchers.always()
-                );
-        }
-
         @Override
         public boolean isApplicable(Job project) {
             return true;
+        }
+
+        public boolean isPollOnMaster() {
+            return pollOnMaster;
+        }
+
+        public void setPollOnMaster(boolean pollOnMaster) {
+            this.pollOnMaster = pollOnMaster;
+        }
+
+        @Deprecated
+        @Nonnull
+        public List<AccurevServer> getServers() {
+            if (this._servers == null) {
+                this._servers = new ArrayList<>();
+            }
+            // We put this here to maintain backwards compatibility
+            // because we changed the name of the 'servers' field to '_servers'
+            if (this.servers != null) {
+                this._servers.addAll(servers);
+                servers = null;
+            }
+            return this._servers;
+        }
+
+        @Deprecated
+        public void setServers(List<AccurevServer> servers) {
+            this._servers = servers;
         }
     }
 
     public static final class AccurevServer extends AccurevServerBackwardCompatibility {
 
-        // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-            .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"));
-        protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
-            .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
-                "mkstream", "move", "promote", "purge", "dispatch"));
-        // keep all transaction types in a set for validation
-        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"};
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
+        public AccurevServer(String uuid, String name, String host, int port, String credentialsId) {
+            super(uuid, name, host, port, credentialsId);
+        }
 
         /* Used for testing migration */
         public AccurevServer(String uuid, String name, String host, int port, String username, String password) {

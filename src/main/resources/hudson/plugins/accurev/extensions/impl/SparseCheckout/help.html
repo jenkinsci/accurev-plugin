@@ -1,0 +1,30 @@
+<div>
+  <p>
+    Some projects only use a portion of the stream or reference tree and, in these instances, it is not necessary to
+    check out the entire contents of the repository<br>
+    In such cases, it may be useful to only populate what's specified in the sparse checkout.<br>
+  </p>
+  <p>
+    Directories and files must be specified one per line and must use relative pathnames. For
+    example,
+    you could use:
+  </p>
+  <p>
+    <code>src/com/my-company/main/my-file.java<br>
+      src/com/test<br>
+      src/com/webapp/my-file2.xml</code>
+  </p>
+  <p>
+    where "src" is the immediate sub-folder under your stream or reference tree.
+  </p>
+  <p>
+    NOTES:
+  </p>
+  <ul>
+    <li>If you specify a spare checkout, with <b>Poll SCM</b> selected, where you do not specify any <b>Inclusion or
+      Exclusion</b> files or directories,
+      <br>then the Sparse checkout files and directories are used as the filter for polling.<br>
+      In this case, changes made to elements in the Sparse checkout will trigger a build in Jenkins.
+    </li>
+  </ul>
+</div>

@@ -69,7 +69,7 @@ public abstract class AbstractModeDelegate {
         server = scm.getServer();
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
-            accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
+            accurevWorkingSpace = jenkinsWorkspace;
             if (!accurevWorkingSpace.exists()) {
                 accurevWorkingSpace.mkdirs();
             }

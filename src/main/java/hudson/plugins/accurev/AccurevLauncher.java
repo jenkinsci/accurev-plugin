@@ -324,16 +324,16 @@ public final class AccurevLauncher {
     private static Integer runCommandToCompletion(//
                                                   final ProcStarter starter, //
                                                   final Lock synchronizationLockObjectOrNull) throws IOException, InterruptedException {
-        try {
-            if (synchronizationLockObjectOrNull != null) {
-                synchronizationLockObjectOrNull.lock();
-            }
-            return starter.join(); // Exit Code from Command
-        } finally {
-            if (synchronizationLockObjectOrNull != null) {
-                synchronizationLockObjectOrNull.unlock();
-            }
-        }
+//        try {
+//            if (synchronizationLockObjectOrNull != null) {
+//                synchronizationLockObjectOrNull.lock();
+//            }
+        return starter.join(); // Exit Code from Command
+//        } finally {
+//            if (synchronizationLockObjectOrNull != null) {
+//                synchronizationLockObjectOrNull.unlock();
+//            }
+//        }
     }
 
     private static ProcStarter createProcess(
