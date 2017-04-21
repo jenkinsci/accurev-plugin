@@ -46,7 +46,6 @@ import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.PopulateCmd;
 import hudson.plugins.accurev.cmd.SetProperty;
 import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.cmd.Synctime;
 
 /**
  * Performs actual SCM operations
@@ -102,7 +101,7 @@ public abstract class AbstractModeDelegate {
         server = scm.getServer();
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
-            accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
+            accurevWorkingSpace = jenkinsWorkspace;
             if (!accurevWorkingSpace.exists()) {
                 accurevWorkingSpace.mkdirs();
             }

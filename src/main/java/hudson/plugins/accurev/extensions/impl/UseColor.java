@@ -9,10 +9,9 @@ import hudson.Extension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
 
-public class IgnoreParentStream extends AccurevSCMExtension {
-
+public class UseColor extends AccurevSCMExtension {
     @DataBoundConstructor
-    public IgnoreParentStream() {
+    public UseColor() {
     }
 
     @Extension
@@ -20,7 +19,7 @@ public class IgnoreParentStream extends AccurevSCMExtension {
         @Override
         @Nonnull
         public String getDisplayName() {
-            return "Ignore parent changes";
+            return "Change Stream Color based on Build Status";
         }
     }
 }

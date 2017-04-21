@@ -1,8 +1,8 @@
 package hudson.plugins.accurev;
 
-import hudson.scm.SCMRevisionState;
-
 import java.util.Objects;
+
+import hudson.scm.SCMRevisionState;
 
 /**
  * Initialized by josep on 05-03-2017.

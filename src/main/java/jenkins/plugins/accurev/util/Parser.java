@@ -1,10 +1,10 @@
 package jenkins.plugins.accurev.util;
 
+import java.io.StringReader;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-
-import java.io.StringReader;
 
 public class Parser {
     public static XmlPullParser createDefaultParser() throws XmlPullParserException {

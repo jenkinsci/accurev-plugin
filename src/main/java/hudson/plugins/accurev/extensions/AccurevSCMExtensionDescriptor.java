@@ -2,8 +2,9 @@ package hudson.plugins.accurev.extensions;
 
 import hudson.DescriptorExtensionList;
 import hudson.model.Descriptor;
-import hudson.plugins.accurev.AccurevSCM;
 import jenkins.model.Jenkins;
+
+import hudson.plugins.accurev.AccurevSCM;
 
 public abstract class AccurevSCMExtensionDescriptor extends Descriptor<AccurevSCMExtension> {
     public static DescriptorExtensionList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> all() {

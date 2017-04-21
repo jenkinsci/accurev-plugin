@@ -1,19 +1,22 @@
 package hudson.plugins.accurev.extensions.impl;
 
-import hudson.Extension;
-import hudson.model.Job;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.extensions.AccurevSCMExtension;
-import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
-import jenkins.plugins.accurev.AccurevClient;
-import jenkins.plugins.accurev.AccurevException;
-import jenkins.plugins.accurev.UpdateCommand;
+import java.io.IOException;
+
+import javax.annotation.Nonnull;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import hudson.Extension;
+import hudson.model.Job;
+import hudson.model.TaskListener;
+
+import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.AccurevException;
+import jenkins.plugins.accurev.UpdateCommand;
+import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.extensions.AccurevSCMExtension;
+import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
 
 public class ReferenceTreeCheckout extends AccurevSCMExtension {
 

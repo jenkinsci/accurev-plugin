@@ -1,13 +1,14 @@
 package hudson.plugins.accurev;
 
-import jenkins.plugins.accurev.AccurevException;
-import jenkins.plugins.accurev.util.Parser;
+import java.io.IOException;
+import java.util.HashMap;
+
 import org.apache.commons.lang.math.NumberUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.IOException;
-import java.util.HashMap;
+import jenkins.plugins.accurev.AccurevException;
+import jenkins.plugins.accurev.util.Parser;
 
 public class AccurevDepots extends HashMap<String, AccurevDepot> {
     public AccurevDepots(String result) throws AccurevException {

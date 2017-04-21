@@ -1,5 +1,15 @@
 package hudson.plugins.accurev;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+import java.util.logging.Logger;
+
+import javax.annotation.CheckForNull;
+
+import org.apache.commons.lang.StringUtils;
+
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -8,24 +18,29 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+
 import hudson.Util;
-import hudson.model.Project;
 import hudson.scm.SCM;
 import hudson.security.ACL;
+import hudson.util.DescribableList;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.CheckForNull;
-import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
-import java.util.logging.Logger;
+import hudson.plugins.accurev.extensions.AccurevSCMExtension;
+import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
+import hudson.plugins.accurev.extensions.impl.AccurevWorkspaceCheckout;
+import hudson.plugins.accurev.extensions.impl.IgnoreParentStream;
+import hudson.plugins.accurev.extensions.impl.ReferenceTreeCheckout;
+import hudson.plugins.accurev.extensions.impl.RestrictedShowStreams;
+import hudson.plugins.accurev.extensions.impl.SkipPopulate;
+import hudson.plugins.accurev.extensions.impl.SnapshotCheckout;
+import hudson.plugins.accurev.extensions.impl.SparseCheckout;
+import hudson.plugins.accurev.extensions.impl.SyncOperation;
+import hudson.plugins.accurev.extensions.impl.UseColor;
 
-public abstract class AccurevSCMBackwardCompatibility extends SCM implements Serializable {
+@SuppressWarnings({"deprecation", "unused"})
+public abstract class AccurevSCMBackwardCompatibility extends SCM {
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    private static final long serialVersionUID = 1L;
     private transient String serverName;
     private transient boolean ignoreStreamParent;
     private transient String wspaceORreftree;
@@ -37,7 +52,6 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     private transient String reftree;
     private transient String subPath;
     private transient String filterForPollSCM;
-    private transient String directoryOffset;
     private transient boolean useReftree;
     private transient boolean useWorkspace;
     private transient boolean noWspaceNoReftree;
@@ -51,68 +65,79 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     protected AccurevSCMBackwardCompatibility() {
     }
 
+    @Deprecated
     public String getServerName() {
         return serverName;
     }
 
+    @Deprecated
     public String getServerUUID() {
         return serverUUID;
     }
 
+    @Deprecated
     public String getWspaceORreftree() {
         return wspaceORreftree;
     }
 
+    @Deprecated
     public String getReftree() {
         return reftree;
     }
 
+    @Deprecated
     public String getWorkspace() {
         return workspace;
     }
 
+    @Deprecated
     public String getSubPath() {
         return subPath;
     }
 
+    @Deprecated
     public String getFilterForPollSCM() {
         return filterForPollSCM;
     }
 
+    @Deprecated
     public String getSnapshotNameFormat() {
         return snapshotNameFormat;
     }
 
+    @Deprecated
     public boolean isIgnoreStreamParent() {
         return ignoreStreamParent;
     }
 
+    @Deprecated
     public boolean isDontPopContent() {
         return dontPopContent;
     }
 
+    @Deprecated
     public boolean isCleanreftree() {
         return cleanreftree;
     }
 
+    @Deprecated
     public boolean isUseSnapshot() {
         return useSnapshot;
     }
 
+    @Deprecated
     public boolean isUseReftree() {
         return useReftree;
     }
 
+    @Deprecated
     public boolean isUseWorkspace() {
         return useWorkspace;
     }
 
+    @Deprecated
     public boolean isNoWspaceNoReftree() {
         return noWspaceNoReftree;
-    }
-
-    public String getDirectoryOffset() {
-        return directoryOffset;
     }
 
     /**
@@ -125,8 +150,8 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
     public AccurevSCM.AccurevServer getServer() {
         AccurevSCM.AccurevServer server;
         AccurevSCM.AccurevSCMDescriptor descriptor = AccurevSCM.configuration();
-        if (getServerUUID() == null) {
-            if (getServerName() == null) {
+        if (serverUUID == null) {
+            if (serverName == null) {
                 // No fallback
                 LOGGER.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
                 return null;
@@ -139,8 +164,49 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
         return server;
     }
 
-    public void migrate(Project p) {
+    void migrate(AccurevSCM.AccurevServer server) {
+        try {
+            if (server != null) {
+                if (server.isSyncOperations()) {
+                    addIfMissing(new SyncOperation());
+                }
+                if (server.isUseColor()) {
+                    addIfMissing(new UseColor());
+                }
+                if (server.isUseRestrictedShowStreams()) {
+                    addIfMissing(new RestrictedShowStreams());
+                }
+            }
+            if (useReftree && StringUtils.isNotBlank(reftree)) {
+                ReferenceTreeCheckout referenceTreeCheckout = new ReferenceTreeCheckout(reftree);
+                referenceTreeCheckout.setCleanReferenceTree(cleanreftree);
+                addIfMissing(referenceTreeCheckout);
+            } else if (useWorkspace && StringUtils.isNotBlank(workspace)) {
+                addIfMissing(new AccurevWorkspaceCheckout(workspace));
+            }
+            if (useSnapshot && StringUtils.isNotBlank(snapshotNameFormat)) {
+                addIfMissing(new SnapshotCheckout(snapshotNameFormat));
+            }
+            if (dontPopContent) {
+                addIfMissing(new SkipPopulate());
+            }
+            if (ignoreStreamParent) {
+                addIfMissing(new IgnoreParentStream());
+            }
+            if (StringUtils.isNotBlank(subPath)) {
+                String paths = subPath.replaceAll(",", "\n");
+                addIfMissing(new SparseCheckout(paths));
+            }
+        } catch (IOException e) {
+            throw new AssertionError(e); // since our extensions don't have any real Saveable
+        }
+    }
 
+    abstract DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> getExtensions();
+
+    private void addIfMissing(AccurevSCMExtension ext) throws IOException {
+        if (getExtensions().get(ext.getClass()) == null)
+            getExtensions().add(ext);
     }
 
     public abstract static class AccurevServerBackwardCompatibility {
@@ -152,21 +218,25 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
         private transient int port = 5050;
         private transient String credentialsId;
         private transient UUID uuid;
-        private transient String validTransactionTypes;
         private transient boolean syncOperations;
-        private transient boolean minimiseLogins;
-        private transient boolean useNonexpiringLogin;
         private transient boolean useRestrictedShowStreams;
         private transient boolean useColor;
-        private transient boolean usePromoteListen;
 
         public AccurevServerBackwardCompatibility(String uuid, String name, String host, int port, String username, String password) {
-            this.uuid = StringUtils.isEmpty(uuid) ? null : UUID.fromString(uuid);
+            this.uuid = StringUtils.isBlank(uuid) ? null : UUID.fromString(uuid);
             this.name = name;
             this.host = host;
             this.port = port;
             this.username = username;
             this.password = password;
+        }
+
+        public AccurevServerBackwardCompatibility(String uuid, String name, String host, int port, String credentialsId) {
+            this.uuid = StringUtils.isBlank(uuid) ? UUID.randomUUID() : UUID.fromString(uuid);
+            this.name = name;
+            this.host = host;
+            this.port = port;
+            this.credentialsId = credentialsId;
         }
 
         private static String deobfuscate(String s) {
@@ -186,25 +256,12 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
         }
 
         /**
-         * When f:repeatable tags are nestable, we can change the advances page
-         * of the server config to allow specifying these locations... until
-         * then this hack!
-         *
-         * @return This.
-         */
-        private Object readResolve() {
-            if (uuid == null) {
-                uuid = UUID.randomUUID();
-            }
-            return this;
-        }
-
-        /**
          * Getter for property 'uuid'.
          * If value is null generate random UUID
          *
          * @return Value for property 'uuid'.
          */
+
         public String getUuid() {
             if (uuid == null) {
                 uuid = UUID.randomUUID();
@@ -285,47 +342,18 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
             return password;
         }
 
-        /**
-         * @return returns the currently set transaction types that are seen as
-         * valid for triggering builds and whos authors get notified when a
-         * build fails
-         */
-        public String getValidTransactionTypes() {
-            return validTransactionTypes;
+        public Object readResolve() throws IOException {
+            migrateCredentials();
+            return this;
         }
 
-        public boolean isSyncOperations() {
-            return syncOperations;
-        }
-
-        public boolean isMinimiseLogins() {
-            return minimiseLogins;
-        }
-
-        public boolean isUseNonexpiringLogin() {
-            return useNonexpiringLogin;
-        }
-
-        public boolean isUseRestrictedShowStreams() {
-            return useRestrictedShowStreams;
-        }
-
-        public boolean isUseColor() {
-            return useColor;
-        }
-
-        public boolean isUsePromoteListen() {
-            return usePromoteListen;
-        }
-
-        public boolean migrateCredentials() {
+        boolean migrateCredentials() throws IOException {
             if (username != null) {
                 LOGGER.info("Migrating to credentials");
                 String secret = deobfuscate(password);
                 String credentialsId = "";
                 List<DomainRequirement> domainRequirements = Util.fixNull(URIRequirementBuilder
-                    .fromUri("")
-                    .withHostnamePort(host, port)
+                    .fromUri(getUrl())
                     .build());
                 List<StandardUsernamePasswordCredentials> credentials = CredentialsMatchers.filter(
                     CredentialsProvider.lookupCredentials(
@@ -354,6 +382,7 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
                     LOGGER.info("Migrated successfully to credentials");
                     username = null;
                     password = null;
+                    SystemCredentialsProvider.getInstance().save();
                     return true;
                 } else {
                     LOGGER.severe("Migration failed");
@@ -364,6 +393,18 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM implements Ser
 
         public String getUrl() {
             return getHost() + ":" + getPort();
+        }
+
+        public boolean isSyncOperations() {
+            return syncOperations;
+        }
+
+        public boolean isUseRestrictedShowStreams() {
+            return useRestrictedShowStreams;
+        }
+
+        public boolean isUseColor() {
+            return useColor;
         }
     }
 }

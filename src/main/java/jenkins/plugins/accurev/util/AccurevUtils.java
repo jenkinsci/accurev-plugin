@@ -1,7 +1,5 @@
 package jenkins.plugins.accurev.util;
 
-import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_SECOND;
-
 import java.util.Date;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;

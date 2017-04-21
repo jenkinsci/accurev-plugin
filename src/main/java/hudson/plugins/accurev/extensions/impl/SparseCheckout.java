@@ -9,10 +9,17 @@ import hudson.Extension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
 
-public class IgnoreParentStream extends AccurevSCMExtension {
+public class SparseCheckout extends AccurevSCMExtension {
+
+    private String paths;
 
     @DataBoundConstructor
-    public IgnoreParentStream() {
+    public SparseCheckout(String paths) {
+        this.paths = paths;
+    }
+
+    public String getPaths() {
+        return paths;
     }
 
     @Extension
@@ -20,7 +27,7 @@ public class IgnoreParentStream extends AccurevSCMExtension {
         @Override
         @Nonnull
         public String getDisplayName() {
-            return "Ignore parent changes";
+            return "Sparse checkout";
         }
     }
 }

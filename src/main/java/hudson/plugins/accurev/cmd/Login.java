@@ -59,19 +59,20 @@ public class Login extends Command {
         AccurevSCMDescriptor.lock();
         try {
             final boolean loginRequired;
-            if (server.isMinimiseLogins()) {
-                final String currentUsername = getLoggedInUsername(accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
-                if (StringUtils.isEmpty(currentUsername)) {
-                    loginRequired = true;
-                    listener.getLogger().println("Not currently authenticated with Accurev server");
-                } else {
-                    loginRequired = !currentUsername.equals(requiredUsername);
-                    listener.getLogger().println(
-                        "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
-                }
-            } else {
-                loginRequired = true;
-            }
+//            TODO commented out because it is being moved around
+//            if (server.isMinimiseLogins()) {
+//                final String currentUsername = getLoggedInUsername(accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
+//                if (StringUtils.isEmpty(currentUsername)) {
+//                    loginRequired = true;
+//                    listener.getLogger().println("Not currently authenticated with Accurev server");
+//                } else {
+//                    loginRequired = !currentUsername.equals(requiredUsername);
+//                    listener.getLogger().println(
+//                        "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
+//                }
+//            } else {
+            loginRequired = true;
+//            }
             if (loginRequired) {
                 return accurevLogin(accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
             }
@@ -99,9 +100,10 @@ public class Login extends Command {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("login");
         addServer(cmd, server);
-        if (server.isUseNonexpiringLogin()) {
-            cmd.add("-n");
-        }
+//        TODO commented out because it is being moved around
+//        if (server.isUseNonexpiringLogin()) {
+//            cmd.add("-n");
+//        }
         cmd.add(credentials.getUsername());
         if (StringUtils.isEmpty(Secret.toString(credentials.getPassword()))) {
             if (launcher.isUnix()) {

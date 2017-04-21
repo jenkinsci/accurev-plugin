@@ -1,10 +1,11 @@
 package hudson.plugins.accurev.extensions.impl;
 
+import javax.annotation.Nonnull;
+
 import hudson.Extension;
+
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
-
-import javax.annotation.Nonnull;
 
 public class AccurevWorkspaceCheckout extends AccurevSCMExtension {
 

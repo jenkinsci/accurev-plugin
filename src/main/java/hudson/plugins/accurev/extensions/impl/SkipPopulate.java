@@ -1,11 +1,13 @@
 package hudson.plugins.accurev.extensions.impl;
 
-import hudson.Extension;
-import hudson.plugins.accurev.extensions.AccurevSCMExtension;
-import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
+import javax.annotation.Nonnull;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import javax.annotation.Nonnull;
+import hudson.Extension;
+
+import hudson.plugins.accurev.extensions.AccurevSCMExtension;
+import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
 
 public class SkipPopulate extends AccurevSCMExtension {
 

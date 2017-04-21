@@ -1,14 +1,15 @@
 package hudson.plugins.accurev;
 
-import jenkins.plugins.accurev.AccurevException;
-import jenkins.plugins.accurev.util.AccurevUtils;
-import jenkins.plugins.accurev.util.Parser;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import jenkins.plugins.accurev.AccurevException;
+import jenkins.plugins.accurev.util.AccurevUtils;
+import jenkins.plugins.accurev.util.Parser;
 
 public class AccurevStreams extends HashMap<String, AccurevStream> {
     public AccurevStreams(String result) {

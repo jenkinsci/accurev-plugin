@@ -1,11 +1,12 @@
 package jenkins.plugins.accurev;
 
+import java.io.File;
+
+import org.apache.commons.lang.StringUtils;
+
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.TaskListener;
-import org.apache.commons.lang.StringUtils;
-
-import java.io.File;
 
 /**
  * Initialized by josep on 04-03-2017.
