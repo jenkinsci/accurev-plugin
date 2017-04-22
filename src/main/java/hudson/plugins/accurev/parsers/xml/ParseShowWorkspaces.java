@@ -11,6 +11,7 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevWorkspace;
 
+@Deprecated
 public final class ParseShowWorkspaces implements ICmdOutputXmlParser<Map<String, AccurevWorkspace>, Void> {
     public Map<String, AccurevWorkspace> parse(XmlPullParser parser, Void context)
         throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {

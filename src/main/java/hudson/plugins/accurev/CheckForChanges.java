@@ -22,6 +22,7 @@ import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
 
+@Deprecated
 public class CheckForChanges {
 
     /**

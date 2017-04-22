@@ -17,6 +17,7 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowDepots;
 
+@Deprecated
 public class ShowDepots extends Command {
 
     public static List<String> getDepots(//

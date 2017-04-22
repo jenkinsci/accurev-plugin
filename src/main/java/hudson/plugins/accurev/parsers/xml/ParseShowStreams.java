@@ -16,6 +16,7 @@ import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevStream.StreamType;
 
+@Deprecated
 public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
         IOException, XmlPullParserException {

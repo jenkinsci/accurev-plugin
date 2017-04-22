@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
+@Deprecated
 public final class ParseOutputToStream implements AccurevLauncher.ICmdOutputParser<Boolean, OutputStream> {
     public Boolean parse(InputStream cmdOutput, OutputStream streamToCopyOutputTo)
         throws UnhandledAccurevCommandOutput, IOException {

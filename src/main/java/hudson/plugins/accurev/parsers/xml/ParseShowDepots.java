@@ -11,6 +11,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
+@Deprecated
 public final class ParseShowDepots implements ICmdOutputXmlParser<List<String>, Void> {
     public List<String> parse(XmlPullParser parser, Void context) throws UnhandledAccurevCommandOutput,
         IOException, XmlPullParserException {

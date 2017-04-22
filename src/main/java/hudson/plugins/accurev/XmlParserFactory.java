@@ -12,6 +12,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 /**
  * Utility class that provides {@link XmlPullParserFactory}s.
  */
+@Deprecated
 public class XmlParserFactory {
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
     private static final Map<Object, XmlPullParserFactory> PARSER_FACTORY_CACHE = new WeakHashMap<>(

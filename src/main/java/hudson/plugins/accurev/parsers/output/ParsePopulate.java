@@ -18,6 +18,7 @@ import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
  * Filters the output of the populate command and just shows a summary of the
  * output. Helps prevent build logs being clogged up with the checkout.
  */
+@Deprecated
 public final class ParsePopulate implements ICmdOutputParser<Boolean, OutputStream> {
     public Boolean parse(InputStream cmdOutput, OutputStream streamToCopyOutputTo)
         throws UnhandledAccurevCommandOutput, IOException {

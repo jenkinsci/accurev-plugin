@@ -2,6 +2,7 @@ package hudson.plugins.accurev;
 
 import java.io.Serializable;
 
+@Deprecated
 public class GetConfigWebURL implements Serializable {
     private final String webURL;
 

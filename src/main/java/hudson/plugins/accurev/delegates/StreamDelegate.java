@@ -18,6 +18,7 @@ import hudson.plugins.accurev.cmd.ShowStreams;
 /**
  * @author raymond
  */
+@Deprecated
 public class StreamDelegate extends AbstractModeDelegate {
     private static final Logger logger = Logger.getLogger(StreamDelegate.class.getName());
 

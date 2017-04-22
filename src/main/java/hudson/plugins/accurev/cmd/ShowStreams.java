@@ -23,6 +23,7 @@ import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 
+@Deprecated
 public class ShowStreams extends Command {
     private static final Logger LOGGER = Logger.getLogger(ShowStreams.class.getName());
 

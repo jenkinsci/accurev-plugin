@@ -20,6 +20,7 @@ import hudson.plugins.accurev.AccurevTransaction;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseHistory;
 
+@Deprecated
 public class History extends Command {
     private static final Logger logger = Logger.getLogger(History.class.getName());
 

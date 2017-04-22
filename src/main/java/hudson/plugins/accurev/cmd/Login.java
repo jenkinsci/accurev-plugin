@@ -21,6 +21,7 @@ import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 
+@Deprecated
 public class Login extends Command {
     private static final Logger logger = Logger.getLogger(Login.class.getName());
 

@@ -50,6 +50,7 @@ import hudson.plugins.accurev.cmd.ShowStreams;
 /**
  * Performs actual SCM operations
  */
+@Deprecated
 public abstract class AbstractModeDelegate {
 
     protected static final String ACCUREV_WORKSPACE = "ACCUREV_WORKSPACE";

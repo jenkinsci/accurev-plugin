@@ -39,6 +39,7 @@ import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
  * Utility class that knows how to run AccuRev commands and (optionally) have
  * something parse their output.
  */
+@Deprecated
 public final class AccurevLauncher {
     private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
 

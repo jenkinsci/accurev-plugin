@@ -8,6 +8,7 @@ import java.io.InputStream;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
+@Deprecated
 public final class ParseOutputToFile implements ICmdOutputParser<Boolean, File> {
     public Boolean parse(InputStream cmdOutput, File fileToWriteTo) throws UnhandledAccurevCommandOutput, IOException {
         final byte[] buffer = new byte[4096];

@@ -14,6 +14,7 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 /**
  * Filters the output of any command and just returns the last few lines.
  */
+@Deprecated
 public final class ParseLastFewLines implements ICmdOutputParser<List<String>, Integer> {
     public List<String> parse(InputStream cmdOutput, Integer numberOfLines) throws
         IOException {

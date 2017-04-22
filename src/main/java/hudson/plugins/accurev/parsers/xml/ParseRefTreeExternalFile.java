@@ -11,6 +11,7 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.RefTreeExternalFile;
 
+@Deprecated
 public class ParseRefTreeExternalFile implements ICmdOutputXmlParser<Map<String, RefTreeExternalFile>, Void> {
     public Map<String, RefTreeExternalFile> parse(XmlPullParser parser, Void context)
         throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {

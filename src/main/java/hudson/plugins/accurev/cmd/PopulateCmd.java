@@ -18,6 +18,7 @@ import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
 
+@Deprecated
 public class PopulateCmd extends Command {
 
 

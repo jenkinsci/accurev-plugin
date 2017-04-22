@@ -36,6 +36,7 @@ import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseGetConfig;
 
+@Deprecated
 public class ChangeLogCmd {
 
     public static boolean captureChangelog(AccurevServer server,

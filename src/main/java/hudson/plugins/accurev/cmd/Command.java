@@ -6,6 +6,7 @@ import hudson.util.ArgumentListBuilder;
 
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
+@Deprecated
 public class Command {
     /**
      * Adds the server reference to the Arguments list.
