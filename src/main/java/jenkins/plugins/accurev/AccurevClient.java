@@ -24,5 +24,7 @@ public interface AccurevClient {
 
     void syncTime() throws InterruptedException;
 
-    AccurevTransaction getLatestTransaction(String depot) throws InterruptedException;
+    StreamsCommand streams();
+
+    PopulateCommand populate();
 }

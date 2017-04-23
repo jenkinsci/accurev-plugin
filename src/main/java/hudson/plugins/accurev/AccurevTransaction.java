@@ -194,8 +194,8 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      * @return transaction id as int of the AccuRev transaction
      */
     @Exported
-    public int getTransaction() {
-        return NumberUtils.toInt(id, 1);
+    public long getTransaction() {
+        return NumberUtils.toLong(id, 1);
     }
 
     @Override

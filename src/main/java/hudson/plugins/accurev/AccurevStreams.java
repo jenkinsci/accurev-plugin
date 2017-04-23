@@ -12,6 +12,10 @@ import jenkins.plugins.accurev.util.AccurevUtils;
 import jenkins.plugins.accurev.util.Parser;
 
 public class AccurevStreams extends HashMap<String, AccurevStream> {
+
+    public AccurevStreams() {
+    }
+
     public AccurevStreams(String result) {
         parse(result);
         if (this.size() > 1) {

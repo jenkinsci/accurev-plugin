@@ -4,6 +4,8 @@ import java.util.List;
 
 public interface UpdateCommand extends AccurevCommand {
 
+    UpdateCommand referenceTree(String referenceTree);
+
     /**
      * the stream/workspace update command
      *
@@ -19,7 +21,7 @@ public interface UpdateCommand extends AccurevCommand {
      * @param previousTransaction the previous transaction jenkins built
      * @return a {@link jenkins.plugins.accurev.UpdateCommand} object
      */
-    UpdateCommand range(int latestTransaction, int previousTransaction);
+    UpdateCommand range(long latestTransaction, long previousTransaction);
 
     /**
      * A sort of dry run for the update command to show changes

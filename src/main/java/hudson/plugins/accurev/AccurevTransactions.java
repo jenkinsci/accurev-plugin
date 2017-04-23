@@ -15,6 +15,9 @@ public class AccurevTransactions extends ArrayList<AccurevTransaction> {
         parse(result);
     }
 
+    public AccurevTransactions() {
+    }
+
     private void parse(String result) {
         try {
             XmlPullParser parser = Parser.parse(result);
@@ -38,7 +41,8 @@ public class AccurevTransactions extends ArrayList<AccurevTransaction> {
                             resultTransaction.addAffectedPath(path);
                     }
                 }
-                this.add(resultTransaction);
+                if (resultTransaction != null && !this.contains(resultTransaction))
+                    this.add(resultTransaction);
             }
         } catch (XmlPullParserException | IOException e) {
             throw new AccurevException("Failed to get transactions", e);

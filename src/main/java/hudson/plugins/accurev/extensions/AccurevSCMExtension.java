@@ -34,7 +34,27 @@ public abstract class AccurevSCMExtension extends AbstractDescribableImpl<Accure
 
     }
 
-    public void decorateUpdateCommand(AccurevSCM scm, Job project, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) throws IOException, InterruptedException, AccurevException {
+    public void decorateStreamsCommand(AccurevSCM scm, UserRemoteConfig config, Run<?, ?> build, AccurevClient accurev, TaskListener listener, StreamsCommand cmd) {
+
+    }
+
+    public void decoratePopulateCommand(AccurevSCM scm, UserRemoteConfig config, Run<?, ?> build, AccurevClient accurev, TaskListener listener, PopulateCommand cmd) {
+
+    }
+
+    public void decorateHistCommand(AccurevSCM scm, UserRemoteConfig config, Run<?, ?> build, AccurevClient accurev, TaskListener listener, HistCommand cmd) {
+        decorateHistCommand(scm, config, build.getParent(), accurev, listener, cmd);
+    }
+
+    public void decorateHistCommand(AccurevSCM scm, UserRemoteConfig config, Job project, AccurevClient accurev, TaskListener listener, HistCommand cmd) {
+
+    }
+
+    public void decorateUpdateCommand(AccurevSCM scm, Job project, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) {
+
+    }
+
+    public void decorateUpdateCommand(AccurevSCM scm, Run<?, ?> build, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) {
 
     }
 

@@ -9,6 +9,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import hudson.Extension;
 import hudson.model.Job;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 
 import jenkins.plugins.accurev.AccurevClient;
@@ -17,6 +18,12 @@ import jenkins.plugins.accurev.UpdateCommand;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
+import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.UpdateCommand;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+
+import javax.annotation.Nonnull;
 
 public class ReferenceTreeCheckout extends AccurevSCMExtension {
 
@@ -47,8 +54,14 @@ public class ReferenceTreeCheckout extends AccurevSCMExtension {
     }
 
     @Override
-    public void decorateUpdateCommand(AccurevSCM scm, Job project, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) throws IOException, InterruptedException, AccurevException {
+    public void decorateUpdateCommand(AccurevSCM scm, Job project, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) {
+        cmd.referenceTree(referenceTree);
+        cmd.stream(null);
+    }
 
+    @Override
+    public void decorateUpdateCommand(AccurevSCM scm, Run<?, ?> build, AccurevClient accurev, TaskListener listener, UpdateCommand cmd) {
+        decorateUpdateCommand(scm, build.getParent(), accurev, listener, cmd);
     }
 
     @Extension

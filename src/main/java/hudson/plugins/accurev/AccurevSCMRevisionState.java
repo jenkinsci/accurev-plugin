@@ -1,36 +1,26 @@
 package hudson.plugins.accurev;
 
-import java.util.Objects;
-
 import hudson.scm.SCMRevisionState;
 
-/**
- * Initialized by josep on 05-03-2017.
- */
-public class AccurevSCMRevisionState extends SCMRevisionState {
+import java.io.Serializable;
+import java.util.Map;
 
-    private final int transaction;
+public class AccurevSCMRevisionState extends SCMRevisionState implements Serializable {
 
-    /* package */ AccurevSCMRevisionState(int transaction) {
-        this.transaction = transaction;
+    private static final long serialVersionUID = 1L;
+    private final Map<String, Long> transactions;
+
+    /* package */ AccurevSCMRevisionState(Map<String, Long> transactions) {
+        this.transactions = transactions;
+    }
+
+    public long getTransaction(String location) {
+        if (transactions == null || !transactions.containsKey(location)) return 1L;
+        return transactions.get(location);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o instanceof AccurevSCMRevisionState) {
-            AccurevSCMRevisionState comp = (AccurevSCMRevisionState) o;
-            return comp.transaction == this.transaction;
-        } else
-            return false;
+    public String toString() {
+        return "AccurevRevisionState" + transactions;
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(transaction);
-    }
-
-    public int getTransaction() {
-        return transaction;
-    }
-
 }
