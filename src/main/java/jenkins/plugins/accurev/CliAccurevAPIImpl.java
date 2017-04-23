@@ -179,6 +179,10 @@ public class CliAccurevAPIImpl implements AccurevClient {
 
                 if (overwrite) args.add("-O");
 
+                if (timespec != null) {
+                    args.add("-t", timespec);
+                }
+
                 args.add("-R");
                 if (elements == null) {
                     args.add(".");

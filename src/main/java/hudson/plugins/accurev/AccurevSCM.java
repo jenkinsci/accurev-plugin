@@ -293,8 +293,12 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
                         URIRequirementBuilder.fromUri(config.getUrl()).build()
                     ),
                 CredentialsMatchers.withId(credentialsId));
-            c.login().username(cred.getUsername()).password(cred.getPassword()).execute();
-        }
+            if (cred != null)
+                c.login().username(cred.getUsername()).password(cred.getPassword()).execute();
+            else
+                throw new AccurevException("Credentials could not be found");
+        } else
+            throw new AccurevException("No credentials provided");
         return c;
     }
 
