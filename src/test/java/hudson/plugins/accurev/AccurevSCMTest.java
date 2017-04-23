@@ -141,7 +141,7 @@ public class AccurevSCMTest {
         AccurevSCM oldAccurev = (AccurevSCM) p.getScm();
         assertEquals(1, oldAccurev.getExtensions().size());
         assertEquals("accurev accurevbox.example.org:5050", oldAccurev.getKey());
-        assertTrue(StringUtils.isNotBlank(oldAccurev.getCredentialsId()));
+        assertTrue(StringUtils.isNotBlank(oldAccurev.getUserRemoteConfigs().get(0).getCredentialsId()));
     }
 
     @Test
@@ -158,10 +158,10 @@ public class AccurevSCMTest {
         assertTrue(migrated);
         assertNotNull(server.getCredentialsId());
         assertNotNull(server.getCredentials());
+        assertNotNull(server.getUsername());
+        assertNotNull(server.getPassword());
         assertEquals(server.getCredentials().getUsername(), credentials.getUsername());
         assertEquals(server.getCredentials().getPassword(), credentials.getPassword());
-        assertNull(server.getUsername());
-        assertNull(server.getPassword());
     }
 
     @Test
@@ -170,9 +170,9 @@ public class AccurevSCMTest {
         boolean migrated = server.migrateCredentials();
         scm.migrate();
         assertTrue(migrated);
-        assertEquals(scm.getUrl(), server.getUrl());
-        assertTrue(StringUtils.isNotBlank(scm.getCredentialsId()));
-        assertEquals(scm.getCredentialsId(), server.getCredentialsId());
+        assertEquals(scm.getUserRemoteConfigs().get(0).getUrl(), server.getUrl());
+        assertTrue(StringUtils.isNotBlank(scm.getUserRemoteConfigs().get(0).getCredentialsId()));
+        assertEquals(scm.getUserRemoteConfigs().get(0).getCredentialsId(), server.getCredentialsId());
     }
 
 }

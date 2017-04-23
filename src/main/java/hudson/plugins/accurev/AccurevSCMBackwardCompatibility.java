@@ -40,29 +40,45 @@ import hudson.plugins.accurev.extensions.impl.UseColor;
 
 @SuppressWarnings({"deprecation", "unused"})
 public abstract class AccurevSCMBackwardCompatibility extends SCM {
-    private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    private transient String serverName;
-    private transient boolean ignoreStreamParent;
-    private transient String wspaceORreftree;
-    private transient boolean cleanreftree;
-    private transient String workspace;
-    private transient boolean useSnapshot;
-    private transient boolean dontPopContent;
-    private transient String snapshotNameFormat;
-    private transient String reftree;
-    private transient String subPath;
-    private transient String filterForPollSCM;
-    private transient boolean useReftree;
-    private transient boolean useWorkspace;
-    private transient boolean noWspaceNoReftree;
-    private transient String serverUUID;
+    static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
+    transient String serverName;
+    transient String depot;
+    transient String stream;
+    transient boolean ignoreStreamParent;
+    transient String wspaceORreftree;
+    transient boolean useReftree;
+    transient boolean useWorkspace;
+    transient boolean noWspaceNoReftree;
+    transient boolean cleanreftree;
+    transient String workspace;
+    transient boolean useSnapshot;
+    transient boolean dontPopContent;
+    transient String snapshotNameFormat;
+    transient boolean synctime;
+    transient String reftree;
+    transient String subPath;
+    transient String filterForPollSCM;
+    transient String directoryOffset;
+    transient String serverUUID;
 
-    public AccurevSCMBackwardCompatibility(AccurevSCM.AccurevServer server) {
-        serverName = server.getName();
-        serverUUID = server.getUuid();
+    @Deprecated
+    public String getDepot() {
+        return depot;
     }
 
-    protected AccurevSCMBackwardCompatibility() {
+    @Deprecated
+    public String getStream() {
+        return stream;
+    }
+
+    @Deprecated
+    public boolean isSynctime() {
+        return synctime;
+    }
+
+    @Deprecated
+    public String getDirectoryOffset() {
+        return directoryOffset;
     }
 
     @Deprecated
@@ -311,6 +327,7 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM {
          * @return Value for property 'credentials'.
          */
         @CheckForNull
+        @Deprecated
         public StandardUsernamePasswordCredentials getCredentials() {
             if (StringUtils.isBlank(credentialsId)) return null;
             else {
@@ -348,7 +365,7 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM {
         }
 
         boolean migrateCredentials() throws IOException {
-            if (username != null) {
+            if (username != null && password != null && credentialsId == null) {
                 LOGGER.info("Migrating to credentials");
                 String secret = deobfuscate(password);
                 String credentialsId = "";
@@ -380,8 +397,6 @@ public abstract class AccurevSCMBackwardCompatibility extends SCM {
                 }
                 if (StringUtils.isNotEmpty(this.credentialsId)) {
                     LOGGER.info("Migrated successfully to credentials");
-                    username = null;
-                    password = null;
                     SystemCredentialsProvider.getInstance().save();
                     return true;
                 } else {
