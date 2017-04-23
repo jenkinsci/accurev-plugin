@@ -1,7 +1,6 @@
 package hudson.plugins.accurev;
 
 import static hudson.Util.fixEmpty;
-import static hudson.Util.fixEmptyAndTrim;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,11 +24,10 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 
@@ -93,10 +91,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         );
     }
 
-    private String url;
-    private String depot;
-    private String stream;
-    private String credentialsId;
+    private List<UserRemoteConfig> userRemoteConfigs;
 
     private DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> extensions;
 
@@ -105,16 +100,24 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
     @DataBoundConstructor
     public AccurevSCM(
-        String url, String depot, String stream, String credentialsId
+        List<UserRemoteConfig> userRemoteConfigs,
+        List<AccurevSCMExtension> extensions
     ) {
-        this.url = url;
-        this.depot = depot;
-        this.stream = stream;
-        this.credentialsId = credentialsId;
+        this.userRemoteConfigs = userRemoteConfigs;
+        this.extensions = new DescribableList<>(Saveable.NOOP, Util.fixNull(extensions));
     }
 
+    /**
+     * Used for testing
+     *
+     * @param server The now deprecated server config
+     * @param depot  values need to convert to the new user config
+     * @param stream values need to convert to the new user config
+     */
+    @Deprecated
     public AccurevSCM(AccurevServer server, String depot, String stream) {
-        super(server);
+        this.serverUUID = server.getUuid();
+        this.serverName = server.getName();
         this.depot = depot;
         this.stream = stream;
     }
@@ -123,29 +126,18 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public String getCredentialsId() {
-        return credentialsId;
-    }
-
-    public String getDepot() {
-        return depot;
+    public List<UserRemoteConfig> getUserRemoteConfigs() {
+        return userRemoteConfigs;
     }
 
     @Nonnull
     @Override
     public String getKey() {
         StringBuilder b = new StringBuilder("accurev");
-        // TODO should handle multiple repos
-        b.append(' ').append(getUrl());
+        for (UserRemoteConfig config : userRemoteConfigs) {
+            b.append(' ').append(config.getUrl());
+        }
         return b.toString();
-    }
-
-    public String getStream() {
-        return stream;
     }
 
     @CheckForNull
@@ -204,21 +196,13 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
      * @param listener      listener
      * @param changelogFile change log file
      * @param scmrs         SCMRevisionState
-     * @throws java.io.IOException            on failing IO
-     * @throws java.lang.InterruptedException on failing interrupt
+     * @throws IOException          on failing IO
+     * @throws InterruptedException on failing interrupt
      */
 
     public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
-
-        String depot = fixEmptyAndTrim(this.depot);
-        String stream = fixEmptyAndTrim(this.stream);
-
-        if (depot == null)
-            throw new AccurevException("Depot must be specified");
-        if (stream == null)
-            throw new AccurevException("Stream must be specified");
 
         Run<?, ?> lastBuild = build.getPreviousBuild();
         AccurevSCMRevisionState baseline;
@@ -227,72 +211,90 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         else if (lastBuild != null)
             baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(lastBuild, workspace, launcher, listener);
         else
-            baseline = new AccurevSCMRevisionState(1); // Accurev specifies transaction start from one
+            baseline = new AccurevSCMRevisionState(null); // Accurev specifies transaction start from one
 
-        if (baseline == null) {
-            throw new AccurevException("Baseline cannot be null");
-        }
         EnvVars environment = build.getEnvironment(listener);
-        AccurevClient accurev = createClient(listener, environment, build, workspace);
+        Map<String, Long> state = new HashMap<>();
+        for (UserRemoteConfig config : userRemoteConfigs) {
+            AccurevClient accurev = createClient(listener, environment, build, workspace, config);
+            AccurevStreams streams = new AccurevStreams();
 
-        int latestTransaction = baseline.getTransaction();
-        int actualTransaction = accurev.getLatestTransaction(getDepot()).getTransaction();
-        if (actualTransaction != 0) latestTransaction = actualTransaction;
+            StreamsCommand streamsCommand = accurev.streams().depot(config.getDepot()).toStreams(streams);
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decorateStreamsCommand(this, config, build, accurev, listener, streamsCommand);
+            }
+            streamsCommand.execute();
 
-//        Use decorateStreamsCommand to handle extensions :)
-        AccurevStreams streams;
-        if (isIgnoreStreamParent()) streams = accurev.getStream(stream);
-        else streams = accurev.getStreams(depot);
+            long latestTransaction = baseline.getTransaction(config.toString());
+            AccurevTransactions transactions = new AccurevTransactions();
+            HistCommand now = accurev.hist().depot(config.getDepot()).timespec("now").count(1).toTransactions(transactions);
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decorateHistCommand(this, config, build, accurev, listener, now);
+            }
+            now.execute();
 
-        if (streams == null)
-            throw new AccurevException("Stream(s) not found");
+            AccurevTransaction transaction = transactions.get(0);
+            long actualTransaction = transaction.getTransaction();
+            if (actualTransaction != 0L) latestTransaction = actualTransaction;
+            state.put(config.toString(), latestTransaction);
 
-        // Check if stream is NOT fetched from Accurev.
-        if (!streams.containsKey(stream))
-            throw new AccurevException("Stream does not exists in the fetched result");
+            // Check if stream is NOT fetched from Accurev.
+            if (!streams.containsKey(config.getStream()))
+                throw new AccurevException("Stream does not exists in the fetched result");
 
-//
-//        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
-//        if (checkout) listener.getLogger().println("Checkout done");
-//        else listener.getLogger().println("Checkout failed");
-//
-        build.addAction(new AccurevSCMRevisionState(latestTransaction));
+            PopulateCommand pop = accurev.populate().stream(config.getStream());
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decoratePopulateCommand(this, config, build, accurev, listener, pop);
+            }
+            pop.execute();
+        }
+        build.addAction(new AccurevSCMRevisionState(state));
     }
 
-    private AccurevClient createClient(TaskListener listener, EnvVars environment, Run<?, ?> build, FilePath workspace) throws IOException, InterruptedException {
-        FilePath ws = workingDirectory(build.getParent(), workspace, environment, listener);
+    private AccurevClient createClient(TaskListener listener, EnvVars environment, Run<?, ?> build, FilePath workspace, UserRemoteConfig config) throws IOException, InterruptedException {
+        FilePath ws = workingDirectory(workspace, environment, config.getLocalDir());
 
         if (ws != null) {
             ws.mkdirs();
         }
-        return createClient(listener, environment, build.getParent(), AccurevUtils.workspaceToNode(workspace), ws);
+        return createClient(listener, environment, build.getParent(), AccurevUtils.workspaceToNode(workspace), ws, config);
     }
 
-    private FilePath workingDirectory(Job<?, ?> parent, FilePath workspace, EnvVars environment, TaskListener listener) {
+    private FilePath workingDirectory(FilePath workspace, EnvVars env, String localDir) {
         if (workspace == null) {
             return null;
         }
-
-        // TODO extension effecting workspace
-        return workspace;
+        if (localDir == null) localDir = ".";
+        return workspace.child(env.expand(localDir));
     }
 
-    private AccurevClient createClient(TaskListener listener, EnvVars environment, Job parent, Node node, FilePath ws) throws InterruptedException, IOException {
-        AccurevServer server = getServer();
-        if (server == null) {
-            throw new AccurevException("No server, selected");
-        }
-        StandardUsernamePasswordCredentials credentials = server.getCredentials();
-        if (credentials == null) {
-            throw new AccurevException("No credentials provided");
-        }
+    private AccurevClient createClient(TaskListener listener, EnvVars environment, Job project, Node node, FilePath ws, UserRemoteConfig config) throws InterruptedException, IOException {
+
         String accurevExe = getAccurevExe(node, listener);
-        Accurev accurev = Accurev.with(listener, environment).in(ws).using(accurevExe).on(server.getUrl());
+        Accurev accurev = Accurev.with(listener, environment).in(ws).using(accurevExe).on(environment.expand(config.getUrl()));
 
         // TODO extension decorate scm and client;
 
+        // Set ACCUREV_HOME to Node's root path
+        if (!environment.containsKey("ACCUREV_HOME")) {
+            String path = AccurevUtils.getRootPath(ws);
+            if (StringUtils.isNotBlank(path))
+                environment.put("ACCUREV_HOME", path);
+        }
+
         AccurevClient c = accurev.getClient();
-        c.login().username(credentials.getUsername()).password(credentials.getPassword()).execute();
+
+        String credentialsId = config.getCredentialsId();
+        if (credentialsId != null) {
+            StandardUsernamePasswordCredentials cred = CredentialsMatchers.firstOrNull(
+                CredentialsProvider
+                    .lookupCredentials(StandardUsernamePasswordCredentials.class,
+                        project, ACL.SYSTEM,
+                        URIRequirementBuilder.fromUri(config.getUrl()).build()
+                    ),
+                CredentialsMatchers.withId(credentialsId));
+            c.login().username(cred.getUsername()).password(cred.getPassword()).execute();
+        }
         return c;
     }
 
@@ -387,7 +389,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
                 }
             }
         }
-        return scmrs == null ? new AccurevSCMRevisionState(1) : scmrs;
+        return scmrs == null ? new AccurevSCMRevisionState(null) : scmrs;
     }
 
     @Override
@@ -409,7 +411,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(project.getLastBuild(),
                 launcher != null ? workspace : null, launcher, listener);
         else
-            baseline = new AccurevSCMRevisionState(1); // Accurev specifies transaction start from one
+            baseline = new AccurevSCMRevisionState(null); // Accurev specifies transaction start from one
 
         if (project.getLastBuild() == null || baseline == null) {
             listener.getLogger().println("[poll] No previous build, so lets start the build.");
@@ -417,40 +419,38 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         }
 
         Node node;
-        if (workspace != null && !getDescriptor().isPollOnMaster()) {
+        if (workspace != null && !getDescriptor().isPollOnMaster())
             node = AccurevUtils.workspaceToNode(workspace);
-        } else
+        else
             node = Jenkins.getInstance();
 
         EnvVars environment = project.getEnvironment(node, listener);
 
-        AccurevClient accurev = createClient(listener, environment, project, node, workspace);
+        for (UserRemoteConfig config : userRemoteConfigs) {
+            AccurevClient accurev = createClient(listener, environment, project, node, workspace, config);
 
-        // Run update command - check using reference tree or stream name
-        int latestTransaction = baseline.getTransaction();
-        int actualTransaction = accurev.getLatestTransaction(getDepot()).getTransaction();
-        if (actualTransaction != 0) latestTransaction = actualTransaction;
+            long latestTransaction = baseline.getTransaction(config.toString());
+            AccurevTransactions transactions = new AccurevTransactions();
+            HistCommand now = accurev.hist().depot(config.getDepot()).timespec("now").count(1).toTransactions(transactions);
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decorateHistCommand(this, config, project, accurev, listener, now);
+            }
+            now.execute();
 
-        List<String> paths = new ArrayList<>();
+            List<String> paths = new ArrayList<>();
 
-        UpdateCommand update = accurev.update()
-            .stream(getStream())
-            .preview(paths)
-            .range(latestTransaction, baseline.getTransaction());
+            UpdateCommand update = accurev.update()
+                .stream(config.getStream())
+                .preview(paths)
+                .range(latestTransaction, baseline.getTransaction(config.toString()));
 
-        for (AccurevSCMExtension ext : getExtensions()) {
-            ext.decorateUpdateCommand(this, project, accurev, listener, update);
+            for (AccurevSCMExtension ext : getExtensions()) {
+                ext.decorateUpdateCommand(this, project, accurev, listener, update);
+            }
+
+            update.execute();
         }
-
-        update.execute();
-
-        // Filter parent changes - use hist command to see if transaction
-        if (isIgnoreStreamParent()) {
-
-        }
-
-        AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
+        return PollingResult.NO_CHANGES;
     }
 
     public boolean hasStringVariableReference(final String str) {
@@ -510,11 +510,11 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
     void migrate() throws IOException {
         // Migrate data
         AccurevServer server = getServer();
-        if (server != null) {
+        if (server != null && userRemoteConfigs == null) {
             server.migrateCredentials();
-            url = server.getUrl();
-            credentialsId = server.getCredentialsId();
-            LOGGER.info("Migrated server URL and credentials to job successfully");
+            userRemoteConfigs = new ArrayList<>();
+            userRemoteConfigs.add(new UserRemoteConfig(server.getUrl(), server.getCredentialsId(), depot, stream, directoryOffset));
+            LOGGER.info("Migrated server and old config to userRemoteConfig successfully");
         }
 
         if (extensions == null)
@@ -556,6 +556,10 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
             ACCUREV_LOCK.unlock();
         }
 
+        public List<AccurevSCMExtensionDescriptor> getExtensionDescriptors() {
+            return AccurevSCMExtensionDescriptor.all();
+        }
+
         @Override
         @Nonnull
         public String getDisplayName() {
@@ -574,21 +578,6 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
                 r.add(accurev.getName());
             }
             return r;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String url, @QueryParameter String credentialsId) {
-            if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
-                return new StandardListBoxModel().includeCurrentValue(credentialsId);
-            }
-            return new StandardListBoxModel()
-                .includeEmptyValue()
-                .includeMatchingAs(ACL.SYSTEM,
-                    Jenkins.getInstance(),
-                    StandardUsernamePasswordCredentials.class,
-                    URIRequirementBuilder.fromUri(url).build(),
-                    CredentialsMatchers.always()
-                );
         }
 
         /**
