@@ -30,11 +30,7 @@ import hudson.tools.ToolProperty;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 
-/**
- * Initialized by josep on 21-01-2017.
- */
 public class AccurevTool extends ToolInstallation implements NodeSpecific<AccurevTool>, EnvironmentSpecific<AccurevTool> {
-
 
     public static transient final String DEFAULT = "Default";
     private static final long serialVersionUID = 1;

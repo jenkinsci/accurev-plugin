@@ -1,6 +1,5 @@
 package hudson.plugins.accurev.parsers.xml;
 
-
 import static jenkins.plugins.accurev.util.AccurevUtils.convertAccurevTimestamp;
 
 import java.io.IOException;

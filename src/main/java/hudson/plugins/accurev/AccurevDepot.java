@@ -1,8 +1,5 @@
 package hudson.plugins.accurev;
 
-/**
- * Initialized by josep on 09-03-2017.
- */
 public class AccurevDepot {
     private final String name;
     private final int number;

@@ -2,9 +2,6 @@ package jenkins.plugins.accurev;
 
 import java.util.List;
 
-/**
- * Initialized by josep on 07-03-2017.
- */
 public interface UpdateCommand extends AccurevCommand {
 
     /**

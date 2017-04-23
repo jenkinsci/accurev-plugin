@@ -25,7 +25,6 @@ public class ShowDepots extends Command {
                                          final Logger descriptorLogger
     ) throws IOException {
 
-
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;
         Launcher launcher = jenkins.createLauncher(listener);

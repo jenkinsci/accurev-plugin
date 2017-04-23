@@ -124,7 +124,6 @@ public class Login extends Command {
         }
     }
 
-
     /**
      * @param server Accurev Server
      * @return boolean whether am successful

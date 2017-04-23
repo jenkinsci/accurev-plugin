@@ -139,7 +139,6 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         return doUpdate(changeLogFile);
     }
 
-
     private boolean doUpdate(File changeLogFile) throws IOException {
         updateLogFile = XmlConsolidateStreamChangeLog.getUpdateChangeLogFile(changeLogFile);
         return Update.performUpdate(scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, getRefTree(), updateLogFile);

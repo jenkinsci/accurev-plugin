@@ -19,8 +19,8 @@ public class AccurevUtils {
     public static Node workspaceToNode(FilePath workspace) {
         Computer computer = workspace.toComputer();
         Node node = null;
-        if (null != computer) node = computer.getNode();
-        return null != node ? node : Jenkins.getInstance();
+        if (computer != null) node = computer.getNode();
+        return node != null ? node : Jenkins.getInstance();
     }
 
     public static String getRootPath(FilePath workspace) {

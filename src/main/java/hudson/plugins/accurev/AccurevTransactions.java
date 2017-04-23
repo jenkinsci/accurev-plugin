@@ -10,9 +10,6 @@ import jenkins.plugins.accurev.AccurevException;
 import jenkins.plugins.accurev.util.AccurevUtils;
 import jenkins.plugins.accurev.util.Parser;
 
-/**
- * Created by joseph on 4/10/17.
- */
 public class AccurevTransactions extends ArrayList<AccurevTransaction> {
     public AccurevTransactions(String result) {
         parse(result);

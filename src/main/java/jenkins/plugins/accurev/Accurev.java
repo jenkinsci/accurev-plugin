@@ -8,9 +8,6 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 
-/**
- * Initialized by josep on 04-03-2017.
- */
 public class Accurev {
     private FilePath workspace;
     private TaskListener listener;

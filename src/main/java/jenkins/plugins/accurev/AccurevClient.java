@@ -2,11 +2,7 @@ package jenkins.plugins.accurev;
 
 import hudson.plugins.accurev.AccurevDepots;
 import hudson.plugins.accurev.AccurevStreams;
-import hudson.plugins.accurev.AccurevTransaction;
 
-/**
- * Initialized by josep on 04-03-2017.
- */
 public interface AccurevClient {
     boolean verbose = Boolean.getBoolean(AccurevClient.class.getName() + ".verbose");
 

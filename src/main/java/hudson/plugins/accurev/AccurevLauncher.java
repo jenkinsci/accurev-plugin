@@ -319,7 +319,6 @@ public final class AccurevLauncher {
         return accurev;
     }
 
-
     /**
      * @param accurevTool Which tool to find
      * @param builtOn     node where build was performed
