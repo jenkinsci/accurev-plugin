@@ -3,7 +3,6 @@ package hudson.plugins.accurev.delegates;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -314,7 +313,8 @@ public abstract class AbstractModeDelegate {
         return populate(build, isPopulateRequired());
     }
 
-    public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
+    // TODO: As part of rewrite I should get accurev transaction onto environment as part of this
+    public void buildEnvVars(Run<?, ?> build, Map<String, String> env) {
         try {
             setup(null, null, TaskListener.NULL);
         } catch (IOException | InterruptedException ex) {
@@ -367,7 +367,7 @@ public abstract class AbstractModeDelegate {
         buildEnvVarsCustom(build, env);
     }
 
-    protected void buildEnvVarsCustom(AbstractBuild<?, ?> build, Map<String, String> env) {
+    protected void buildEnvVarsCustom(Run<?, ?> build, Map<String, String> env) {
         // override to put implementation specific values
     }
 
