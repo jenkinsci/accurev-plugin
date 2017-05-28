@@ -1,9 +1,12 @@
 package jenkins.plugins.accurev;
 
+import static jenkins.plugins.accurev.util.AccurevUtils.cleanAccurevPath;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.CheckForNull;
@@ -53,11 +56,11 @@ public class CliAccurevAPIImpl implements AccurevClient {
         launcher = new Launcher.LocalLauncher(AccurevClient.verbose ? listener : TaskListener.NULL);
     }
 
-    public ArgumentListBuilder command(String cmd, String... args) {
+    private ArgumentListBuilder command(String cmd, String... args) {
         return new ArgumentListBuilder(cmd, "-H", url).add(args);
     }
 
-    public ArgumentListBuilder commandXML(String cmd, String... args) {
+    private ArgumentListBuilder commandXML(String cmd, String... args) {
         return command(cmd).add("-fx").add(args);
     }
 
@@ -102,7 +105,7 @@ public class CliAccurevAPIImpl implements AccurevClient {
                     if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {
                         String path = parser.getAttributeValue("", "location");
                         if (path != null) {
-                            output.add(AccurevUtils.cleanAccurevPath(path));
+                            output.add(cleanAccurevPath(path));
                         }
                     }
                 }

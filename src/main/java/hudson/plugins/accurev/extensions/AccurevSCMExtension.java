@@ -1,17 +1,18 @@
 package hudson.plugins.accurev.extensions;
 
-import java.io.IOException;
-
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 
 import jenkins.plugins.accurev.AccurevClient;
-import jenkins.plugins.accurev.AccurevException;
+import jenkins.plugins.accurev.HistCommand;
+import jenkins.plugins.accurev.PopulateCommand;
+import jenkins.plugins.accurev.StreamsCommand;
 import jenkins.plugins.accurev.UpdateCommand;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevTransaction;
+import hudson.plugins.accurev.UserRemoteConfig;
 
 public abstract class AccurevSCMExtension extends AbstractDescribableImpl<AccurevSCMExtension> {
     /**

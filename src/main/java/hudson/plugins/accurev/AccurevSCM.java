@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -60,6 +61,9 @@ import jenkins.plugins.accurev.Accurev;
 import jenkins.plugins.accurev.AccurevClient;
 import jenkins.plugins.accurev.AccurevException;
 import jenkins.plugins.accurev.AccurevTool;
+import jenkins.plugins.accurev.HistCommand;
+import jenkins.plugins.accurev.PopulateCommand;
+import jenkins.plugins.accurev.StreamsCommand;
 import jenkins.plugins.accurev.UpdateCommand;
 import jenkins.plugins.accurev.util.AccurevUtils;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
@@ -419,7 +423,7 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
         if (project.getLastBuild() == null || baseline == null) {
             listener.getLogger().println("[poll] No previous build, so lets start the build.");
-            return PollingResult.NO_CHANGES;
+            return PollingResult.BUILD_NOW;
         }
 
         Node node;
@@ -433,26 +437,37 @@ public class AccurevSCM extends AccurevSCMBackwardCompatibility {
         for (UserRemoteConfig config : userRemoteConfigs) {
             AccurevClient accurev = createClient(listener, environment, project, node, workspace, config);
 
-            long latestTransaction = baseline.getTransaction(config.toString());
+            long previousTransaction = baseline.getTransaction(config.toString());
             AccurevTransactions transactions = new AccurevTransactions();
             HistCommand now = accurev.hist().depot(config.getDepot()).timespec("now").count(1).toTransactions(transactions);
             for (AccurevSCMExtension ext : extensions) {
                 ext.decorateHistCommand(this, config, project, accurev, listener, now);
             }
             now.execute();
+            long latestTransaction = transactions.get(0).getTransaction();
 
             List<String> paths = new ArrayList<>();
 
             UpdateCommand update = accurev.update()
                 .stream(config.getStream())
                 .preview(paths)
-                .range(latestTransaction, baseline.getTransaction(config.toString()));
+                .range(latestTransaction, previousTransaction);
 
             for (AccurevSCMExtension ext : getExtensions()) {
                 ext.decorateUpdateCommand(this, project, accurev, listener, update);
             }
-
             update.execute();
+
+            if (paths.size() != 0) {
+                transactions.clear();
+                HistCommand hist = accurev.hist()
+                    .depot(config.getDepot())
+                    .stream(config.getStream())
+                    .timespec(latestTransaction + "-" + previousTransaction)
+                    .toTransactions(transactions);
+                hist.execute();
+                // TODO: transaction excluded?
+            }
         }
         return PollingResult.NO_CHANGES;
     }
