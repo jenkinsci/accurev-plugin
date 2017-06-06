@@ -1,6 +1,5 @@
 package hudson.plugins.accurev.delegates;
 
-import hudson.model.AbstractBuild;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.plugins.accurev.*;
@@ -183,7 +182,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     @Override
-    protected void buildEnvVarsCustom(AbstractBuild<?, ?> build, Map<String, String> env) {
+    protected void buildEnvVarsCustom(Run<?, ?> build, Map<String, String> env) {
         env.put("ACCUREV_REFTREE", scm.getReftree());
     }
 

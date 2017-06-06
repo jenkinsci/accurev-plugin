@@ -318,10 +318,14 @@ public class AccurevSCM extends SCM {
      * @param env   enviroments
      * @since 0.6.9
      */
+    // TODO: 2.60+ Delete this override.
     @Override
     public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
-        // call super even though SCM.buildEnvVars currently does nothing - this could change
-        super.buildEnvVars(build, env);
+        buildEnvironment(build, env);
+    }
+
+    // TODO: 2.60+ - add @Override.
+    public void buildEnvironment(Run<?,?> build, Map<String, String> env) {
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         delegate.buildEnvVars(build, env);
     }
