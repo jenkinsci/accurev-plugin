@@ -15,7 +15,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,7 +22,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -289,15 +287,15 @@ public abstract class AbstractModeDelegate {
                 else
                     return false;
             } else {
-                String filePath = getFileRevisionsTobePopulated(build, lastTransaction, getChangeLogStream());
-                logger.info("populate file path " + filePath);
-                if (filePath != null) {
+                FilePath populateFile = getFileRevisionsTobePopulated(lastTransaction, getChangeLogStream());
+                if (populateFile != null) {
+                    logger.info("populate file path " + populateFile.getRemote());
                     if (pop.populate(scm, launcher, listener, server, stream, true, getPopulateFromMessage(), accurevWorkingSpace,
-                        accurevEnv, filePath)) {
+                        accurevEnv, populateFile)) {
                         startDateOfPopulate = pop.get_startDateOfPopulate();
-                        deletePopulateFile(filePath);
+                        deleteTempFile(populateFile);
                     } else {
-                        deletePopulateFile(filePath);
+                        deleteTempFile(populateFile);
                         return false;
                     }
                 }
@@ -413,20 +411,25 @@ public abstract class AbstractModeDelegate {
      * @throws IOException failed to open file
      */
 
-    private String getFileRevisionsTobePopulated(Run<?, ?> build, int lastTransaction, String stream) throws IOException {
+    private FilePath getFileRevisionsTobePopulated(int lastTransaction, String stream) throws IOException, InterruptedException {
         List<AccurevTransaction> transactions = History.getTransactionsAfterLastTransaction(scm, server, accurevEnv,
             accurevWorkingSpace, listener, launcher, stream, lastTransaction);
+        if (transactions.isEmpty()) {
+            return null;
+        }
         // collect all the files from the list of transactions and remove duplicates from the list of files.
-        List<String> fileRevisions = transactions
+        Set<String> fileRevisions = new HashSet<>();
+        transactions
             .stream()
-            .filter(t -> t != null && !(t.getAction().equals("defunct")))
+            .filter(t -> t != null && !t.getAction().equals("defunct") && !t.getAffectedPaths().isEmpty())
             .map(AccurevTransaction::getAffectedPaths)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList())
-            .parallelStream()
-            .distinct()
-            .collect(Collectors.toList());
-        return (!fileRevisions.isEmpty()) ? getPopulateFilePath(build, fileRevisions) : null;
+            .forEach(fileRevisions::addAll);
+        transactions
+            .stream()
+            .filter(t -> t != null && t.getAction().equals("defunct") && !t.getAffectedPaths().isEmpty())
+            .map(AccurevTransaction::getAffectedPaths)
+            .forEach(fileRevisions::removeAll);
+        return (!fileRevisions.isEmpty()) ? getPopulateFilePath(fileRevisions) : null;
     }
 
     /**
@@ -435,35 +438,21 @@ public abstract class AbstractModeDelegate {
      * @param fileRevisions current file revisions
      * @return String
      */
-    private String getPopulateFilePath(Run<?, ?> build, List<String> fileRevisions) {
-        BufferedWriter bw = null;
-        File populateFile;
-        String filepath = null;
-        try {
-            populateFile = new File(build.getParent().getRootDir(), POPULATE_FILES);
-            filepath = populateFile.getAbsolutePath();
-            logger.info("populate file path is " + populateFile.getAbsolutePath());
-            bw = Files.newBufferedWriter(populateFile.toPath(), UTF_8);
-            for (String filePath : fileRevisions) {
-                bw.write(filePath);
-                bw.newLine();
-            }
-        } catch (IOException exe) {
-            logger.info("Exception happend to write in a file." + exe);
-        } finally {
-            try {
-                if (bw != null)
-                    bw.close();
-            } catch (IOException ex) {
-                logger.info("Exception happend to close the buffered writer." + ex);
-            }
-        }
-        return filepath;
+    private FilePath getPopulateFilePath(Set<String> fileRevisions) throws IOException, InterruptedException {
+        FilePath populateFiles = accurevWorkingSpace.createTextTempFile("PopulateFiles", ".txt", String.join("\n", fileRevisions));
+        populateFiles.chmod(0700);
+        return populateFiles;
     }
 
-    private void deletePopulateFile(String filePath) {
-        File populateFile = new File(filePath);
-        boolean deleted = populateFile.delete();
-        logger.info("temporary file deleted " + deleted);
+    private void deleteTempFile(FilePath tempFile) throws InterruptedException, IOException {
+        if (tempFile != null) {
+            try {
+                tempFile.delete();
+            } catch (IOException ex) {
+                if (tempFile.exists()) {
+                    listener.getLogger().println("[WARNING] temp file " + tempFile + " not deleted");
+                }
+            }
+        }
     }
 }

@@ -51,7 +51,7 @@ public class PopulateCmd extends Command {
                             String fromMessage,
                             FilePath workspace,
                             EnvVars accurevEnv,
-                            String files) throws IOException {
+                            FilePath files) throws IOException {
         listener.getLogger().println("Populating " + fromMessage + "...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("pop");
@@ -65,10 +65,10 @@ public class PopulateCmd extends Command {
         cmd.add("-L");
         cmd.add(workspace.getRemote());
 
-        // Add the list files to be populated
+        // Add the file containing list to be populated
         if (files != null) {
             cmd.add("-l");
-            cmd.add(files);
+            cmd.add(files.getRemote());
         }
 
         if (overwrite) cmd.add("-O");
