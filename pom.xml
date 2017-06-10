@@ -18,6 +18,7 @@
     <jenkins.version>2.32.2</jenkins.version>
     <java.level>8</java.level>
     <kotlin.version>1.1.2-2</kotlin.version>
+    <maven.javadoc.skip>true</maven.javadoc.skip> <!-- Need to find solution to javadoc/kotlin doc -->
   </properties>
 
   <developers>

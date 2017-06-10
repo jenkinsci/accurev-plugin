@@ -1,6 +1,7 @@
 package hudson.plugins.accurev.parsers.xml;
 
 import hudson.plugins.accurev.AccurevLauncher;
+import hudson.plugins.accurev.AccurevUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -16,11 +17,7 @@ public class ParseUpdate implements AccurevLauncher.ICmdOutputXmlParser<Boolean,
             if (parser.getEventType() == XmlPullParser.START_TAG && "element".equalsIgnoreCase(parser.getName())) {
                 String path = parser.getAttributeValue("", "location");
                 if (path != null) {
-                    path = path.replace("\\", "/");
-                    if (path.startsWith("/./")) {
-                        path = path.substring(3);
-                    }
-                    context.add(path);
+                    context.add(AccurevUtils.cleanAccurevPath(path));
                 }
             }
         }

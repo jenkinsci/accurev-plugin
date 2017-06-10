@@ -419,17 +419,12 @@ public abstract class AbstractModeDelegate {
         }
         // collect all the files from the list of transactions and remove duplicates from the list of files.
         Set<String> fileRevisions = new HashSet<>();
-        transactions
-            .stream()
+        transactions.stream()
             .filter(t -> t != null && !t.getAction().equals("defunct") && !t.getAffectedPaths().isEmpty())
             .map(AccurevTransaction::getAffectedPaths)
             .forEach(fileRevisions::addAll);
-        transactions
-            .stream()
-            .filter(t -> t != null && t.getAction().equals("defunct") && !t.getAffectedPaths().isEmpty())
-            .map(AccurevTransaction::getAffectedPaths)
-            .forEach(fileRevisions::removeAll);
-        return (!fileRevisions.isEmpty()) ? getPopulateFilePath(fileRevisions) : null;
+        if (fileRevisions.isEmpty()) return null;
+        return checkFilesOnStream(getPopulateFilePath(fileRevisions));
     }
 
     /**
@@ -440,8 +435,22 @@ public abstract class AbstractModeDelegate {
      */
     private FilePath getPopulateFilePath(Set<String> fileRevisions) throws IOException, InterruptedException {
         FilePath populateFiles = accurevWorkingSpace.createTextTempFile("PopulateFiles", ".txt", String.join("\n", fileRevisions));
-        populateFiles.chmod(0700);
+        populateFiles.chmod(0600);
         return populateFiles;
+    }
+
+    private FilePath checkFilesOnStream(FilePath filePath) throws IOException, InterruptedException {
+        Set<String> fileRevisions = new HashSet<>();
+        List<AccurevElement> accurevElements = FilesCmd.checkFiles(scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, filePath);
+        accurevElements.stream()
+            .filter(e -> e != null && !e.getStatus().matches(".*(defunct|no such elem).*"))
+            .map(AccurevElement::getLocation)
+            .forEach(fileRevisions::add);
+        for (String str : fileRevisions) {
+            listener.getLogger().print(str);
+        }
+        filePath.write(String.join("\n", fileRevisions), "UTF-8");
+        return filePath;
     }
 
     private void deleteTempFile(FilePath tempFile) throws InterruptedException, IOException {
