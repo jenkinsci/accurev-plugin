@@ -3,6 +3,7 @@ package hudson.plugins.accurev.parsers.xml;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevTransaction;
+import hudson.plugins.accurev.AccurevUtils;
 import hudson.plugins.accurev.ParseChangeLog;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -31,10 +32,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     // parse path & convert it to standard format
                     String path = parser.getAttributeValue("", "path");
                     if (path != null) {
-                        path = path.replace("\\", "/");
-                        if (path.startsWith("/./")) {
-                            path = path.substring(3);
-                        }
+                        path = AccurevUtils.cleanAccurevPath(path);
                     }
                     resultTransaction.addAffectedPath(path);
                 }

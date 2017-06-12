@@ -43,8 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
- * @author connollys
- * @since 09-Oct-2007 16:17:34
+ * Accurev SCM plugin for Jenkins
  */
 public class AccurevSCM extends SCM {
 
@@ -325,7 +324,7 @@ public class AccurevSCM extends SCM {
     }
 
     // TODO: 2.60+ - add @Override.
-    public void buildEnvironment(Run<?,?> build, Map<String, String> env) {
+    public void buildEnvironment(Run<?, ?> build, Map<String, String> env) {
         AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
         delegate.buildEnvVars(build, env);
     }

@@ -160,10 +160,7 @@ public class ParseChangeLog extends ChangeLogParser {
                     } else if ("version".equalsIgnoreCase(tagName) && currentTransaction != null) {
                         path = parser.getAttributeValue("", "path");
                         if (path != null) {
-                            path = path.replace("\\", "/");
-                            if (path.startsWith("/./")) {
-                                path = path.substring(3);
-                            }
+                            path = AccurevUtils.cleanAccurevPath(path);
                             // currentTransaction.addAffectedPath(path);
 
                         }
