@@ -3,7 +3,7 @@
 
 Read more: [https://plugins.jenkins.io/accurev](https://plugins.jenkins.io/accurev)
 
-#Bug Reports
+# Bug Reports
 
 File bug reports [here](http://issues.jenkins-ci.org/secure/IssueNavigator.jspa?mode=hide&reset=true&jqlQuery=project+%3D+JENKINS+AND+status+in+%28Open%2C+%22In+Progress%22%2C+Reopened%29+AND+component+%3D+%27accurev-plugin%27)
 
