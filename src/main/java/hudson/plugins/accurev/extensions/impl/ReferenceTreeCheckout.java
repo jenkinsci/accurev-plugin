@@ -1,7 +1,5 @@
 package hudson.plugins.accurev.extensions.impl;
 
-import java.io.IOException;
-
 import javax.annotation.Nonnull;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -13,17 +11,10 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 
 import jenkins.plugins.accurev.AccurevClient;
-import jenkins.plugins.accurev.AccurevException;
 import jenkins.plugins.accurev.UpdateCommand;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
-import jenkins.plugins.accurev.AccurevClient;
-import jenkins.plugins.accurev.UpdateCommand;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-
-import javax.annotation.Nonnull;
 
 public class ReferenceTreeCheckout extends AccurevSCMExtension {
 

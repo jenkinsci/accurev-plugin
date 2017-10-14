@@ -7,13 +7,13 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+
+import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.StreamsCommand;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.UserRemoteConfig;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
-import jenkins.plugins.accurev.AccurevClient;
-import jenkins.plugins.accurev.StreamsCommand;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 public class RestrictedShowStreams extends AccurevSCMExtension {
     @DataBoundConstructor

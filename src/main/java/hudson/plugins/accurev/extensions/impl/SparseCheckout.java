@@ -1,26 +1,25 @@
 package hudson.plugins.accurev.extensions.impl;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.annotation.Nonnull;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+
+import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.PopulateCommand;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.UserRemoteConfig;
 import hudson.plugins.accurev.extensions.AccurevSCMExtension;
 import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
-import jenkins.plugins.accurev.AccurevClient;
-import jenkins.plugins.accurev.PopulateCommand;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-
-import javax.annotation.Nonnull;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class SparseCheckout extends AccurevSCMExtension {
 

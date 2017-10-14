@@ -1,9 +1,9 @@
 package hudson.plugins.accurev;
 
-import hudson.scm.SCMRevisionState;
-
 import java.io.Serializable;
 import java.util.Map;
+
+import hudson.scm.SCMRevisionState;
 
 public class AccurevSCMRevisionState extends SCMRevisionState implements Serializable {
 
