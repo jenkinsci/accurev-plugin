@@ -1,22 +1,11 @@
 package hudson.plugins.accurev.cmd;
 
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.GetConfigWebURL;
-import hudson.plugins.accurev.XmlParserFactory;
-import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
-import hudson.plugins.accurev.parsers.xml.ParseGetConfig;
-import hudson.util.ArgumentListBuilder;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParserFactory;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -26,12 +15,26 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.logging.Logger;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+
+import hudson.plugins.accurev.AccurevLauncher;
+import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.GetConfigWebURL;
+import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
+import hudson.plugins.accurev.parsers.xml.ParseGetConfig;
 
 public class ChangeLogCmd {
 

@@ -1,5 +1,22 @@
 package jenkins.plugins.accurev;
 
+import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Logger;
+
+import javax.annotation.Nonnull;
+
+import net.sf.json.JSONObject;
+
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.init.Initializer;
@@ -12,20 +29,6 @@ import hudson.tools.ToolInstallation;
 import hudson.tools.ToolProperty;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-import org.jenkinsci.Symbol;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
-import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Logger;
-
-import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
 
 /**
  * Initialized by josep on 21-01-2017.

@@ -1,14 +1,15 @@
 package hudson.plugins.accurev;
 
-import hudson.model.Run;
-import hudson.scm.ChangeLogSet;
-import org.kohsuke.stapler.export.Exported;
-import org.kohsuke.stapler.export.ExportedBean;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
+
+import hudson.model.Run;
+import hudson.scm.ChangeLogSet;
 
 /**
  * Created by IntelliJ IDEA.

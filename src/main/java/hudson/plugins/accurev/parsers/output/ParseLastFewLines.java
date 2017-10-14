@@ -1,11 +1,15 @@
 package hudson.plugins.accurev.parsers.output;
 
-import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
+
+import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 
 /**
  * Filters the output of any command and just returns the last few lines.

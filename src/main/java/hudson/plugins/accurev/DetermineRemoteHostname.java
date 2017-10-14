@@ -1,12 +1,13 @@
 package hudson.plugins.accurev;
 
-import hudson.remoting.Callable;
-import org.jenkinsci.remoting.RoleChecker;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import org.jenkinsci.remoting.RoleChecker;
+
+import hudson.remoting.Callable;
 
 public class DetermineRemoteHostname implements Callable<RemoteWorkspaceDetails, UnknownHostException> {
 

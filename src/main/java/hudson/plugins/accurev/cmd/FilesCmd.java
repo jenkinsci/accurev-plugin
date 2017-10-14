@@ -1,21 +1,23 @@
 package hudson.plugins.accurev.cmd;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
+import org.xmlpull.v1.XmlPullParserFactory;
+
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+
 import hudson.plugins.accurev.AccurevElement;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseFiles;
-import hudson.util.ArgumentListBuilder;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
 
 public class FilesCmd extends Command {
     private static final Logger logger = Logger.getLogger(Login.class.getName());

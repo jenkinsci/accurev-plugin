@@ -1,24 +1,30 @@
 package hudson.plugins.accurev;
 
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
-import hudson.model.FreeStyleProject;
-import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.security.ACL;
-import jenkins.model.Jenkins;
-import jenkins.plugins.accurev.AccurevPlugin;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 
-import static org.junit.Assert.*;
+import hudson.model.FreeStyleProject;
+import hudson.security.ACL;
+import jenkins.model.Jenkins;
+
+import jenkins.plugins.accurev.AccurevPlugin;
+import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
 public class MigrateIDAndCredentialTest {
     @org.junit.Rule

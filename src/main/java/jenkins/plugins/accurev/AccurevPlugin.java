@@ -1,17 +1,21 @@
 package jenkins.plugins.accurev;
 
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import hudson.init.Initializer;
-import hudson.model.Project;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import jenkins.model.Jenkins;
-import jenkins.plugins.accurev.util.UUIDUtils;
+import static hudson.init.InitMilestone.COMPLETED;
+import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
+import static hudson.init.InitMilestone.JOB_LOADED;
 
 import java.util.logging.Logger;
 
-import static hudson.init.InitMilestone.*;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+
+import hudson.init.Initializer;
+import hudson.model.Project;
+import jenkins.model.Jenkins;
+
+import jenkins.plugins.accurev.util.UUIDUtils;
+import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
 /**
  * Initialized by josp on 21/09/16.

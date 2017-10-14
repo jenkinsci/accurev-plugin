@@ -1,13 +1,13 @@
 package hudson.plugins.accurev;
 
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
  * Utility class that provides {@link XmlPullParserFactory}s.

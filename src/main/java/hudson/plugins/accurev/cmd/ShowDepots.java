@@ -1,19 +1,21 @@
 package hudson.plugins.accurev.cmd;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.logging.Logger;
+
+import org.xmlpull.v1.XmlPullParserFactory;
+
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+import jenkins.model.Jenkins;
+
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowDepots;
-import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.logging.Logger;
 
 public class ShowDepots extends Command {
 

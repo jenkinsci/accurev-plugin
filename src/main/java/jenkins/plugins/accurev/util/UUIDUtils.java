@@ -1,8 +1,8 @@
 package jenkins.plugins.accurev.util;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.util.UUID;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Initialized by josp on 21/09/16.

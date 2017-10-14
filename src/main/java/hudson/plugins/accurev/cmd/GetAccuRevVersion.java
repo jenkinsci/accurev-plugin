@@ -1,10 +1,10 @@
 package hudson.plugins.accurev.cmd;
 
-import org.apache.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
+import org.apache.log4j.Logger;
 
 public class GetAccuRevVersion {
 

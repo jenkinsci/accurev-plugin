@@ -1,16 +1,17 @@
 package hudson.plugins.accurev.cmd;
 
+import java.io.IOException;
+import java.util.logging.Logger;
+
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.util.ArgumentListBuilder;
-
-import java.io.IOException;
-import java.util.logging.Logger;
 
 public class Synctime extends Command {
     private static final Logger logger = Logger.getLogger(Synctime.class.getName());

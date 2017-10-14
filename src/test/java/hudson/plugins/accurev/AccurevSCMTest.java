@@ -1,13 +1,5 @@
 package hudson.plugins.accurev;
 
-import hudson.model.AbstractBuild;
-import hudson.model.Run;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,6 +7,15 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Test;
+
+import hudson.model.AbstractBuild;
+import hudson.model.Run;
 
 public class AccurevSCMTest {
 

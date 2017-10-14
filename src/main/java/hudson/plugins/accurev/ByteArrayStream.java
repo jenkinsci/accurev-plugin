@@ -1,6 +1,10 @@
 package hudson.plugins.accurev;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Simple class to capture the output of something, and then allow that output

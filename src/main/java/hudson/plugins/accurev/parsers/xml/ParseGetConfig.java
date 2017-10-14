@@ -1,15 +1,16 @@
 package hudson.plugins.accurev.parsers.xml;
 
-import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
-import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
-import hudson.plugins.accurev.GetConfigWebURL;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
+import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
+import hudson.plugins.accurev.GetConfigWebURL;
 
 public class ParseGetConfig implements ICmdOutputXmlParser<Map<String, GetConfigWebURL>, Void> {
 

@@ -1,29 +1,52 @@
 package hudson.plugins.accurev.delegates;
 
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.Job;
-import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.*;
-import hudson.plugins.accurev.cmd.*;
-import hudson.scm.PollingResult;
-import hudson.scm.SCMRevisionState;
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.Job;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.scm.PollingResult;
+import hudson.scm.SCMRevisionState;
+import jenkins.model.Jenkins;
+
+import hudson.plugins.accurev.AccuRevHiddenParametersAction;
+import hudson.plugins.accurev.AccurevElement;
+import hudson.plugins.accurev.AccurevPromoteTrigger;
+import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.AccurevStream;
+import hudson.plugins.accurev.AccurevTransaction;
+import hudson.plugins.accurev.GetConfigWebURL;
+import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
+import hudson.plugins.accurev.cmd.ChangeLogCmd;
+import hudson.plugins.accurev.cmd.FilesCmd;
+import hudson.plugins.accurev.cmd.GetAccuRevVersion;
+import hudson.plugins.accurev.cmd.History;
+import hudson.plugins.accurev.cmd.Login;
+import hudson.plugins.accurev.cmd.PopulateCmd;
+import hudson.plugins.accurev.cmd.SetProperty;
+import hudson.plugins.accurev.cmd.ShowStreams;
+import hudson.plugins.accurev.cmd.Synctime;
 
 /**
  * Performs actual SCM operations

@@ -1,16 +1,5 @@
 package hudson.plugins.accurev;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.model.Run;
-import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
-import hudson.plugins.accurev.parsers.xml.ParseUpdate;
-import hudson.scm.ChangeLogParser;
-import hudson.scm.ChangeLogSet;
-import hudson.scm.RepositoryBrowser;
-import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +8,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.model.Run;
+import hudson.scm.ChangeLogParser;
+import hudson.scm.ChangeLogSet;
+import hudson.scm.RepositoryBrowser;
+
+import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
+import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 
 /**
  * Parses a change log that was recorded by {@link ParseOutputToFile}.

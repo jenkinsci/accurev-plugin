@@ -1,10 +1,14 @@
 package hudson.plugins.accurev.parsers.output;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
-
-import java.io.*;
-import java.nio.charset.Charset;
 
 public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void> {
     public String parse(InputStream cmdOutput, Void context) throws UnhandledAccurevCommandOutput, IOException {

@@ -1,6 +1,10 @@
 package hudson.plugins.accurev;
 
-import hudson.plugins.accurev.delegates.*;
+import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+import hudson.plugins.accurev.delegates.ReftreeDelegate;
+import hudson.plugins.accurev.delegates.SnapshotDelegate;
+import hudson.plugins.accurev.delegates.StreamDelegate;
+import hudson.plugins.accurev.delegates.WorkspaceDelegate;
 
 /**
  * Determines the delegate used for building

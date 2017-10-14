@@ -1,16 +1,17 @@
 package hudson.plugins.accurev;
 
-import hudson.model.User;
-import hudson.scm.ChangeLogSet;
-import hudson.scm.EditType;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.export.Exported;
-import org.kohsuke.stapler.export.ExportedBean;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
+
+import hudson.model.User;
+import hudson.scm.ChangeLogSet;
+import hudson.scm.EditType;
 
 /**
  * One commit.

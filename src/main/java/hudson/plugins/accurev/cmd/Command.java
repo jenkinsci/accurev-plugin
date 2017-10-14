@@ -1,8 +1,10 @@
 package hudson.plugins.accurev.cmd;
 
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.util.ArgumentListBuilder;
 import org.apache.commons.lang.StringUtils;
+
+import hudson.util.ArgumentListBuilder;
+
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
 public class Command {
     /**

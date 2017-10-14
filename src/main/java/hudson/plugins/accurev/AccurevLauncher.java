@@ -1,27 +1,5 @@
 package hudson.plugins.accurev;
 
-import hudson.AbortException;
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.Launcher.ProcStarter;
-import hudson.model.Computer;
-import hudson.model.Node;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
-import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
-import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
-import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
-import jenkins.plugins.accurev.AccurevTool;
-import org.apache.commons.lang.StringUtils;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,6 +8,31 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.apache.commons.lang.StringUtils;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import hudson.AbortException;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Launcher.ProcStarter;
+import hudson.model.Computer;
+import hudson.model.Node;
+import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+import jenkins.model.Jenkins;
+
+import jenkins.plugins.accurev.AccurevTool;
+import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
+import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
+import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
 
 /**
  * Utility class that knows how to run AccuRev commands and (optionally) have

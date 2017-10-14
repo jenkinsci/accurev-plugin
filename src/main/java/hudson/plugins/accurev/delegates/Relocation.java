@@ -1,8 +1,8 @@
 package hudson.plugins.accurev.delegates;
 
-import hudson.util.ArgumentListBuilder;
-
 import java.util.List;
+
+import hudson.util.ArgumentListBuilder;
 
 /**
  * @author raymond

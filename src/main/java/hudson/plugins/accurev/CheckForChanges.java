@@ -1,19 +1,26 @@
 package hudson.plugins.accurev;
 
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.cmd.History;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.TaskListener;
+
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.cmd.History;
 
 public class CheckForChanges {
 

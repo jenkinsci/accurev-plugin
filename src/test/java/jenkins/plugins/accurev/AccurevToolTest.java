@@ -1,15 +1,16 @@
 package jenkins.plugins.accurev;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
+
 import hudson.EnvVars;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
 import hudson.util.StreamTaskListener;
-import org.junit.Before;
-import org.junit.Test;
-import org.jvnet.hudson.test.JenkinsRule;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Initialized by josep on 22-01-2017.

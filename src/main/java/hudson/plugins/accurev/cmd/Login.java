@@ -1,22 +1,25 @@
 package hudson.plugins.accurev.cmd;
 
+import java.io.IOException;
+import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
+
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+import hudson.util.Secret;
+import jenkins.model.Jenkins;
+
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
-import hudson.util.ArgumentListBuilder;
-import hudson.util.Secret;
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
-
-import java.io.IOException;
-import java.util.logging.Logger;
 
 public class Login extends Command {
     private static final Logger logger = Logger.getLogger(Login.class.getName());

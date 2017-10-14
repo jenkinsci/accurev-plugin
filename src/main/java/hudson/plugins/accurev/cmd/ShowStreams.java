@@ -1,21 +1,5 @@
 package hudson.plugins.accurev.cmd;
 
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.TaskListener;
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.XmlParserFactory;
-import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
-import hudson.util.ArgumentListBuilder;
-import hudson.util.ComboBoxModel;
-import jenkins.model.Jenkins;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +8,25 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.annotation.CheckForNull;
+
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.TaskListener;
+import hudson.util.ArgumentListBuilder;
+import hudson.util.ComboBoxModel;
+import jenkins.model.Jenkins;
+
+import hudson.plugins.accurev.AccurevLauncher;
+import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.AccurevStream;
+import hudson.plugins.accurev.XmlParserFactory;
+import hudson.plugins.accurev.parsers.xml.ParseShowStreams;
 
 public class ShowStreams extends Command {
     private static final Logger LOGGER = Logger.getLogger(ShowStreams.class.getName());

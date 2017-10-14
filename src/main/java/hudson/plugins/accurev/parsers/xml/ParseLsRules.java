@@ -1,12 +1,13 @@
 package hudson.plugins.accurev.parsers.xml;
 
-import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
-import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
+import java.io.IOException;
+import java.util.HashMap;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.IOException;
-import java.util.HashMap;
+import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
+import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
 final class ParseLsRules implements ICmdOutputXmlParser<HashMap<String, String>, Void> {
     public HashMap<String, String> parse(final XmlPullParser parser, final Void context)

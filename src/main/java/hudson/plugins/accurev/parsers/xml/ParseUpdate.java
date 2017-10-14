@@ -1,12 +1,13 @@
 package hudson.plugins.accurev.parsers.xml;
 
-import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevUtils;
+import java.io.IOException;
+import java.util.List;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.IOException;
-import java.util.List;
+import hudson.plugins.accurev.AccurevLauncher;
+import hudson.plugins.accurev.AccurevUtils;
 
 /**
  * @author raymond

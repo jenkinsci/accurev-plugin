@@ -1,15 +1,16 @@
 package hudson.plugins.accurev.parsers.xml;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevTransaction;
 import hudson.plugins.accurev.AccurevUtils;
 import hudson.plugins.accurev.ParseChangeLog;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.util.List;
 
 public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
     public Boolean parse(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput,
