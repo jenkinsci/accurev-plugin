@@ -49,6 +49,7 @@ public class AccurevSCMTest {
     public JenkinsRule rule = new JenkinsRule();
 
     private AccurevSCM scm;
+    private List<UserRemoteConfig> userRemoteConfigs = new ArrayList<>();;
     private AccurevServer oldServer;
     private FreeStyleProject accurevTest;
     private AccurevSCMDescriptor descriptor;
@@ -68,6 +69,20 @@ public class AccurevSCMTest {
         scm = new AccurevSCM(oldServer, "test", "test");
         accurevTest = rule.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);
+
+        store.addCredentials(
+            Domain.global(),
+            new UsernamePasswordCredentialsImpl(
+                CredentialsScope.GLOBAL,
+                "accurev",
+                "Test Accurev credential",
+                "bob",
+                "test"
+            )
+        );
+
+        UserRemoteConfig userRemoteConfig = new UserRemoteConfig(oldServer.getUrl(), "accurev", "depot", "stream", "");
+        userRemoteConfigs.add(userRemoteConfig);
     }
 
     @SuppressWarnings("deprecation")
@@ -97,21 +112,7 @@ public class AccurevSCMTest {
 
     @Test
     public void testConfigRoundtrip() throws Exception {
-        store.addCredentials(
-            Domain.global(),
-            new UsernamePasswordCredentialsImpl(
-                CredentialsScope.GLOBAL,
-                "accurev",
-                "Test Accurev credential",
-                "bob",
-                "test"
-            )
-        );
-
-        // setup global config - add another server to test that part
-        List<AccurevServer> serverList = descriptor.getServers();
-        serverList.add(new AccurevServer(null, "otherServerName", "otherServerHost", 5050, "accurev"));
-        descriptor.setServers(serverList);
+        AccurevSCM scm = new AccurevSCM(userRemoteConfigs, null);
 
         accurevTest.setScm(scm);
         rule.configRoundtrip(accurevTest);
@@ -128,6 +129,7 @@ public class AccurevSCMTest {
             test2
         );
 
+        scm = new AccurevSCM(userRemoteConfigs, null);
         scm.setAccurevTool("test2");
         accurevTest.setScm(scm);
         rule.configRoundtrip(accurevTest);
