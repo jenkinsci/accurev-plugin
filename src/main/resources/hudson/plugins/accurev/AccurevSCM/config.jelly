@@ -6,16 +6,16 @@
       <legend>AccuRev Configurations</legend>
       <table width="100%">
         <f:entry title="Server ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
-                 field="serverUUID" help="/plugin/accurev/help/project/server.html">
+                 field="serverName" help="/plugin/accurev/help/project/server.html">
           <f:select/>
         </f:entry>
         <f:entry title="Depot ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="depot" help="/plugin/accurev/help/project/depot.html">
-          <f:select/>
+          <f:textbox/>
         </f:entry>
         <f:entry title="Stream/Workspace ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="stream" help="/plugin/accurev/help/project/stream.html">
-          <f:combobox/>
+          <f:textbox/>
         </f:entry>
         <j:if test="${descriptor.showAccurevToolOptions()}">
           <f:entry title="${%Accurev executable}" field="accurevTool">

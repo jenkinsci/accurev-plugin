@@ -61,7 +61,6 @@ import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCMRevisionState;
 import hudson.security.ACL;
-import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
@@ -69,9 +68,6 @@ import jenkins.model.Jenkins;
 
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.ShowDepots;
-import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 
 /**
@@ -658,52 +654,6 @@ public class AccurevSCM extends SCM {
             }
 
             return s;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillDepotItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUuid();
-            final AccurevServer server = getServer(serverUUID);
-
-            if (server == null) {
-                return new ListBoxModel();
-            }
-
-            List<String> depots = new ArrayList<>();
-
-            // Execute the login command first & upon success of that run show depots
-            // command. If any of the command's exitvalue is 1 proper error message is
-            // logged
-            if (Login.accurevLoginFromGlobalConfig(server)) {
-                depots = ShowDepots.getDepots(server, DESCRIPTORLOGGER);
-            }
-
-            ListBoxModel d = new ListBoxModel();
-            for (String dname : depots) {
-                d.add(dname, dname);
-            }
-            // Below while loop is for to retain the selected item when you open the
-            // Job to reconfigure
-            d.stream().filter(o -> depot.equals(o.name)).forEach(o -> o.selected = true);
-            return d;
-        }
-
-        // Populating the streams
-        @SuppressWarnings("unused") // Used by stapler
-        public ComboBoxModel doFillStreamItems(@QueryParameter String serverUUID, @QueryParameter String depot) throws IOException, InterruptedException {
-            if (StringUtils.isBlank(serverUUID) && !getServers().isEmpty()) serverUUID = getServers().get(0).getUuid();
-            final AccurevServer server = getServer(serverUUID);
-            if (server == null) {
-                return new ComboBoxModel();
-            }
-            ComboBoxModel cbm = new ComboBoxModel();
-            if (Login.accurevLoginFromGlobalConfig(server)) {
-                if (StringUtils.isBlank(depot)) {
-                    depot = Util.fixNull(ShowDepots.getDepots(server, DESCRIPTORLOGGER)).get(0);
-                }
-                cbm = ShowStreams.getStreamsForGlobalConfig(server, depot, cbm);
-            }
-            return cbm;
         }
 
         @SuppressWarnings("unused") // Used by stapler

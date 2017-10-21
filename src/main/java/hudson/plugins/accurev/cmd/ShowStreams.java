@@ -1,13 +1,10 @@
 package hudson.plugins.accurev.cmd;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import javax.annotation.CheckForNull;
 
@@ -18,8 +15,6 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
-import hudson.util.ComboBoxModel;
-import jenkins.model.Jenkins;
 
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
@@ -131,27 +126,4 @@ public class ShowStreams extends Command {
                 .forEach(stream -> stream.setParent(streams.get(stream.getBasisName())));
     }
 
-    //Populating streams dynamically in the global config page
-
-    public static ComboBoxModel getStreamsForGlobalConfig(//
-                                                          final AccurevServer server,
-                                                          final String depot,
-                                                          final ComboBoxModel cbm
-    ) throws IOException {
-        Jenkins jenkins = Jenkins.getInstance();
-        TaskListener listener = TaskListener.NULL;
-        Launcher launcher = jenkins.createLauncher(listener);
-        EnvVars accurevEnv = new EnvVars();
-        Map<String, AccurevStream> allStreams = getAllStreams(null, server, depot, null, accurevEnv, jenkins.getRootPath(), listener, launcher);
-        if (allStreams == null) return cbm;
-        if (allStreams.isEmpty()) return cbm;
-        List<String> streamNames = allStreams
-            .values()
-            .stream()
-            .map(AccurevStream::getName)
-            .collect(Collectors.toList());
-        cbm.addAll(streamNames);
-        Collections.sort(cbm);
-        return cbm;
-    }
 }
