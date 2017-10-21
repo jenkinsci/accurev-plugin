@@ -123,7 +123,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         cmd.add("wspaces");
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        return AccurevLauncher.runCommand("Show workspaces command", accurevTool, launcher, cmd, scm.getOptionalLock(),
+        return AccurevLauncher.runCommand("Show workspaces command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
             accurevEnv, jenkinsWorkspace, listener, logger, parser, new ParseShowWorkspaces(), null);
     }
 
