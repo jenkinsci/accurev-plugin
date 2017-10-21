@@ -54,9 +54,9 @@ public class CheckForChanges {
         //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
         List<String> validTransactionTypes;
         if (stream.getType().name().equalsIgnoreCase("workspace")) {
-            validTransactionTypes = AccurevServer.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
+            validTransactionTypes = AccurevSCM.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
         } else {
-            validTransactionTypes = AccurevServer.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
+            validTransactionTypes = AccurevSCM.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
         }
         listener.getLogger().println(//
             "Checking transactions of type " + String.join(", ", validTransactionTypes) + //

@@ -66,7 +66,6 @@ public abstract class AbstractModeDelegate {
     private static final String ACCUREV_LATEST_TRANSACTION_DATE = "ACCUREV_LATEST_TRANSACTION_DATE";
     private static final String ACCUREV_HOME = "ACCUREV_HOME";
     private static final String ACCUREVLASTTRANSFILENAME = "AccurevLastTrans.txt";
-    private static final String POPULATE_FILES = "PopulateFiles.txt";
     public final AccurevSCM scm;
     protected Launcher launcher;
     protected AccurevSCM.AccurevServer server;
