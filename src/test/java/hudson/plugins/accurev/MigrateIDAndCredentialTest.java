@@ -26,6 +26,7 @@ import jenkins.plugins.accurev.AccurevPlugin;
 import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
+@SuppressWarnings("deprecation")
 public class MigrateIDAndCredentialTest {
     @org.junit.Rule
     public JenkinsRule j = new JenkinsRule();
@@ -36,9 +37,10 @@ public class MigrateIDAndCredentialTest {
     @Before
     public void setUp() throws Exception {
         AccurevServer server = new AccurevServer(null,
-            "test", "localhost",
-            5050, "bob", "OBF:1rwf1x1b1rwf");
-        scm = new AccurevSCM(null, "test", "test");
+            "test", "localhost");
+        server.setUsername("bob");
+        server.setPassword("OBF:1rwf1x1b1rwf");
+        scm = new AccurevSCM(server.getName(), "test", "test");
         scm.setServerName("test");
         FreeStyleProject accurevTest = j.createFreeStyleProject("accurevTest");
         accurevTest.setScm(scm);

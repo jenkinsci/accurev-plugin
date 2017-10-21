@@ -1,5 +1,8 @@
 package hudson.plugins.accurev;
 
+import static hudson.Util.fixEmpty;
+import static hudson.Util.fixNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -7,10 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
@@ -43,7 +44,6 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -61,7 +61,6 @@ import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCMRevisionState;
 import hudson.security.ACL;
-import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
@@ -74,8 +73,11 @@ import hudson.plugins.accurev.delegates.AbstractModeDelegate;
  * Accurev SCM plugin for Jenkins
  */
 public class AccurevSCM extends SCM {
-
-// ------------------------------ FIELDS ------------------------------
+    protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
+        .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"));
+    protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
+        .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
+            "mkstream", "move", "promote", "purge", "dispatch"));
 
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
@@ -102,25 +104,23 @@ public class AccurevSCM extends SCM {
     private String accurevTool = null;
     private Job<?, ?> activeProject;
 
-// --------------------------- CONSTRUCTORS ---------------------------
-
     @DataBoundConstructor
     public AccurevSCM(
-        String serverUUID, String depot, String stream
+        String serverName, String depot, String stream
     ) {
-        this.serverUUID = serverUUID;
         this.depot = depot;
         this.stream = stream;
-        AccurevServer server = getDescriptor().getServer(serverUUID);
-        if (server != null) serverName = server.getName();
+        AccurevServer server = getDescriptor().getServer(serverName);
+        if (server != null) {
+            setServerName(server.getName());
+            setServerUUID(server.getUuid());
+        }
         updateMode();
     }
 
     public static AccurevSCMDescriptor configuration() {
         return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
     }
-
-// --------------------- GETTER / SETTER METHODS ---------------------
 
     public String getDepot() {
         return depot;
@@ -130,7 +130,6 @@ public class AccurevSCM extends SCM {
         return serverName;
     }
 
-    @DataBoundSetter
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
@@ -180,6 +179,8 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setWspaceORreftree(String wspaceORreftree) {
+        if (wspaceORreftree.equals("none"))
+            wspaceORreftree = null;
         this.wspaceORreftree = wspaceORreftree;
         updateMode();
     }
@@ -190,7 +191,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setReftree(String reftree) {
-        this.reftree = reftree;
+        this.reftree = fixEmpty(reftree);
     }
 
     public String getWorkspace() {
@@ -199,7 +200,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setWorkspace(String workspace) {
-        this.workspace = workspace;
+        this.workspace = fixEmpty(workspace);
     }
 
     @CheckForNull
@@ -209,7 +210,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setAccurevTool(String accurevTool) {
-        this.accurevTool = accurevTool;
+        this.accurevTool = fixEmpty(accurevTool);
     }
 
     public String getSubPath() {
@@ -218,7 +219,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setSubPath(String subPath) {
-        this.subPath = subPath;
+        this.subPath = fixEmpty(subPath);
     }
 
     public String getFilterForPollSCM() {
@@ -227,7 +228,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setFilterForPollSCM(String filterForPollSCM) {
-        this.filterForPollSCM = filterForPollSCM;
+        this.filterForPollSCM = fixEmpty(filterForPollSCM);
     }
 
     public String getSnapshotNameFormat() {
@@ -236,7 +237,7 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setSnapshotNameFormat(String snapshotNameFormat) {
-        this.snapshotNameFormat = snapshotNameFormat;
+        this.snapshotNameFormat = fixEmpty(snapshotNameFormat);
     }
 
     public boolean isIgnoreStreamParent() {
@@ -305,11 +306,8 @@ public class AccurevSCM extends SCM {
 
     @DataBoundSetter
     public void setDirectoryOffset(String directoryOffset) {
-        this.directoryOffset = directoryOffset;
+        this.directoryOffset = fixEmpty(directoryOffset);
     }
-
-// ------------------------ INTERFACE METHODS ------------------------
-// --------------------- Interface Describable ---------------------
 
     private void updateMode() {
         AccurevMode accurevMode = AccurevMode.findMode(this);
@@ -327,8 +325,6 @@ public class AccurevSCM extends SCM {
     public AccurevSCMDescriptor getDescriptor() {
         return (AccurevSCMDescriptor) super.getDescriptor();
     }
-
-// -------------------------- OTHER METHODS --------------------------
 
     /**
      * Exposes AccuRev-specific information to the environment. The following
@@ -503,7 +499,6 @@ public class AccurevSCM extends SCM {
         return parsedLocalStream;
     }
 
-    //--------------------------- Inner Class - DescriptorImplementation ----------------------------
     @Extension
     public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
@@ -643,14 +638,14 @@ public class AccurevSCM extends SCM {
         }
 
         @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillServerUUIDItems(@QueryParameter String serverUUID) {
+        public ListBoxModel doFillServerNameItems() {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
                 DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
                 return s;
             }
             for (AccurevServer server : this._servers) {
-                s.add(server.getName(), server.getUuid());
+                s.add(server.getName());
             }
 
             return s;
@@ -671,27 +666,18 @@ public class AccurevSCM extends SCM {
         }
     }
 
-    // --------------------------- Inner Class ---------------------------------------------------
     public static final class AccurevServer extends AbstractDescribableImpl<AccurevServer> {
 
-        // public static final String DEFAULT_VALID_TRANSACTION_TYPES = "add,chstream,co,defcomp,defunct,keep,mkstream,move,promote,purge,dispatch";
-        protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-            .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"));
-        protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
-            .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
-                "mkstream", "move", "promote", "purge", "dispatch"));
-        // keep all transaction types in a set for validation
-        private static final String[] VTT_LIST = {"chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"};
-        private static final Set<String> VALID_TRANSACTION_TYPES = new HashSet<>(Arrays.asList(VTT_LIST));
         private transient static final String __OBFUSCATE = "OBF:";
         private final String name;
         private final String host;
+        @Deprecated
         transient String username;
+        @Deprecated
         transient String password;
         private int port = 5050;
         private String credentialsId;
         private UUID uuid;
-        private String validTransactionTypes;
         private boolean syncOperations;
         private boolean minimiseLogins;
         private boolean useNonexpiringLogin;
@@ -708,17 +694,6 @@ public class AccurevSCM extends SCM {
             else this.uuid = UUID.fromString(uuid);
             this.name = name;
             this.host = host;
-            AccurevPromoteTrigger.validateListeners();
-        }
-
-        /* Used for testing */
-        public AccurevServer(String uuid, String name, String host, int port, String username, String password) {
-            this.uuid = StringUtils.isEmpty(uuid) ? null : UUID.fromString(uuid);
-            this.name = name;
-            this.host = host;
-            this.port = port;
-            this.username = username;
-            this.password = password;
         }
 
         private static String deobfuscate(String s) {
@@ -829,43 +804,24 @@ public class AccurevSCM extends SCM {
             }
         }
 
-        /**
-         * Getter for property 'username'.
-         *
-         * @return Value for property 'username'.
-         */
         public String getUsername() {
             StandardUsernamePasswordCredentials credentials = getCredentials();
             return credentials == null ? "jenkins" : credentials.getUsername();
         }
 
-        /**
-         * Getter for property 'password'.
-         *
-         * @return Value for property 'password'.
-         */
+        @Deprecated
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
         public String getPassword() {
             StandardUsernamePasswordCredentials credentials = getCredentials();
             return credentials == null ? "" : Secret.toString(credentials.getPassword());
         }
 
-        /**
-         * @return returns the currently set transaction types that are seen as
-         * valid for triggering builds and whos authors get notified when a
-         * build fails
-         */
-        public String getValidTransactionTypes() {
-            return validTransactionTypes;
-        }
-
-        /**
-         * @param validTransactionTypes the currently set transaction types that
-         *                              are seen as valid for triggering builds and whos authors get notified
-         *                              when a build fails
-         */
-        @DataBoundSetter
-        public void setValidTransactionTypes(String validTransactionTypes) {
-            this.validTransactionTypes = validTransactionTypes;
+        @Deprecated
+        public void setPassword(String password) {
+            this.password = password;
         }
 
         public boolean isSyncOperations() {
@@ -922,23 +878,12 @@ public class AccurevSCM extends SCM {
             this.usePromoteListen = usePromoteListen;
         }
 
-        public FormValidation doValidTransactionTypesCheck(@QueryParameter String value)//
-        {
-            final String[] formValidTypes = value.split(",");
-            for (final String formValidType : formValidTypes) {
-                if (!VALID_TRANSACTION_TYPES.contains(formValidType)) {
-                    return FormValidation.error("Invalid transaction type [" + formValidType + "]. Valid types are: " + Arrays.toString(VTT_LIST));
-                }
-            }
-            return FormValidation.ok();
-        }
-
         public boolean migrateCredentials() {
             if (username != null) {
                 LOGGER.info("Migrating to credentials");
                 String secret = deobfuscate(password);
                 String credentialsId = "";
-                List<DomainRequirement> domainRequirements = Util.fixNull(URIRequirementBuilder
+                List<DomainRequirement> domainRequirements = fixNull(URIRequirementBuilder
                     .fromUri("")
                     .withHostnamePort(host, port)
                     .build());
@@ -1007,8 +952,6 @@ public class AccurevSCM extends SCM {
             }
         }
     }
-
-    // -------------------------- INNER CLASSES --------------------------
 
     /**
      * Class responsible for parsing change-logs recorded by the builds. If this

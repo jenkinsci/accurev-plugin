@@ -2,6 +2,10 @@ package jenkins.plugins.accurev;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -10,6 +14,11 @@ import hudson.EnvVars;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
+import hudson.tools.CommandInstaller;
+import hudson.tools.InstallSourceProperty;
+import hudson.tools.ToolInstallation;
+import hudson.tools.ToolInstaller;
+import hudson.tools.ToolProperty;
 import hudson.util.StreamTaskListener;
 
 /**
@@ -21,6 +30,17 @@ public class AccurevToolTest {
     public JenkinsRule j = new JenkinsRule();
 
     private AccurevTool accurevTool;
+
+    public static AccurevTool createTool(String name) throws IOException {
+        List<ToolInstaller> installers = new ArrayList<ToolInstaller>();
+        installers.add(new CommandInstaller(null, "accurev",
+            "./"));
+
+        List<ToolProperty<ToolInstallation>> properties = new ArrayList<ToolProperty<ToolInstallation>>();
+        properties.add(new InstallSourceProperty(installers));
+
+        return new AccurevTool(name, "./", properties);
+    }
 
     @Before
     public void setUp() throws Exception {
