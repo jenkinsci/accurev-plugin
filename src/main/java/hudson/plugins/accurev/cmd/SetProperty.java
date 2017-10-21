@@ -13,6 +13,7 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 
+@Deprecated
 public class SetProperty extends Command {
 
     private static final Logger logger = Logger.getLogger(SetProperty.class.getName());

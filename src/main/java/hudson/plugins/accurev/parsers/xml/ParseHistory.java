@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.parsers.xml;
 
+import static jenkins.plugins.accurev.util.AccurevUtils.cleanAccurevPath;
 import static jenkins.plugins.accurev.util.AccurevUtils.convertAccurevTimestamp;
 
 import java.io.IOException;
@@ -8,11 +9,11 @@ import java.util.List;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import jenkins.plugins.accurev.util.AccurevUtils;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevTransaction;
 
+@Deprecated
 public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
     public Boolean parse(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput,
         IOException, XmlPullParserException {
@@ -33,7 +34,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     // parse path & convert it to standard format
                     String path = parser.getAttributeValue("", "path");
                     if (path != null) {
-                        path = AccurevUtils.cleanAccurevPath(path);
+                        path = cleanAccurevPath(path);
                     }
                     resultTransaction.addAffectedPath(path);
                 }

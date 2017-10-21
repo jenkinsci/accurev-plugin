@@ -39,6 +39,7 @@ import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
  * Utility class that knows how to run AccuRev commands and (optionally) have
  * something parse their output.
  */
+@Deprecated
 public final class AccurevLauncher {
     private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
 
@@ -318,7 +319,6 @@ public final class AccurevLauncher {
         return accurev;
     }
 
-
     /**
      * @param accurevTool Which tool to find
      * @param builtOn     node where build was performed
@@ -344,16 +344,16 @@ public final class AccurevLauncher {
     private static Integer runCommandToCompletion(//
                                                   final ProcStarter starter, //
                                                   final Lock synchronizationLockObjectOrNull) throws IOException, InterruptedException {
-        try {
-            if (synchronizationLockObjectOrNull != null) {
-                synchronizationLockObjectOrNull.lock();
-            }
-            return starter.join(); // Exit Code from Command
-        } finally {
-            if (synchronizationLockObjectOrNull != null) {
-                synchronizationLockObjectOrNull.unlock();
-            }
-        }
+//        try {
+//            if (synchronizationLockObjectOrNull != null) {
+//                synchronizationLockObjectOrNull.lock();
+//            }
+        return starter.join(); // Exit Code from Command
+//        } finally {
+//            if (synchronizationLockObjectOrNull != null) {
+//                synchronizationLockObjectOrNull.unlock();
+//            }
+//        }
     }
 
     private static ProcStarter createProcess(

@@ -12,6 +12,7 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.GetConfigWebURL;
 
+@Deprecated
 public class ParseGetConfig implements ICmdOutputXmlParser<Map<String, GetConfigWebURL>, Void> {
 
     public Map<String, GetConfigWebURL> parse(XmlPullParser parser, Void context)

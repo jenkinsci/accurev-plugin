@@ -13,6 +13,7 @@ import hudson.plugins.accurev.AccurevLauncher;
 /**
  * @author raymond
  */
+@Deprecated
 public class ParseUpdate implements AccurevLauncher.ICmdOutputXmlParser<Boolean, List<String>> {
     public Boolean parse(XmlPullParser parser, List<String> context) throws AccurevLauncher.UnhandledAccurevCommandOutput, IOException, XmlPullParserException {
         while (parser.next() != XmlPullParser.END_DOCUMENT) {

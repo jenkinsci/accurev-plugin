@@ -29,6 +29,7 @@ import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 /**
  * @author raymond
  */
+@Deprecated
 public class WorkspaceDelegate extends ReftreeDelegate {
 
     private static final Logger logger = Logger.getLogger(WorkspaceDelegate.class.getName());

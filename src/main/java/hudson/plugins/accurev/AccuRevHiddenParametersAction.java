@@ -5,6 +5,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.InvisibleAction;
 
+@Deprecated
 public class AccuRevHiddenParametersAction extends InvisibleAction implements EnvironmentContributingAction {
 
     private final EnvVars values;

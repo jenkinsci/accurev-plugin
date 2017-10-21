@@ -11,6 +11,7 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevReferenceTree;
 
+@Deprecated
 public class ParseShowReftrees implements ICmdOutputXmlParser<Map<String, AccurevReferenceTree>, Void> {
     public Map<String, AccurevReferenceTree> parse(XmlPullParser parser, Void context)
         throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {

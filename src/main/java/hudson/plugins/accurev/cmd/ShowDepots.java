@@ -17,13 +17,13 @@ import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.parsers.xml.ParseShowDepots;
 
+@Deprecated
 public class ShowDepots extends Command {
 
     public static List<String> getDepots(//
                                          final AccurevServer server,
                                          final Logger descriptorLogger
     ) throws IOException {
-
 
         Jenkins jenkins = Jenkins.getInstance();
         TaskListener listener = TaskListener.NULL;

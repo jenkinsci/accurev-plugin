@@ -7,6 +7,7 @@ import hudson.util.ArgumentListBuilder;
 /**
  * @author raymond
  */
+@Deprecated
 public class Relocation {
 
     private final List<RelocationOption> relocationOptions;

@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
+@Deprecated
 public final class ParseInfoToLoginName implements ICmdOutputParser<String, Void> {
     public String parse(InputStream cmdOutput, Void context) throws UnhandledAccurevCommandOutput, IOException {
         final String usernameHeading = "Principal:";

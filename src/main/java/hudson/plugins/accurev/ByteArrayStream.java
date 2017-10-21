@@ -10,6 +10,7 @@ import java.io.InputStream;
  * Simple class to capture the output of something, and then allow that output
  * to be read.
  */
+@Deprecated
 public class ByteArrayStream implements Closeable {
     private final Output mOutputStream = new Output();
 

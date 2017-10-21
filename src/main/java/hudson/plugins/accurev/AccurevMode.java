@@ -9,6 +9,7 @@ import hudson.plugins.accurev.delegates.WorkspaceDelegate;
 /**
  * Determines the delegate used for building
  */
+@Deprecated
 public enum AccurevMode {
 
     WORKSPACE(true) {

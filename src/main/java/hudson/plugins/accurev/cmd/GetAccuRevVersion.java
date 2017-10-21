@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 
 import org.apache.log4j.Logger;
 
+@Deprecated
 public class GetAccuRevVersion {
 
     private static final Logger logger = Logger.getLogger(GetAccuRevVersion.class.getName());

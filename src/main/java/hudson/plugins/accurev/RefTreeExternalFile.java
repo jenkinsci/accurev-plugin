@@ -2,6 +2,7 @@ package hudson.plugins.accurev;
 
 import java.io.Serializable;
 
+@Deprecated
 public class RefTreeExternalFile implements Serializable {
     private final String location;
     private final String status;

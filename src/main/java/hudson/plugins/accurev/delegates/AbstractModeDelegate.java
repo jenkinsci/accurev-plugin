@@ -46,11 +46,11 @@ import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.PopulateCmd;
 import hudson.plugins.accurev.cmd.SetProperty;
 import hudson.plugins.accurev.cmd.ShowStreams;
-import hudson.plugins.accurev.cmd.Synctime;
 
 /**
  * Performs actual SCM operations
  */
+@Deprecated
 public abstract class AbstractModeDelegate {
 
     protected static final String ACCUREV_WORKSPACE = "ACCUREV_WORKSPACE";
@@ -102,19 +102,12 @@ public abstract class AbstractModeDelegate {
         server = scm.getServer();
         accurevEnv = new EnvVars();
         if (jenkinsWorkspace != null) {
-            accurevWorkingSpace = new FilePath(jenkinsWorkspace, scm.getDirectoryOffset() == null ? "" : scm.getDirectoryOffset());
+            accurevWorkingSpace = jenkinsWorkspace;
             if (!accurevWorkingSpace.exists()) {
                 accurevWorkingSpace.mkdirs();
             }
             if (!Login.ensureLoggedInToAccurev(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
                 throw new IllegalArgumentException("Authentication failure");
-            }
-
-            if (scm.isSynctime()) {
-                listener.getLogger().println("Synchronizing clock with the server...");
-                if (!Synctime.synctime(scm, server, accurevEnv, jenkinsWorkspace, listener, launcher)) {
-                    throw new IllegalArgumentException("Synchronizing clock failure");
-                }
             }
         }
     }

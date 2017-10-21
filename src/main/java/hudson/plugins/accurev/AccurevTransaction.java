@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -184,6 +185,17 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
      */
     public void setId(String id) {
         this.id = id;
+    }
+
+    /**
+     * Getter for id
+     * Enables logging with AccuRev transaction id
+     *
+     * @return transaction id as int of the AccuRev transaction
+     */
+    @Exported
+    public long getTransaction() {
+        return NumberUtils.toLong(id, 1);
     }
 
     @Override

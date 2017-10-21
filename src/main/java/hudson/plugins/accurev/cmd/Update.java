@@ -25,6 +25,7 @@ import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 /**
  * @author raymond
  */
+@Deprecated
 public class Update extends Command {
 
     private static final Logger logger = Logger.getLogger(Update.class.getName());

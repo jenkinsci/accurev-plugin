@@ -30,11 +30,7 @@ import hudson.tools.ToolProperty;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 
-/**
- * Initialized by josep on 21-01-2017.
- */
 public class AccurevTool extends ToolInstallation implements NodeSpecific<AccurevTool>, EnvironmentSpecific<AccurevTool> {
-
 
     public static transient final String DEFAULT = "Default";
     private static final long serialVersionUID = 1;
@@ -68,8 +64,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
      * @return default installation
      */
     public static AccurevTool getDefaultInstallation() {
-        Jenkins jenkinsInstance = Jenkins.getInstance();
-        DescriptorImpl AccurevTools = jenkinsInstance.getDescriptorByType(AccurevTool.DescriptorImpl.class);
+        DescriptorImpl AccurevTools = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class);
         AccurevTool tool = AccurevTools.getInstallation(AccurevTool.DEFAULT);
         if (tool != null) {
             return tool;
@@ -88,9 +83,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
     public static void onLoaded() {
         //Creates default tool installation if needed. Uses "accurev" or migrates data from previous versions
 
-        Jenkins jenkinsInstance = Jenkins.getInstance();
-
-        DescriptorImpl descriptor = (DescriptorImpl) jenkinsInstance.getDescriptor(AccurevTool.class);
+        DescriptorImpl descriptor = AccurevTool.configuration();
         AccurevTool[] installations = getInstallations(descriptor);
 
         if (installations != null && installations.length > 0) {
@@ -106,6 +99,10 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
         }
     }
 
+    public static DescriptorImpl configuration() {
+        return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class);
+    }
+
     public AccurevTool forNode(@Nonnull Node node, TaskListener log) throws IOException, InterruptedException {
         return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
     }
@@ -116,8 +113,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
 
     @Override
     public DescriptorImpl getDescriptor() {
-        Jenkins jenkinsInstance = Jenkins.getInstance();
-        return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
+        return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
 
     @Extension

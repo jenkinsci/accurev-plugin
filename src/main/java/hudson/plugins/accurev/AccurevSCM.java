@@ -1,19 +1,17 @@
 package hudson.plugins.accurev;
 
 import static hudson.Util.fixEmpty;
-import static hudson.Util.fixNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -27,180 +25,123 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
-import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractDescribableImpl;
-import hudson.model.Descriptor;
 import hudson.model.Job;
 import hudson.model.ModelObject;
+import hudson.model.Node;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
+import hudson.model.Saveable;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
-import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCMRevisionState;
 import hudson.security.ACL;
+import hudson.util.DescribableList;
 import hudson.util.ListBoxModel;
-import hudson.util.Secret;
 import jenkins.model.Jenkins;
 
+import jenkins.plugins.accurev.Accurev;
+import jenkins.plugins.accurev.AccurevClient;
+import jenkins.plugins.accurev.AccurevException;
 import jenkins.plugins.accurev.AccurevTool;
-import jenkins.plugins.accurev.util.UUIDUtils;
+import jenkins.plugins.accurev.HistCommand;
+import jenkins.plugins.accurev.PopulateCommand;
+import jenkins.plugins.accurev.StreamsCommand;
+import jenkins.plugins.accurev.UpdateCommand;
+import jenkins.plugins.accurev.util.AccurevUtils;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+import hudson.plugins.accurev.extensions.AccurevSCMExtension;
+import hudson.plugins.accurev.extensions.AccurevSCMExtensionDescriptor;
 
 /**
  * Accurev SCM plugin for Jenkins
  */
-public class AccurevSCM extends SCM {
-    protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections
-        .unmodifiableList(Arrays.asList("chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"));
-    protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections
-        .unmodifiableList(Arrays.asList("add", "chstream", "co", "defcomp", "defunct", "keep",
-            "mkstream", "move", "promote", "purge", "dispatch"));
+public class AccurevSCM extends AccurevSCMBackwardCompatibility {
 
+    public static final boolean VERBOSE = Boolean.getBoolean(AccurevSCM.class.getName() + ".verbose");
+    protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
+    protected static final List<String> DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
     static final Date NO_TRANS_DATE = new Date(0);
     private static final Logger LOGGER = Logger.getLogger(AccurevSCM.class.getName());
-    private final String depot;
-    private final String stream;
-    private String serverName;
-    private boolean ignoreStreamParent;
-    private String wspaceORreftree;
-    private boolean cleanreftree;
-    private String workspace;
-    private boolean useSnapshot;
-    private boolean dontPopContent;
-    private String snapshotNameFormat;
-    private boolean synctime;
-    private String reftree;
-    private String subPath;
-    private String filterForPollSCM;
-    private String directoryOffset;
-    private boolean useReftree;
-    private boolean useWorkspace;
-    private boolean noWspaceNoReftree;
-    private String serverUUID;
+
+    static {
+        DEFAULT_VALID_STREAM_TRANSACTION_TYPES = Collections.unmodifiableList(
+            Arrays.asList(
+                "chstream", "defcomp", "mkstream", "promote", "demote_to", "demote_from", "purge"
+            )
+        );
+        DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES = Collections.unmodifiableList(
+            Arrays.asList(
+                "add", "chstream", "co", "defcomp", "defunct", "keep",
+                "mkstream", "move", "promote", "purge", "dispatch"
+            )
+        );
+    }
+
+    private List<UserRemoteConfig> userRemoteConfigs;
+
+    private DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> extensions;
+
     @CheckForNull
     private String accurevTool = null;
-    private Job<?, ?> activeProject;
 
     @DataBoundConstructor
     public AccurevSCM(
-        String serverName, String depot, String stream
+        List<UserRemoteConfig> userRemoteConfigs,
+        List<AccurevSCMExtension> extensions
     ) {
+        this.userRemoteConfigs = userRemoteConfigs;
+        this.extensions = new DescribableList<>(Saveable.NOOP, Util.fixNull(extensions));
+    }
+
+    /**
+     * Used for testing
+     *
+     * @param server The now deprecated server config
+     * @param depot  values need to convert to the new user config
+     * @param stream values need to convert to the new user config
+     */
+    @Deprecated
+    public AccurevSCM(AccurevServer server, String depot, String stream) {
+        this.serverUUID = server.getUuid();
+        this.serverName = server.getName();
         this.depot = depot;
         this.stream = stream;
-        AccurevServer server = getDescriptor().getServer(serverName);
-        if (server != null) {
-            setServerName(server.getName());
-            setServerUUID(server.getUuid());
-        }
-        updateMode();
     }
 
     public static AccurevSCMDescriptor configuration() {
         return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
     }
 
-    public String getDepot() {
-        return depot;
+    public List<UserRemoteConfig> getUserRemoteConfigs() {
+        return userRemoteConfigs;
     }
 
-    public String getServerName() {
-        return serverName;
-    }
-
-    public void setServerName(String serverName) {
-        this.serverName = serverName;
-    }
-
-    public String getServerUUID() {
-        return serverUUID;
-    }
-
-    public void setServerUUID(String uuid) {
-        serverUUID = uuid;
-    }
-
-    /**
-     * Getter for Accurev server
-     *
-     * @return AccurevServer based on serverUUID (or serverName if serverUUID is null)
-     */
-    @CheckForNull
-    public AccurevServer getServer() {
-        AccurevServer server;
-        AccurevSCMDescriptor descriptor = getDescriptor();
-        if (serverUUID == null) {
-            if (serverName == null) {
-                // No fallback
-                LOGGER.severe("AccurevSCM.getServer called but serverName and serverUUID are NULL!");
-                return null;
-            }
-            LOGGER.warning("Getting server by name (" + serverName + "), because UUID is not set.");
-            server = descriptor.getServer(serverName);
-            if (server != null) {
-                this.setServerUUID(server.getUuid());
-                descriptor.save();
-            }
-        } else {
-            server = descriptor.getServer(serverUUID);
+    @Nonnull
+    @Override
+    public String getKey() {
+        StringBuilder b = new StringBuilder("accurev");
+        for (UserRemoteConfig config : userRemoteConfigs) {
+            b.append(' ').append(config.getUrl());
         }
-        return server;
-    }
-
-    public String getStream() {
-        return stream;
-    }
-
-    public String getWspaceORreftree() {
-        return wspaceORreftree;
-    }
-
-    @DataBoundSetter
-    public void setWspaceORreftree(String wspaceORreftree) {
-        if (wspaceORreftree.equals("none"))
-            wspaceORreftree = null;
-        this.wspaceORreftree = wspaceORreftree;
-        updateMode();
-    }
-
-    public String getReftree() {
-        return reftree;
-    }
-
-    @DataBoundSetter
-    public void setReftree(String reftree) {
-        this.reftree = fixEmpty(reftree);
-    }
-
-    public String getWorkspace() {
-        return workspace;
-    }
-
-    @DataBoundSetter
-    public void setWorkspace(String workspace) {
-        this.workspace = fixEmpty(workspace);
+        return b.toString();
     }
 
     @CheckForNull
@@ -211,109 +152,6 @@ public class AccurevSCM extends SCM {
     @DataBoundSetter
     public void setAccurevTool(String accurevTool) {
         this.accurevTool = fixEmpty(accurevTool);
-    }
-
-    public String getSubPath() {
-        return subPath;
-    }
-
-    @DataBoundSetter
-    public void setSubPath(String subPath) {
-        this.subPath = fixEmpty(subPath);
-    }
-
-    public String getFilterForPollSCM() {
-        return filterForPollSCM;
-    }
-
-    @DataBoundSetter
-    public void setFilterForPollSCM(String filterForPollSCM) {
-        this.filterForPollSCM = fixEmpty(filterForPollSCM);
-    }
-
-    public String getSnapshotNameFormat() {
-        return snapshotNameFormat;
-    }
-
-    @DataBoundSetter
-    public void setSnapshotNameFormat(String snapshotNameFormat) {
-        this.snapshotNameFormat = fixEmpty(snapshotNameFormat);
-    }
-
-    public boolean isIgnoreStreamParent() {
-        return ignoreStreamParent;
-    }
-
-    @DataBoundSetter
-    public void setIgnoreStreamParent(boolean ignoreStreamParent) {
-        this.ignoreStreamParent = ignoreStreamParent;
-    }
-
-    public boolean isSynctime() {
-        return synctime;
-    }
-
-    @DataBoundSetter
-    public void setSynctime(boolean synctime) {
-        this.synctime = synctime;
-    }
-
-    public boolean isDontPopContent() {
-        return dontPopContent;
-    }
-
-    @DataBoundSetter
-    public void setDontPopContent(boolean dontPopContent) {
-        this.dontPopContent = dontPopContent;
-    }
-
-    public boolean isCleanreftree() {
-        return cleanreftree;
-    }
-
-    @DataBoundSetter
-    public void setCleanreftree(boolean cleanreftree) {
-        this.cleanreftree = cleanreftree;
-    }
-
-    public boolean isUseSnapshot() {
-        return useSnapshot;
-    }
-
-    @DataBoundSetter
-    public void setUseSnapshot(boolean useSnapshot) {
-        this.useSnapshot = useSnapshot;
-        if (!useSnapshot) {
-            snapshotNameFormat = "";
-        }
-    }
-
-    public boolean isUseReftree() {
-        return useReftree;
-    }
-
-    public boolean isUseWorkspace() {
-        return useWorkspace;
-    }
-
-    public boolean isNoWspaceNoReftree() {
-        return noWspaceNoReftree;
-    }
-
-    public String getDirectoryOffset() {
-        return directoryOffset;
-    }
-
-    @DataBoundSetter
-    public void setDirectoryOffset(String directoryOffset) {
-        this.directoryOffset = fixEmpty(directoryOffset);
-    }
-
-    private void updateMode() {
-        AccurevMode accurevMode = AccurevMode.findMode(this);
-        useReftree = accurevMode.isReftree();
-        useWorkspace = accurevMode.isWorkspace();
-        noWspaceNoReftree = accurevMode.isNoWorkspaceOrRefTree();
     }
 
     /**
@@ -361,18 +199,140 @@ public class AccurevSCM extends SCM {
      * @param workspace     jenkins workspace
      * @param listener      listener
      * @param changelogFile change log file
-     * @param baseline      SCMRevisionState
-     * @throws java.io.IOException            on failing IO
-     * @throws java.lang.InterruptedException on failing interrupt
+     * @param scmrs         SCMRevisionState
+     * @throws IOException          on failing IO
+     * @throws InterruptedException on failing interrupt
      */
 
     public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
-                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
-        if (checkout) listener.getLogger().println("Checkout done");
-        else listener.getLogger().println("Checkout failed");
+                         @CheckForNull SCMRevisionState scmrs) throws IOException, InterruptedException {
+
+        Run<?, ?> lastBuild = build.getPreviousBuild();
+        AccurevSCMRevisionState baseline;
+        if (scmrs instanceof AccurevSCMRevisionState)
+            baseline = (AccurevSCMRevisionState) scmrs;
+        else if (lastBuild != null)
+            baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(lastBuild, workspace, launcher, listener);
+        else
+            baseline = new AccurevSCMRevisionState(null); // Accurev specifies transaction start from one
+
+        EnvVars environment = build.getEnvironment(listener);
+        Map<String, Long> state = new HashMap<>();
+        for (UserRemoteConfig config : userRemoteConfigs) {
+            AccurevClient accurev = createClient(listener, environment, build, workspace, config);
+            AccurevStreams streams = new AccurevStreams();
+
+            StreamsCommand streamsCommand = accurev.streams().depot(config.getDepot()).toStreams(streams);
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decorateStreamsCommand(this, config, build, accurev, listener, streamsCommand);
+            }
+            streamsCommand.execute();
+
+            long latestTransaction = baseline.getTransaction(config.toString());
+            AccurevTransactions transactions = new AccurevTransactions();
+            HistCommand now = accurev.hist().depot(config.getDepot()).timespec("now").count(1).toTransactions(transactions);
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decorateHistCommand(this, config, build, accurev, listener, now);
+            }
+            now.execute();
+
+            AccurevTransaction transaction = transactions.get(0);
+            long actualTransaction = transaction.getTransaction();
+            if (actualTransaction != 0L) latestTransaction = actualTransaction;
+            state.put(config.toString(), latestTransaction);
+
+            // Check if stream is NOT fetched from Accurev.
+            if (!streams.containsKey(config.getStream()))
+                throw new AccurevException("Stream does not exists in the fetched result");
+
+            PopulateCommand pop = accurev.populate().stream(config.getStream());
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decoratePopulateCommand(this, config, build, accurev, listener, pop);
+            }
+            pop.execute();
+        }
+        build.addAction(new AccurevSCMRevisionState(state));
+    }
+
+    private AccurevClient createClient(TaskListener listener, EnvVars environment, Run<?, ?> build, FilePath workspace, UserRemoteConfig config) throws IOException, InterruptedException {
+        FilePath ws = workingDirectory(workspace, environment, config.getLocalDir());
+
+        if (ws != null) {
+            ws.mkdirs();
+        }
+        return createClient(listener, environment, build.getParent(), AccurevUtils.workspaceToNode(workspace), ws, config);
+    }
+
+    private FilePath workingDirectory(FilePath workspace, EnvVars env, String localDir) {
+        if (workspace == null) {
+            return null;
+        }
+        if (localDir == null) localDir = ".";
+        return workspace.child(env.expand(localDir));
+    }
+
+    private AccurevClient createClient(TaskListener listener, EnvVars environment, Job project, Node node, FilePath ws, UserRemoteConfig config) throws InterruptedException, IOException {
+
+        String accurevExe = getAccurevExe(node, listener);
+        Accurev accurev = Accurev.with(listener, environment).in(ws).using(accurevExe).on(environment.expand(config.getUrl()));
+
+        // TODO extension decorate scm and client;
+
+        // Set ACCUREV_HOME to Node's root path
+        if (!environment.containsKey("ACCUREV_HOME")) {
+            String path = AccurevUtils.getRootPath(ws);
+            if (StringUtils.isNotBlank(path))
+                environment.put("ACCUREV_HOME", path);
+        }
+
+        AccurevClient c = accurev.getClient();
+
+        String credentialsId = config.getCredentialsId();
+        if (credentialsId != null) {
+            StandardUsernamePasswordCredentials cred = CredentialsMatchers.firstOrNull(
+                CredentialsProvider
+                    .lookupCredentials(StandardUsernamePasswordCredentials.class,
+                        project, ACL.SYSTEM,
+                        URIRequirementBuilder.fromUri(config.getUrl()).build()
+                    ),
+                CredentialsMatchers.withId(credentialsId));
+            if (cred != null)
+                c.login().username(cred.getUsername()).password(cred.getPassword()).execute();
+            else
+                throw new AccurevException("Credentials could not be found");
+        } else
+            throw new AccurevException("No credentials provided");
+        return c;
+    }
+
+    private String getAccurevExe(Node node, TaskListener listener) {
+        return getAccurevExe(node, null, listener);
+    }
+
+    private String getAccurevExe(Node node, EnvVars env, TaskListener listener) {
+        AccurevTool tool = resolveAccurevTool(listener);
+        if (node != null) {
+            try {
+                tool = tool.forNode(node, listener);
+            } catch (InterruptedException | IOException e) {
+                listener.getLogger().println("Failed to get Accurev Executable");
+            }
+        }
+        if (env != null) {
+            tool = tool.forEnvironment(env);
+        }
+        return tool.getHome();
+    }
+
+    private AccurevTool resolveAccurevTool(TaskListener listener) {
+        if (StringUtils.isBlank(accurevTool)) return AccurevTool.getDefaultInstallation();
+        AccurevTool accurev = AccurevTool.configuration().getInstallation(accurevTool);
+        if (accurev == null) {
+            listener.getLogger().println("Selected Accurev installation does not exist. Using Default");
+            accurev = AccurevTool.getDefaultInstallation();
+        }
+        return accurev;
     }
 
     /**
@@ -386,20 +346,17 @@ public class AccurevSCM extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
-        boolean requiresWorkspace = AccurevMode.findMode(this).isRequiresWorkspace();
-        if (getDescriptor().isPollOnMaster() && !requiresWorkspace) {
-            // Does not require workspace if Poll On Master is enabled; unless build is using workspace
-            return false;
-        }
+        return getExtensions().stream()
+            .anyMatch(AccurevSCMExtension::requiresWorkspaceForPolling);
+    }
 
-        if (activeProject != null && !activeProject.isBuilding()) {
-            // Check if project is no longer active.
-            activeProject = null;
-        }
+    public DescribableList<AccurevSCMExtension, AccurevSCMExtensionDescriptor> getExtensions() {
+        return extensions;
+    }
 
-        // Return true if activeProject null and it does require a workspace, otherwise false.
-        return requiresWorkspace && activeProject == null;
-
+    @DataBoundSetter
+    public void setExtensions(List<AccurevSCMExtension> extensions) {
+        this.extensions = new DescribableList<>(Saveable.NOOP, Util.fixNull(extensions));
     }
 
     /**
@@ -431,24 +388,88 @@ public class AccurevSCM extends SCM {
     @Override
     public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
                                                    @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        return SCMRevisionState.NONE;
+        AccurevSCMRevisionState scmrs = build.getAction(AccurevSCMRevisionState.class);
+        if (scmrs == null) {
+            for (Run<?, ?> b = build; b != null; b = b.getPreviousBuild()) {
+                scmrs = b.getAction(AccurevSCMRevisionState.class);
+                if (scmrs != null) {
+                    break;
+                }
+            }
+        }
+        return scmrs == null ? new AccurevSCMRevisionState(null) : scmrs;
     }
 
     @Override
     public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
                                                    @Nullable FilePath workspace, @Nonnull TaskListener listener,
-                                                   @Nonnull SCMRevisionState baseline) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-        if (activeProject != null && activeProject.isBuilding()) {
-            // Skip polling while there is an active project.
-            // This will prevent waiting for the workspace to become available.
+                                                   @Nonnull SCMRevisionState scmrs) throws IOException, InterruptedException {
+        // If workspace is required (then workspace is not null) and project is building then please stop
+        // Accurev requires workspace and built being stopped cause otherwise it might break another build running.
+        if (workspace != null && (project.isBuilding() || project.isInQueue())) {
+            listener.getLogger().println("[poll] Build requires workspace and is currently building. Halting poll.");
             return PollingResult.NO_CHANGES;
         }
-        activeProject = project;
 
-        AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
-        return delegate.compareRemoteRevisionWith(project, launcher, workspace, listener, baseline);
+        final AccurevSCMRevisionState baseline;
+
+        if (scmrs instanceof AccurevSCMRevisionState)
+            baseline = (AccurevSCMRevisionState) scmrs;
+        else if (project.getLastBuild() != null)
+            baseline = (AccurevSCMRevisionState) calcRevisionsFromBuild(project.getLastBuild(),
+                launcher != null ? workspace : null, launcher, listener);
+        else
+            baseline = new AccurevSCMRevisionState(null); // Accurev specifies transaction start from one
+
+        if (project.getLastBuild() == null || baseline == null) {
+            listener.getLogger().println("[poll] No previous build, so lets start the build.");
+            return PollingResult.BUILD_NOW;
+        }
+
+        Node node;
+        if (workspace != null && !getDescriptor().isPollOnMaster())
+            node = AccurevUtils.workspaceToNode(workspace);
+        else
+            node = Jenkins.getInstance();
+
+        EnvVars environment = project.getEnvironment(node, listener);
+
+        for (UserRemoteConfig config : userRemoteConfigs) {
+            AccurevClient accurev = createClient(listener, environment, project, node, workspace, config);
+
+            long previousTransaction = baseline.getTransaction(config.toString());
+            AccurevTransactions transactions = new AccurevTransactions();
+            HistCommand now = accurev.hist().depot(config.getDepot()).timespec("now").count(1).toTransactions(transactions);
+            for (AccurevSCMExtension ext : extensions) {
+                ext.decorateHistCommand(this, config, project, accurev, listener, now);
+            }
+            now.execute();
+            long latestTransaction = transactions.get(0).getTransaction();
+
+            List<String> paths = new ArrayList<>();
+
+            UpdateCommand update = accurev.update()
+                .stream(config.getStream())
+                .preview(paths)
+                .range(latestTransaction, previousTransaction);
+
+            for (AccurevSCMExtension ext : getExtensions()) {
+                ext.decorateUpdateCommand(this, project, accurev, listener, update);
+            }
+            update.execute();
+
+            if (paths.size() != 0) {
+                transactions.clear();
+                HistCommand hist = accurev.hist()
+                    .depot(config.getDepot())
+                    .stream(config.getStream())
+                    .timespec(latestTransaction + "-" + previousTransaction)
+                    .toTransactions(transactions);
+                hist.execute();
+                // TODO: transaction excluded?
+            }
+        }
+        return PollingResult.NO_CHANGES;
     }
 
     public boolean hasStringVariableReference(final String str) {
@@ -499,6 +520,28 @@ public class AccurevSCM extends SCM {
         return parsedLocalStream;
     }
 
+    public Object readResolve() throws IOException {
+        migrate();
+        return this;
+    }
+
+    @SuppressWarnings("deprecation")
+    void migrate() throws IOException {
+        // Migrate data
+        AccurevServer server = getServer();
+        if (server != null && userRemoteConfigs == null) {
+            server.migrateCredentials();
+            userRemoteConfigs = new ArrayList<>();
+            userRemoteConfigs.add(new UserRemoteConfig(server.getUrl(), server.getCredentialsId(), depot, stream, directoryOffset));
+            LOGGER.info("Migrated server and old config to userRemoteConfig successfully");
+        }
+
+        if (extensions == null)
+            extensions = new DescribableList<>(Saveable.NOOP);
+
+        migrate(server);
+    }
+
     @Extension
     public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM> implements ModelObject {
 
@@ -510,7 +553,7 @@ public class AccurevSCM extends SCM {
          */
         transient static final Lock ACCUREV_LOCK = new ReentrantLock();
         private static final Logger DESCRIPTORLOGGER = Logger.getLogger(AccurevSCMDescriptor.class.getName());
-        private List<AccurevServer> _servers;
+        private transient List<AccurevServer> _servers;
         // The servers field is here for backwards compatibility.
         // The transient modifier means it won't be written to the config file
         private transient List<AccurevServer> servers;
@@ -532,11 +575,10 @@ public class AccurevSCM extends SCM {
             ACCUREV_LOCK.unlock();
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @return String
-         */
+        public List<AccurevSCMExtensionDescriptor> getExtensionDescriptors() {
+            return AccurevSCMExtensionDescriptor.all();
+        }
+
         @Override
         @Nonnull
         public String getDisplayName() {
@@ -545,17 +587,16 @@ public class AccurevSCM extends SCM {
 
         @SuppressWarnings("unused") // used by stapler
         public boolean showAccurevToolOptions() {
-            return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
+            return AccurevTool.configuration().getInstallations().length > 1;
         }
 
-        /**
-         * Lists available tool installations.
-         *
-         * @return list of available accurev tools
-         */
-        public List<AccurevTool> getAccurevTools() {
-            AccurevTool[] accurevToolInstallations = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations();
-            return Arrays.asList(accurevToolInstallations);
+        @SuppressWarnings("unused") // Used by stapler
+        public ListBoxModel doFillAccurevToolItems() {
+            ListBoxModel r = new ListBoxModel();
+            for (AccurevTool accurev : AccurevTool.configuration().getInstallations()) {
+                r.add(accurev.getName());
+            }
+            return r;
         }
 
         /**
@@ -573,11 +614,38 @@ public class AccurevSCM extends SCM {
             return true;
         }
 
-        /**
-         * Getter for property 'servers'.
-         *
-         * @return Value for property 'servers'.
-         */
+        @CheckForNull
+        public AccurevServer getServer(String uuid) {
+            if (uuid == null || this._servers == null) {
+                LOGGER.fine("No server found. - getServer(NULL)");
+                return null;
+            }
+            for (AccurevServer server : this._servers) {
+                if (uuid.equals(server.getUuid())) {
+                    return server;
+                } else if (uuid.equals(server.getName())) {
+                    // support old server name
+                    return server;
+                }
+            }
+            LOGGER.fine("No server found.");
+            return null;
+        }
+
+        @Override
+        public boolean isApplicable(Job project) {
+            return true;
+        }
+
+        public boolean isPollOnMaster() {
+            return pollOnMaster;
+        }
+
+        public void setPollOnMaster(boolean pollOnMaster) {
+            this.pollOnMaster = pollOnMaster;
+        }
+
+        @Deprecated
         @Nonnull
         public List<AccurevServer> getServers() {
             if (this._servers == null) {
@@ -592,364 +660,21 @@ public class AccurevSCM extends SCM {
             return this._servers;
         }
 
-        /**
-         * Setter for property 'servers'.
-         *
-         * @param servers Value to set for property 'servers'.
-         */
+        @Deprecated
         public void setServers(List<AccurevServer> servers) {
             this._servers = servers;
         }
-
-        /**
-         * Getter for property 'pollOnMaster'.
-         *
-         * @return Value for property 'pollOnMaster'.
-         */
-        public boolean isPollOnMaster() {
-            return pollOnMaster;
-        }
-
-        /**
-         * Setter for property 'pollOnMaster'.
-         *
-         * @param pollOnMaster poll on aster
-         */
-        public void setPollOnMaster(boolean pollOnMaster) {
-            this.pollOnMaster = pollOnMaster;
-        }
-
-        @CheckForNull
-        public AccurevServer getServer(String uuid) {
-            if (uuid == null || this._servers == null) {
-                LOGGER.fine("No server found. - getServer(NULL)");
-                return null;
-            }
-            for (AccurevServer server : this._servers) {
-                if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUuid())) {
-                    return server;
-                } else if (uuid.equals(server.getName())) {
-                    // support old server name
-                    return server;
-                }
-            }
-            LOGGER.fine("No server found.");
-            return null;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillServerNameItems() {
-            ListBoxModel s = new ListBoxModel();
-            if (this._servers == null) {
-                DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
-                return s;
-            }
-            for (AccurevServer server : this._servers) {
-                s.add(server.getName());
-            }
-
-            return s;
-        }
-
-        @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillAccurevToolItems() {
-            ListBoxModel r = new ListBoxModel();
-            for (AccurevTool accurev : getAccurevTools()) {
-                r.add(accurev.getName());
-            }
-            return r;
-        }
-
-        @Override
-        public boolean isApplicable(Job project) {
-            return true;
-        }
     }
 
-    public static final class AccurevServer extends AbstractDescribableImpl<AccurevServer> {
+    public static final class AccurevServer extends AccurevServerBackwardCompatibility {
 
-        private transient static final String __OBFUSCATE = "OBF:";
-        private final String name;
-        private final String host;
-        @Deprecated
-        transient String username;
-        @Deprecated
-        transient String password;
-        private int port = 5050;
-        private String credentialsId;
-        private UUID uuid;
-        private boolean syncOperations;
-        private boolean minimiseLogins;
-        private boolean useNonexpiringLogin;
-        private boolean useRestrictedShowStreams;
-        private boolean useColor;
-        private boolean usePromoteListen;
-
-        @DataBoundConstructor
-        public AccurevServer(//
-                             String uuid,
-                             String name, //
-                             String host) {
-            if (StringUtils.isEmpty(uuid)) this.uuid = UUID.randomUUID();
-            else this.uuid = UUID.fromString(uuid);
-            this.name = name;
-            this.host = host;
+        public AccurevServer(String uuid, String name, String host, int port, String credentialsId) {
+            super(uuid, name, host, port, credentialsId);
         }
 
-        private static String deobfuscate(String s) {
-            if (s.startsWith(__OBFUSCATE))
-                s = s.substring(__OBFUSCATE.length());
-            if (StringUtils.isEmpty(s)) return "";
-            byte[] b = new byte[s.length() / 2];
-            int l = 0;
-            for (int i = 0; i < s.length(); i += 4) {
-                String x = s.substring(i, i + 4);
-                int i0 = Integer.parseInt(x, 36);
-                int i1 = (i0 / 256);
-                int i2 = (i0 % 256);
-                b[l++] = (byte) ((i1 + i2 - 254) / 2);
-            }
-            return new String(b, 0, l, StandardCharsets.UTF_8);
-        }
-
-        /**
-         * When f:repeatable tags are nestable, we can change the advances page
-         * of the server config to allow specifying these locations... until
-         * then this hack!
-         *
-         * @return This.
-         */
-        private Object readResolve() {
-            if (uuid == null) {
-                uuid = UUID.randomUUID();
-            }
-            return this;
-        }
-
-        /**
-         * Getter for property 'uuid'.
-         * If value is null generate random UUID
-         *
-         * @return Value for property 'uuid'.
-         */
-        public String getUuid() {
-            if (uuid == null) {
-                uuid = UUID.randomUUID();
-            }
-            return uuid.toString();
-        }
-
-        /**
-         * Getter for property 'name'.
-         *
-         * @return Value for property 'name'.
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Getter for property 'host'.
-         *
-         * @return Value for property 'host'.
-         */
-        public String getHost() {
-            return host;
-        }
-
-        /**
-         * Getter for property 'port'.
-         *
-         * @return Value for property 'port'.
-         */
-        public int getPort() {
-            return port;
-        }
-
-        @DataBoundSetter
-        public void setPort(int port) {
-            this.port = port;
-        }
-
-        /**
-         * Getter for property 'credentialsId'.
-         *
-         * @return Value for property 'credentialsId'.
-         */
-        public String getCredentialsId() {
-            return credentialsId;
-        }
-
-        @DataBoundSetter
-        public void setCredentialsId(String credentialsId) {
-            this.credentialsId = credentialsId;
-        }
-
-        /**
-         * Getter for property 'credentials'.
-         *
-         * @return Value for property 'credentials'.
-         */
-        @CheckForNull
-        public StandardUsernamePasswordCredentials getCredentials() {
-            if (StringUtils.isBlank(credentialsId)) return null;
-            else {
-                return CredentialsMatchers.firstOrNull(
-                    CredentialsProvider
-                        .lookupCredentials(StandardUsernamePasswordCredentials.class,
-                            Jenkins.getInstance(), ACL.SYSTEM,
-                            URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build()),
-                    CredentialsMatchers.withId(credentialsId)
-                );
-            }
-        }
-
-        public String getUsername() {
-            StandardUsernamePasswordCredentials credentials = getCredentials();
-            return credentials == null ? "jenkins" : credentials.getUsername();
-        }
-
-        @Deprecated
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            StandardUsernamePasswordCredentials credentials = getCredentials();
-            return credentials == null ? "" : Secret.toString(credentials.getPassword());
-        }
-
-        @Deprecated
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public boolean isSyncOperations() {
-            return syncOperations;
-        }
-
-        @DataBoundSetter
-        public void setSyncOperations(boolean syncOperations) {
-            this.syncOperations = syncOperations;
-        }
-
-        public boolean isMinimiseLogins() {
-            return minimiseLogins;
-        }
-
-        @DataBoundSetter
-        public void setMinimiseLogins(boolean minimiseLogins) {
-            this.minimiseLogins = minimiseLogins;
-        }
-
-        public boolean isUseNonexpiringLogin() {
-            return useNonexpiringLogin;
-        }
-
-        @DataBoundSetter
-        public void setUseNonexpiringLogin(boolean useNonexpiringLogin) {
-            this.useNonexpiringLogin = useNonexpiringLogin;
-        }
-
-        public boolean isUseRestrictedShowStreams() {
-            return useRestrictedShowStreams;
-        }
-
-        @DataBoundSetter
-        public void setUseRestrictedShowStreams(boolean useRestrictedShowStreams) {
-            this.useRestrictedShowStreams = useRestrictedShowStreams;
-        }
-
-        public boolean isUseColor() {
-            return useColor;
-        }
-
-        @DataBoundSetter
-        public void setUseColor(boolean useColor) {
-            this.useColor = useColor;
-        }
-
-        public boolean isUsePromoteListen() {
-            return usePromoteListen;
-        }
-
-        @DataBoundSetter
-        public void setUsePromoteListen(boolean usePromoteListen) {
-            this.usePromoteListen = usePromoteListen;
-        }
-
-        public boolean migrateCredentials() {
-            if (username != null) {
-                LOGGER.info("Migrating to credentials");
-                String secret = deobfuscate(password);
-                String credentialsId = "";
-                List<DomainRequirement> domainRequirements = fixNull(URIRequirementBuilder
-                    .fromUri("")
-                    .withHostnamePort(host, port)
-                    .build());
-                List<StandardUsernamePasswordCredentials> credentials = CredentialsMatchers.filter(
-                    CredentialsProvider.lookupCredentials(
-                        StandardUsernamePasswordCredentials.class,
-                        Jenkins.getInstance(), ACL.SYSTEM, domainRequirements),
-                    CredentialsMatchers.withUsername(username)
-                );
-                for (StandardUsernamePasswordCredentials cred : credentials) {
-                    if (StringUtils.equals(secret, Secret.toString(cred.getPassword()))) {
-                        // If some credentials have the same username/password, use those.
-                        credentialsId = cred.getId();
-                        this.credentialsId = credentialsId;
-                        break;
-                    }
-                }
-                if (StringUtils.isBlank(credentialsId)) {
-                    // If we couldn't find any existing credentials,
-                    // create new credentials with the principal and secret and use it.
-                    StandardUsernamePasswordCredentials newCredentials = new UsernamePasswordCredentialsImpl(
-                        CredentialsScope.SYSTEM, null, "Migrated by Accurev Plugin", username, secret);
-                    SystemCredentialsProvider.getInstance().getCredentials().add(newCredentials);
-                    credentialsId = newCredentials.getId();
-                    this.credentialsId = credentialsId;
-                }
-                if (StringUtils.isNotEmpty(this.credentialsId)) {
-                    LOGGER.info("Migrated successfully to credentials");
-                    username = null;
-                    password = null;
-                    return true;
-                } else {
-                    LOGGER.severe("Migration failed");
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public DescriptorImpl getDescriptor() {
-            return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
-        }
-
-        @Extension
-        public static class DescriptorImpl extends Descriptor<AccurevServer> {
-
-            @Nonnull
-            @Override
-            public String getDisplayName() {
-                return "AccuRev Server";
-            }
-
-            @SuppressWarnings("unused")
-            public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
-                if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
-                    return new StandardListBoxModel().includeCurrentValue(credentialsId);
-                }
-                return new StandardListBoxModel()
-                    .includeEmptyValue()
-                    .includeMatchingAs(ACL.SYSTEM,
-                        Jenkins.getInstance(),
-                        StandardUsernamePasswordCredentials.class,
-                        URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
-                        CredentialsMatchers.always()
-                    );
-            }
+        /* Used for testing migration */
+        public AccurevServer(String uuid, String name, String host, int port, String username, String password) {
+            super(uuid, name, host, port, username, password);
         }
     }
 

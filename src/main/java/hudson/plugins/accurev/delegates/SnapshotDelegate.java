@@ -17,6 +17,7 @@ import hudson.plugins.accurev.cmd.Command;
 /**
  * @author raymond
  */
+@Deprecated
 public class SnapshotDelegate extends StreamDelegate {
 
     private static final Logger logger = Logger.getLogger(SnapshotDelegate.class.getName());

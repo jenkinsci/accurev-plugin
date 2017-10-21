@@ -18,8 +18,8 @@ import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParsePopulate;
 
+@Deprecated
 public class PopulateCmd extends Command {
-
 
     private static final Logger logger = Logger.getLogger(PopulateCmd.class.getName());
 

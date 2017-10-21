@@ -1,10 +1,8 @@
 package jenkins.plugins.accurev.AccurevTool
 
-/**
- * Initialized by josep on 21-01-2017.
- */
+import lib.FormTagLib
 
-f = namespace("/lib/form")
+f = namespace(FormTagLib)
 
 f.entry(field: "name", title: _("Name")) {
     f.textbox()

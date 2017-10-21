@@ -30,6 +30,7 @@ import hudson.plugins.accurev.parsers.xml.ParseShowReftrees;
 /**
  * @author raymond
  */
+@Deprecated
 public class ReftreeDelegate extends AbstractModeDelegate {
 
     private static final Logger logger = Logger.getLogger(ReftreeDelegate.class.getName());
@@ -137,7 +138,6 @@ public class ReftreeDelegate extends AbstractModeDelegate {
 
         return doUpdate(changeLogFile);
     }
-
 
     private boolean doUpdate(File changeLogFile) throws IOException {
         updateLogFile = XmlConsolidateStreamChangeLog.getUpdateChangeLogFile(changeLogFile);

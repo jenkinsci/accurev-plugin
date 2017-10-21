@@ -9,6 +9,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 
+@Deprecated
 final class ParseLsRules implements ICmdOutputXmlParser<HashMap<String, String>, Void> {
     public HashMap<String, String> parse(final XmlPullParser parser, final Void context)
         throws UnhandledAccurevCommandOutput, IOException, XmlPullParserException {

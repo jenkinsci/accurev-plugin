@@ -1,7 +1,5 @@
 package jenkins.plugins.accurev.util;
 
-import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_SECOND;
-
 import java.util.Date;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -11,6 +9,7 @@ import hudson.model.Node;
 import jenkins.model.Jenkins;
 
 public class AccurevUtils {
+    private static final long MILLIS_PER_SECOND = 1000L;
 
     public static String cleanAccurevPath(String str) {
         return str.replace("\\", "/").replaceFirst("^/[.]/", "");
@@ -20,8 +19,8 @@ public class AccurevUtils {
     public static Node workspaceToNode(FilePath workspace) {
         Computer computer = workspace.toComputer();
         Node node = null;
-        if (null != computer) node = computer.getNode();
-        return null != node ? node : Jenkins.getInstance();
+        if (computer != null) node = computer.getNode();
+        return node != null ? node : Jenkins.getInstance();
     }
 
     public static String getRootPath(FilePath workspace) {
