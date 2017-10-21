@@ -55,7 +55,6 @@ public class ShowStreams extends Command {
                                                            final TaskListener listener, //
                                                            final Launcher launcher) throws IOException {
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        String accurevTool = scm == null ? null : scm.getAccurevTool();
         cmd.add("show");
         addServer(cmd, server);
         cmd.add("-fx");
@@ -64,7 +63,7 @@ public class ShowStreams extends Command {
         cmd.add("streams");
         XmlPullParserFactory parser = XmlParserFactory.getFactory();
         if (parser == null) throw new IOException("No XML Parser");
-        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", accurevTool, launcher, cmd, lock, accurevEnv,
+        final Map<String, AccurevStream> streams = AccurevLauncher.runCommand("Show streams command", scm.getAccurevTool(), launcher, cmd, lock, accurevEnv,
             workspace, listener, LOGGER, parser, new ParseShowStreams(), depot);
         setParents(streams);
         return streams;

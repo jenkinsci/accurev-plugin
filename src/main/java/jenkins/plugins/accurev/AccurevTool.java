@@ -100,8 +100,10 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
 
         String defaultAccurevExe = "accurev";
         AccurevTool tool = new AccurevTool(DEFAULT, defaultAccurevExe, Collections.emptyList());
-        descriptor.setInstallations(tool);
-        descriptor.save();
+        if (descriptor != null) {
+            descriptor.setInstallations(tool);
+            descriptor.save();
+        }
     }
 
     public AccurevTool forNode(@Nonnull Node node, TaskListener log) throws IOException, InterruptedException {

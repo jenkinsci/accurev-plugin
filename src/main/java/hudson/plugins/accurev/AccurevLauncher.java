@@ -292,12 +292,28 @@ public final class AccurevLauncher {
     }
 
     public static AccurevTool resolveAccurevTool(String accurevTool, TaskListener listener) {
-        if (StringUtils.isBlank(accurevTool)) return AccurevTool.getDefaultInstallation();
+        if (StringUtils.isBlank(accurevTool)) {
+            AccurevTool defaultInstallation = AccurevTool.getDefaultInstallation();
+            listener.getLogger().println(
+                String.format(
+                    "No Accurv tool is chosen, reverting to %s (%s)",
+                    defaultInstallation.getName(),
+                    defaultInstallation.getHome()
+                )
+            );
+            return defaultInstallation;
+        }
 
         AccurevTool accurev = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallation(accurevTool);
         if (accurev == null) {
-            listener.getLogger().println("Selected Accurev installation does not exist. Using Default");
             accurev = AccurevTool.getDefaultInstallation();
+            listener.getLogger().println(
+                String.format(
+                    "Selected Accurev installation does not exist. Using Default %s (%s)",
+                    accurev.getName(),
+                    accurev.getHome()
+                )
+            );
         }
         return accurev;
     }

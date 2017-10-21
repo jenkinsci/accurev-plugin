@@ -76,7 +76,6 @@ public abstract class AbstractModeDelegate {
     protected FilePath accurevWorkingSpace;
     protected String localStream;
     protected Date startDateOfPopulate;
-    protected String accurevTool;
 
     public AbstractModeDelegate(AccurevSCM scm) {
         this.scm = scm;
