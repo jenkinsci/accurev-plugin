@@ -1,5 +1,7 @@
 package hudson.plugins.accurev;
 
+import static jenkins.plugins.accurev.util.AccurevUtils.convertAccurevTimestamp;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +21,7 @@ import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.RepositoryBrowser;
 
+import jenkins.plugins.accurev.util.AccurevUtils;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 
@@ -28,26 +31,6 @@ import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 public class ParseChangeLog extends ChangeLogParser {
 
     private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
-    private static final long MILLIS_PER_SECOND = 1000L;
-
-    /**
-     * Converts an Accurev timestamp into a {@link Date}
-     *
-     * @param transactionTime The accurev timestamp.
-     * @return A {@link Date} set to the time for the accurev timestamp.
-     */
-    public static Date convertAccurevTimestamp(String transactionTime) {
-        if (transactionTime == null) {
-            return null;
-        }
-        try {
-            final long time = Long.parseLong(transactionTime);
-            final long date = time * MILLIS_PER_SECOND;
-            return new Date(date);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
 
     /**
      * {@inheritDoc}
@@ -154,7 +137,7 @@ public class ParseChangeLog extends ChangeLogParser {
                         transactions.add(currentTransaction);
                         currentTransaction.setId(parser.getAttributeValue("", "id"));
                         currentTransaction.setUser(parser.getAttributeValue("", "user"));
-                        currentTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("", "time")));
+                        currentTransaction.setDate(convertAccurevTimestamp(parser.getAttributeValue("", "time")));
                         currentTransaction.setAction(parser.getAttributeValue("", "type"));
                         if (webuiURL != null && !webuiURL.isEmpty()) {
                             currentTransaction.setWebuiURLforTrans(webuiURL + "/WebGui.jsp?tran_number=" + parser.getAttributeValue("", "id") + "&depot=" + depotName + "&view=trans_hist");

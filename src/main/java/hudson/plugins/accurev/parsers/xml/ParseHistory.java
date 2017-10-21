@@ -1,16 +1,17 @@
 package hudson.plugins.accurev.parsers.xml;
 
+import static jenkins.plugins.accurev.util.AccurevUtils.convertAccurevTimestamp;
+
 import java.io.IOException;
 import java.util.List;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import jenkins.plugins.accurev.util.AccurevUtils;
 import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevTransaction;
-import hudson.plugins.accurev.AccurevUtils;
-import hudson.plugins.accurev.ParseChangeLog;
 
 public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<AccurevTransaction>> {
     public Boolean parse(XmlPullParser parser, List<AccurevTransaction> context) throws UnhandledAccurevCommandOutput,
@@ -23,8 +24,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     // parse transaction-values
                     resultTransaction.setId((parser.getAttributeValue("", "id")));
                     resultTransaction.setAction(parser.getAttributeValue("", "type"));
-                    resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
-                        "time")));
+                    resultTransaction.setDate(convertAccurevTimestamp(parser.getAttributeValue("", "time")));
                     resultTransaction.setUser(parser.getAttributeValue("", "user"));
                 } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
                     // parse comments
@@ -52,8 +52,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
                     // parse transaction-values
                     resultTransaction.setId((parser.getAttributeValue("", "id")));
                     resultTransaction.setAction(parser.getAttributeValue("", "type"));
-                    resultTransaction.setDate(ParseChangeLog.convertAccurevTimestamp(parser.getAttributeValue("",
-                        "time")));
+                    resultTransaction.setDate(convertAccurevTimestamp(parser.getAttributeValue("", "time")));
                     resultTransaction.setUser(parser.getAttributeValue("", "user"));
                 } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
                     // parse comments
