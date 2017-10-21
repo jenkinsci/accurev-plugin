@@ -1,5 +1,7 @@
 package hudson.plugins.accurev;
 
+import static jenkins.plugins.accurev.util.AccurevUtils.workspaceToNode;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,7 +11,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -501,14 +502,6 @@ public final class AccurevLauncher {
         } catch (IOException | InterruptedException e1) {
             return false;
         }
-    }
-
-    @CheckForNull
-    public static Node workspaceToNode(FilePath workspace) {
-        Computer computer = workspace.toComputer();
-        Node node = null;
-        if (null != computer) node = computer.getNode();
-        return null != node ? node : Jenkins.getInstance();
     }
 
     /**

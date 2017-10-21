@@ -1,6 +1,8 @@
 package hudson.plugins.accurev.parsers.xml;
 
 
+import static jenkins.plugins.accurev.util.AccurevUtils.convertAccurevTimestamp;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,7 +15,6 @@ import hudson.plugins.accurev.AccurevLauncher.ICmdOutputXmlParser;
 import hudson.plugins.accurev.AccurevLauncher.UnhandledAccurevCommandOutput;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevStream.StreamType;
-import hudson.plugins.accurev.ParseChangeLog;
 
 public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, AccurevStream>, String> {
     public Map<String, AccurevStream> parse(XmlPullParser parser, String depot) throws UnhandledAccurevCommandOutput,
@@ -29,9 +30,9 @@ public final class ParseShowStreams implements ICmdOutputXmlParser<Map<String, A
                 final String streamTypeStr = parser.getAttributeValue("", "type");
                 final String streamIsDynamic = parser.getAttributeValue("", "isDynamic");
                 final String streamTimeString = parser.getAttributeValue("", "time");
-                final Date streamTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamTimeString);
+                final Date streamTime = streamTimeString == null ? null : convertAccurevTimestamp(streamTimeString);
                 final String streamStartTimeString = parser.getAttributeValue("", "startTime");
-                final Date streamStartTime = streamTimeString == null ? null : ParseChangeLog.convertAccurevTimestamp(streamStartTimeString);
+                final Date streamStartTime = streamTimeString == null ? null : convertAccurevTimestamp(streamStartTimeString);
                 try {
                     final Long streamNumber = streamNumberStr == null ? null : Long.valueOf(streamNumberStr);
                     final Long basisStreamNumber = basisStreamNumberStr == null ? null : Long.valueOf(basisStreamNumberStr);
