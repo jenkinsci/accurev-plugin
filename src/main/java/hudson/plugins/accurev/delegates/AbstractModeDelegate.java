@@ -3,6 +3,7 @@ package hudson.plugins.accurev.delegates;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +33,6 @@ import jenkins.model.Jenkins;
 
 import hudson.plugins.accurev.AccuRevHiddenParametersAction;
 import hudson.plugins.accurev.AccurevElement;
-import hudson.plugins.accurev.AccurevPromoteTrigger;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevTransaction;
@@ -80,6 +80,21 @@ public abstract class AbstractModeDelegate {
 
     public AbstractModeDelegate(AccurevSCM scm) {
         this.scm = scm;
+    }
+
+    /**
+     * Sets last transaction build from the jenkins for the currently running project
+     *
+     * @param job      Jenkins job
+     * @param previous used to set the last Transaction
+     * @throws IOException Failing to read file
+     */
+    public static void setLastTransaction(Job<?, ?> job, String previous) throws IOException {
+        if (job == null) throw new IOException("Job is null");
+        File f = new File(job.getRootDir(), ACCUREVLASTTRANSFILENAME);
+        try (BufferedWriter br = Files.newBufferedWriter(f.toPath(), UTF_8)) {
+            br.write(previous);
+        }
     }
 
     public void setup(Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener) throws IOException, IllegalArgumentException, InterruptedException {
@@ -181,7 +196,7 @@ public abstract class AbstractModeDelegate {
             EnvVars envVars = new EnvVars();
             envVars.put(ACCUREV_LATEST_TRANSACTION_ID, latestTransactionID);
             envVars.put(ACCUREV_LATEST_TRANSACTION_DATE, latestTransactionDate);
-            AccurevPromoteTrigger.setLastTransaction(build.getParent(), latestTransactionID);
+            setLastTransaction(build.getParent(), latestTransactionID);
             build.addAction(new AccuRevHiddenParametersAction(envVars));
 
         } catch (Exception e) {
