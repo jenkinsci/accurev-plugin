@@ -8,24 +8,21 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+import jenkins.plugins.accurevclient.model.AccurevReferenceTree;
 
 import hudson.plugins.accurev.AccurevLauncher;
-import hudson.plugins.accurev.AccurevReferenceTree;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.DetermineRemoteHostname;
 import hudson.plugins.accurev.RemoteWorkspaceDetails;
 import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
-import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.plugins.accurev.cmd.Update;
 import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
-import hudson.plugins.accurev.parsers.xml.ParseShowReftrees;
 
 /**
  * @author raymond
@@ -65,9 +62,9 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     }
 
     protected Relocation checkForRelocation() throws IOException, InterruptedException {
-        final Map<String, AccurevReferenceTree> reftrees = getReftrees();
+        final Map<String, AccurevReferenceTree> reftrees = client.getReferenceTrees().getMap();
         String reftree = scm.getReftree();
-        if (reftrees == null) {
+        if (reftrees.isEmpty()) {
             throw new IllegalArgumentException("Cannot determine reference tree configuration information");
         }
         if (!reftrees.containsKey(reftree)) {
@@ -98,26 +95,6 @@ public class ReftreeDelegate extends AbstractModeDelegate {
             e.printStackTrace(listener.getLogger());
             throw new IllegalArgumentException("Unable to validate reference tree host.");
         }
-    }
-
-    /**
-     * Builds a command which gets executed and retrieves the following return data
-     *
-     * @return Map with Reference Tree name as key and Reference Tree Object as value.
-     * @throws IOException Failed to execute command or Parse data.
-     */
-    private Map<String, AccurevReferenceTree> getReftrees() throws IOException {
-        listener.getLogger().println("Getting a list of reference trees...");
-        final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add("show");
-        Command.addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("refs");
-        XmlPullParserFactory parser = XmlParserFactory.getFactory();
-        if (parser == null) throw new IOException("No XML Parser");
-        return AccurevLauncher.runCommand("Show ref trees command", scm.getAccurevTool(),
-            launcher, cmd, scm.getOptionalLock(), accurevEnv, jenkinsWorkspace, listener, logger,
-            parser, new ParseShowReftrees(), null);
     }
 
     @Override

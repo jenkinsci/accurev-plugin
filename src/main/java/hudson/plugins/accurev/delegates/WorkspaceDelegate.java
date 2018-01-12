@@ -5,26 +5,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.scm.PollingResult;
 import hudson.util.ArgumentListBuilder;
+import jenkins.plugins.accurevclient.model.AccurevStream;
+import jenkins.plugins.accurevclient.model.AccurevWorkspace;
 
-import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevStream;
-import hudson.plugins.accurev.AccurevWorkspace;
 import hudson.plugins.accurev.RemoteWorkspaceDetails;
-import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.cmd.Command;
-import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.delegates.Relocation.RelocationOption;
-import hudson.plugins.accurev.parsers.xml.ParseShowWorkspaces;
 
 /**
  * @author raymond
@@ -52,11 +48,9 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     protected Relocation checkForRelocation() throws IOException, InterruptedException {
         String depot = scm.getDepot();
         String _accurevWorkspace = scm.getWorkspace();
-        Map<String, AccurevWorkspace> workspaces = getWorkspaces();
-        Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, _accurevWorkspace, server, accurevEnv, jenkinsWorkspace, listener,
-            launcher);
+        Map<String, AccurevWorkspace> workspaces = client.getWorkspaces().getMap();
 
-        if (workspaces == null) {
+        if (workspaces.isEmpty()) {
             throw new IllegalArgumentException("Cannot determine workspace configuration information");
         }
         if (!workspaces.containsKey(_accurevWorkspace)) {
@@ -65,33 +59,6 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         AccurevWorkspace accurevWorkspace = workspaces.get(_accurevWorkspace);
         if (!depot.equals(accurevWorkspace.getDepot())) {
             throw new IllegalArgumentException("The specified workspace, " + _accurevWorkspace + ", is based in the depot " + accurevWorkspace.getDepot() + " not " + depot);
-        }
-
-        if (scm.isIgnoreStreamParent()) {
-            if (!streams.isEmpty()) {
-                AccurevStream workspaceStream = streams.values().iterator().next();
-                accurevWorkspace.setStream(workspaceStream);
-                String workspaceBasisStream = workspaceStream.getBasisName();
-                if (streams.containsKey(workspaceBasisStream)) {
-                    workspaceStream.setParent(streams.get(workspaceBasisStream));
-                } else {
-                    Map<String, AccurevStream> workspaceBasis = ShowStreams.getStreams(scm, workspaceBasisStream, server, accurevEnv, jenkinsWorkspace, listener,
-                        launcher);
-                    if (workspaceBasis == null) {
-                        throw new IllegalArgumentException("Could not determine the workspace basis stream");
-                    }
-                    workspaceStream.setParent(workspaceBasis.get(workspaceBasisStream));
-                }
-            } else {
-                throw new IllegalArgumentException("Workspace stream not found " + _accurevWorkspace);
-            }
-        } else {
-            for (AccurevStream accurevStream : streams.values()) {
-                if (accurevWorkspace.getStreamNumber().equals(accurevStream.getNumber())) {
-                    accurevWorkspace.setStream(accurevStream);
-                    break;
-                }
-            }
         }
 
         final RemoteWorkspaceDetails remoteDetails = getRemoteWorkspaceDetails();
@@ -103,28 +70,6 @@ public class WorkspaceDelegate extends ReftreeDelegate {
             }
         }
         return new Relocation(relocationOptions, remoteDetails.getHostName(), accurevWorkingSpace.getRemote(), localStream);
-    }
-
-    /**
-     * Builds a command which gets executed and retrieves the following return data
-     *
-     * @return Map with Workspace name as key and Workspace Object as value.
-     * @throws IOException Failed to execute command or Parse data.
-     */
-    private Map<String, AccurevWorkspace> getWorkspaces() throws IOException {
-        listener.getLogger().println("Getting a list of workspaces...");
-        String depot = scm.getDepot();
-        final ArgumentListBuilder cmd = new ArgumentListBuilder();
-        cmd.add("show");
-        Command.addServer(cmd, server);
-        cmd.add("-fx");
-        cmd.add("-p");
-        cmd.add(depot);
-        cmd.add("wspaces");
-        XmlPullParserFactory parser = XmlParserFactory.getFactory();
-        if (parser == null) throw new IOException("No XML Parser");
-        return AccurevLauncher.runCommand("Show workspaces command", scm.getAccurevTool(), launcher, cmd, scm.getOptionalLock(),
-            accurevEnv, jenkinsWorkspace, listener, logger, parser, new ParseShowWorkspaces(), null);
     }
 
     @Override
@@ -209,7 +154,11 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         REPARENT {
             @Override
             protected boolean isRequired(AccurevWorkspace accurevWorkspace, RemoteWorkspaceDetails remoteDetails, String localStream) {
-                return !localStream.equals(accurevWorkspace.getStream().getParent().getName());
+                String name = Optional.ofNullable(accurevWorkspace.getStream())
+                    .map(AccurevStream::getParent)
+                    .map(AccurevStream::getName)
+                    .orElse("");
+                return !localStream.equals(name);
             }
 
             @Override

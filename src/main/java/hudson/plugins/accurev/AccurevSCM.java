@@ -785,6 +785,10 @@ public class AccurevSCM extends SCM {
             this.credentialsId = credentialsId;
         }
 
+        public String getUrl() {
+            return getHost() + ":" + getPort();
+        }
+
         /**
          * Getter for property 'credentials'.
          *
