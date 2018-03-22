@@ -40,4 +40,8 @@ f.advanced {
     f.entry(field: "uuid", title: _("ID")) {
         f.textbox(disabled: true)
     }
+    
+     f.entry(field: "enablePlugin", title: "Disable Plugin for this server ", help: "/plugin/accurev/help/poll-on-master.html") {
+        f.checkbox()
+    }
 }

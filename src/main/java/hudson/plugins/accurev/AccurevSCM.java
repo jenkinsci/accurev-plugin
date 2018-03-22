@@ -370,9 +370,15 @@ public class AccurevSCM extends SCM {
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
+    	final AccurevServer server = getServer();
+        final boolean shouldLock = server != null && server.isEnablePlugin();
+    	if(!shouldLock){
         boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
         if (checkout) listener.getLogger().println("Checkout done");
         else listener.getLogger().println("Checkout failed");
+    	}else{
+    		listener.getLogger().println("Checkout skipped");
+    	}
     }
 
     /**
@@ -547,7 +553,24 @@ public class AccurevSCM extends SCM {
         public boolean showAccurevToolOptions() {
             return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
         }
-
+        
+        /**
+         *disable the depot textbox if enablePlugin is checked in configuration page for the accurev server 
+         *
+         * @return boolean
+         */
+        @SuppressWarnings("unused") // used by stapler
+        public boolean showDepot(String serverName) {
+        	if(serverName!= null){
+        	AccurevServer server = getServer(serverName);
+        	if(server.isEnablePlugin()){
+        		return true;
+        	}
+        	}
+			return true;
+            
+        }
+      
         /**
          * Lists available tool installations.
          *
@@ -684,6 +707,9 @@ public class AccurevSCM extends SCM {
         private boolean useRestrictedShowStreams;
         private boolean useColor;
         private boolean usePromoteListen;
+        private  boolean enablePlugin;
+
+      
 
         @DataBoundConstructor
         public AccurevServer(//
@@ -877,7 +903,18 @@ public class AccurevSCM extends SCM {
         public void setUsePromoteListen(boolean usePromoteListen) {
             this.usePromoteListen = usePromoteListen;
         }
+        
+        public boolean isEnablePlugin() {
+			return enablePlugin;
+		}
 
+        @DataBoundSetter
+		public  void setEnablePlugin(boolean enablePlugin) {
+			this.enablePlugin = enablePlugin;
+		}
+
+        
+       
         public boolean migrateCredentials() {
             if (username != null) {
                 LOGGER.info("Migrating to credentials");
