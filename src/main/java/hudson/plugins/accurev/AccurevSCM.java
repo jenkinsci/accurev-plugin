@@ -67,6 +67,8 @@ import jenkins.model.Jenkins;
 
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
+import hudson.plugins.accurev.cmd.Login;
+import hudson.plugins.accurev.cmd.ShowDepots;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 
 /**
@@ -366,20 +368,22 @@ public class AccurevSCM extends SCM {
      * @throws java.lang.InterruptedException on failing interrupt
      */
 
-    public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
-                         @Nonnull TaskListener listener, @CheckForNull File changelogFile,
-                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
-//        TODO: Implement SCMRevisionState?
-    	final AccurevServer server = getServer();
-        final boolean shouldLock = server != null && server.isEnablePlugin();
-    	if(!shouldLock){
-        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
-        if (checkout) listener.getLogger().println("Checkout done");
-        else listener.getLogger().println("Checkout failed");
-    	}else{
-    		listener.getLogger().println("Checkout skipped");
-    	}
-    }
+	public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
+			@Nonnull TaskListener listener, @CheckForNull File changelogFile, @CheckForNull SCMRevisionState baseline)
+			throws IOException, InterruptedException {
+		 AccurevServer server = getServer();
+		 boolean serverDisabled = server != null && server.isServerDisabled();
+		if (!serverDisabled) {
+			boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener,
+					changelogFile);
+			if (checkout)
+				listener.getLogger().println("Checkout done");
+			else
+				listener.getLogger().println("Checkout failed");
+		} else {
+			listener.getLogger().println("Checkout skipped");
+		}
+	}
 
     /**
      * {@inheritDoc}
@@ -521,8 +525,9 @@ public class AccurevSCM extends SCM {
         // The transient modifier means it won't be written to the config file
         private transient List<AccurevServer> servers;
         private boolean pollOnMaster;
+        
 
-        /**
+		/**
          * Constructs a new AccurevSCMDescriptor.
          */
         public AccurevSCMDescriptor() {
@@ -554,22 +559,7 @@ public class AccurevSCM extends SCM {
             return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
         }
         
-        /**
-         *disable the depot textbox if enablePlugin is checked in configuration page for the accurev server 
-         *
-         * @return boolean
-         */
-        @SuppressWarnings("unused") // used by stapler
-        public boolean showDepot(String serverName) {
-        	if(serverName!= null){
-        	AccurevServer server = getServer(serverName);
-        	if(server.isEnablePlugin()){
-        		return true;
-        	}
-        	}
-			return true;
-            
-        }
+       
       
         /**
          * Lists available tool installations.
@@ -661,7 +651,7 @@ public class AccurevSCM extends SCM {
         }
 
         @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillServerNameItems() {
+        public ListBoxModel doFillServerNameItems(@QueryParameter String serverName) {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
                 DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
@@ -674,6 +664,7 @@ public class AccurevSCM extends SCM {
             return s;
         }
 
+    
         @SuppressWarnings("unused") // Used by stapler
         public ListBoxModel doFillAccurevToolItems() {
             ListBoxModel r = new ListBoxModel();
@@ -707,7 +698,7 @@ public class AccurevSCM extends SCM {
         private boolean useRestrictedShowStreams;
         private boolean useColor;
         private boolean usePromoteListen;
-        private  boolean enablePlugin;
+        private boolean isServerDisabled;
 
       
 
@@ -904,18 +895,20 @@ public class AccurevSCM extends SCM {
             this.usePromoteListen = usePromoteListen;
         }
         
-        public boolean isEnablePlugin() {
-			return enablePlugin;
-		}
-
-        @DataBoundSetter
-		public  void setEnablePlugin(boolean enablePlugin) {
-			this.enablePlugin = enablePlugin;
-		}
+      
 
         
        
-        public boolean migrateCredentials() {
+        public boolean isServerDisabled() {
+			return isServerDisabled;
+		}
+        
+        @DataBoundSetter
+		public void setServerDisabled(boolean isServerDisabled) {
+			this.isServerDisabled = isServerDisabled;
+		}
+
+		public boolean migrateCredentials() {
             if (username != null) {
                 LOGGER.info("Migrating to credentials");
                 String secret = deobfuscate(password);

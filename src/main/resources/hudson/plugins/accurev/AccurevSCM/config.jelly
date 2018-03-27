@@ -11,10 +11,7 @@
         </f:entry>
         <f:entry title="Depot ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="depot" help="/plugin/accurev/help/project/depot.html">
-                  <j:if test="${descriptor.showDepot(instance.serverName)}">
-          <f:textbox disabled="true"/>
-          </j:if>
-          
+               <f:textbox/>
         </f:entry>
         <f:entry title="Stream/Workspace ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="stream" help="/plugin/accurev/help/project/stream.html">

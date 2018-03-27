@@ -367,8 +367,8 @@ public abstract class AbstractModeDelegate {
             env.put(ACCUREV_STREAM, "");
         }
 
-        if (server != null && server.getName() != null) {
-            env.put(ACCUREV_SERVER, server.getName());
+        if (server != null && server.getHost() != null) {
+            env.put(ACCUREV_SERVER, server.getHost()+":"+server.getPort());
         } else {
             env.put(ACCUREV_SERVER, "");
         }

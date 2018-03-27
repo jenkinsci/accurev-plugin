@@ -41,7 +41,7 @@ f.advanced {
         f.textbox(disabled: true)
     }
     
-     f.entry(field: "enablePlugin", title: "Disable Plugin for this server ", help: "/plugin/accurev/help/poll-on-master.html") {
+     f.entry(field: "isServerDisabled", title: "Disable Plugin for this server ", help: "/plugin/accurev/help/server-disable.html") {
         f.checkbox()
     }
 }
