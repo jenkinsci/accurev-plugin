@@ -22,8 +22,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -55,6 +53,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
 import hudson.scm.SCM;
@@ -64,12 +63,9 @@ import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
-
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
-import hudson.plugins.accurev.cmd.Login;
-import hudson.plugins.accurev.cmd.ShowDepots;
-import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+import net.sf.json.JSONObject;
 
 /**
  * Accurev SCM plugin for Jenkins
@@ -651,7 +647,7 @@ public class AccurevSCM extends SCM {
         }
 
         @SuppressWarnings("unused") // Used by stapler
-        public ListBoxModel doFillServerNameItems(@QueryParameter String serverName) {
+        public ListBoxModel doFillServerNameItems() {
             ListBoxModel s = new ListBoxModel();
             if (this._servers == null) {
                 DESCRIPTORLOGGER.warning("Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
