@@ -18,6 +18,9 @@ f.entry(field: "port", title: _("Port")) {
 f.entry(field: "credentialsId", title: _("Credentials")) {
     c.select()
 }
+f.entry() {
+    f.validateButton(method:"test", title:"Test Connection", with:"name,host,port,credentialsId")
+}
 f.advanced {
     f.entry(field: "syncOperations", title: _("Synchronize AccuRev CLI Operations"), help: "/plugin/accurev/help/sync-operations.html") {
         f.checkbox()

@@ -22,8 +22,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -55,6 +53,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
@@ -66,9 +65,9 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
-
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
+import net.sf.json.JSONObject;
 
 /**
  * Accurev SCM plugin for Jenkins
@@ -973,6 +972,24 @@ public class AccurevSCM extends SCM {
                         URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
                         CredentialsMatchers.always()
                     );
+            }
+
+            @SuppressWarnings("unused")
+            public FormValidation doTest(@QueryParameter String name, @QueryParameter String host, @QueryParameter int port,@QueryParameter String credentialsId) throws IOException {
+                try {
+                    if(null == host || host.isEmpty()){
+                        return FormValidation.warning("No Host Provided");
+                    }
+                   AccurevServer server = new AccurevServer("", name, host);
+                   server.setPort(port);
+                   server.setCredentialsId(credentialsId);
+                   if (Login.accurevLoginFromGlobalConfig(server)) {
+                       return FormValidation.ok("SUCCESS");
+                   }
+                        return FormValidation.error("FAILURE");
+                } catch (Exception e) {
+                    return FormValidation.error("FAILURE : " + e.getMessage());
+                }
             }
         }
     }
