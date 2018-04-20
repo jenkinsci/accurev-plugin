@@ -22,6 +22,8 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.sf.json.JSONObject;
+
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -60,12 +62,14 @@ import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCMRevisionState;
 import hudson.security.ACL;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
+
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
-import net.sf.json.JSONObject;
+
 
 /**
  * Accurev SCM plugin for Jenkins
@@ -364,22 +368,21 @@ public class AccurevSCM extends SCM {
      * @throws java.lang.InterruptedException on failing interrupt
      */
 
-	public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
-			@Nonnull TaskListener listener, @CheckForNull File changelogFile, @CheckForNull SCMRevisionState baseline)
-			throws IOException, InterruptedException {
-		 AccurevServer server = getServer();
-		 boolean serverDisabled = server != null && server.isServerDisabled();
-		if (!serverDisabled) {
-			boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener,
-					changelogFile);
-			if (checkout)
-				listener.getLogger().println("Checkout done");
-			else
-				listener.getLogger().println("Checkout failed");
-		} else {
-			listener.getLogger().println("Checkout skipped");
-		}
-	}
+    public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
+                         @Nonnull TaskListener listener, @CheckForNull File changelogFile,
+                         @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
+//        TODO: Implement SCMRevisionState?
+    	final AccurevServer server = getServer();
+        boolean serverDisabled = server != null && server.isServerDisabled();
+        if (!serverDisabled) {
+        boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
+        if (checkout) listener.getLogger().println("Checkout done");
+        else listener.getLogger().println("Checkout failed");
+    	}else{
+    	    listener.getLogger().println("Checkout skipped due to server disabled");
+            throw new InterruptedException();
+    	}
+    }
 
     /**
      * {@inheritDoc}
@@ -521,9 +524,8 @@ public class AccurevSCM extends SCM {
         // The transient modifier means it won't be written to the config file
         private transient List<AccurevServer> servers;
         private boolean pollOnMaster;
-        
 
-		/**
+        /**
          * Constructs a new AccurevSCMDescriptor.
          */
         public AccurevSCMDescriptor() {
@@ -554,9 +556,7 @@ public class AccurevSCM extends SCM {
         public boolean showAccurevToolOptions() {
             return Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations().length > 1;
         }
-        
-       
-      
+
         /**
          * Lists available tool installations.
          *
@@ -624,6 +624,7 @@ public class AccurevSCM extends SCM {
          *
          * @param pollOnMaster poll on aster
          */
+        @DataBoundSetter
         public void setPollOnMaster(boolean pollOnMaster) {
             this.pollOnMaster = pollOnMaster;
         }
@@ -660,7 +661,6 @@ public class AccurevSCM extends SCM {
             return s;
         }
 
-    
         @SuppressWarnings("unused") // Used by stapler
         public ListBoxModel doFillAccurevToolItems() {
             ListBoxModel r = new ListBoxModel();
@@ -673,6 +673,18 @@ public class AccurevSCM extends SCM {
         @Override
         public boolean isApplicable(Job project) {
             return true;
+        }
+
+        public FormValidation doCheckServerName(@QueryParameter String value) throws IOException {
+            if (StringUtils.isBlank(value) && !getServers().isEmpty())
+                value = getServers().get(0).getUuid();
+            if (null != value) {
+                AccurevServer server = getServer(value);
+                if (null != server && server.isServerDisabled()) {
+                    return FormValidation.error("This server is disabled");
+                }
+            }
+            return FormValidation.ok();
         }
     }
 
@@ -694,7 +706,7 @@ public class AccurevSCM extends SCM {
         private boolean useRestrictedShowStreams;
         private boolean useColor;
         private boolean usePromoteListen;
-        private boolean isServerDisabled;
+        private boolean serverDisabled;
 
       
 
@@ -890,21 +902,17 @@ public class AccurevSCM extends SCM {
         public void setUsePromoteListen(boolean usePromoteListen) {
             this.usePromoteListen = usePromoteListen;
         }
-        
-      
 
-        
-       
         public boolean isServerDisabled() {
-			return isServerDisabled;
-		}
-        
-        @DataBoundSetter
-		public void setServerDisabled(boolean isServerDisabled) {
-			this.isServerDisabled = isServerDisabled;
-		}
+            return serverDisabled;
+        }
 
-		public boolean migrateCredentials() {
+        @DataBoundSetter
+        public void setServerDisabled(boolean serverDisabled) {
+            this.serverDisabled = serverDisabled;
+        }
+
+        public boolean migrateCredentials() {
             if (username != null) {
                 LOGGER.info("Migrating to credentials");
                 String secret = deobfuscate(password);

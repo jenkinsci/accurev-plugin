@@ -11,11 +11,11 @@
         </f:entry>
         <f:entry title="Depot ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="depot" help="/plugin/accurev/help/project/depot.html">
-               <f:textbox/>
+          <f:textbox/>
         </f:entry>
         <f:entry title="Stream/Workspace ${hudson.utils.Util.filter(scms,hudson.plugins.accurev.AccurevSCM.class)}"
                  field="stream" help="/plugin/accurev/help/project/stream.html">
-          <f:textbox/>
+          <f:textbox />
         </f:entry>
         <j:if test="${descriptor.showAccurevToolOptions()}">
           <f:entry title="${%Accurev executable}" field="accurevTool">
@@ -28,7 +28,7 @@
                           checked="${instance.useWorkspace}"
                           help="/plugin/accurev/help/project/workspace.html" inline="true">
               <f:entry title="Workspace">
-                <f:textbox name="accurev.workspace" value="${instance.workspace}"/>
+                <f:textbox name="accurev.workspace" value="${instance.workspace}" />
               </f:entry>
             </f:radioBlock>
             <f:radioBlock name="accurev.wspaceORreftree" value="reftree" title="Use Reference Tree"
@@ -47,7 +47,7 @@
               <f:textbox name="accurev.directoryOffset" value="${instance.directoryOffset}"/>
             </f:entry>
             <f:entry title="Sub-path" help="/plugin/accurev/help/project/subpath.html">
-              <f:textbox name="accurev.subPath" value="${instance.subPath}"/>
+              <f:textbox name="accurev.subPath" value="${instance.subPath}" />
             </f:entry>
             <f:entry title="Filter for Poll SCM" help="/plugin/accurev/help/project/filterforpollscm.html">
               <f:textbox name="accurev.filterForPollSCM" value="${instance.filterForPollSCM}"/>
