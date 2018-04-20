@@ -147,6 +147,11 @@ public abstract class AbstractModeDelegate {
 
         setup(launcher, jenkinsWorkspace, listener);
 
+        if(server.isServerDisabled()){
+            listener.fatalError("Checkout skipped due to server disabled!");
+            throw new InterruptedException();
+        }
+        
         if (StringUtils.isEmpty(scm.getDepot())) {
             throw new IllegalStateException("Must specify a depot");
         }

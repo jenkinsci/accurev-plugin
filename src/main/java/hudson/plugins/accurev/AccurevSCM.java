@@ -372,16 +372,9 @@ public class AccurevSCM extends SCM {
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
-    	final AccurevServer server = getServer();
-        boolean serverDisabled = server != null && server.isServerDisabled();
-        if (!serverDisabled) {
         boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
         if (checkout) listener.getLogger().println("Checkout done");
         else listener.getLogger().println("Checkout failed");
-    	}else{
-    	    listener.getLogger().println("Checkout skipped due to server disabled");
-            throw new InterruptedException();
-    	}
     }
 
     /**
