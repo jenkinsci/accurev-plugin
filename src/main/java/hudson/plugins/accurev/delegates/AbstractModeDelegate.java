@@ -149,7 +149,7 @@ public abstract class AbstractModeDelegate {
 
         if(server.isServerDisabled()){
             listener.fatalError("Checkout skipped due to server disabled!");
-            throw new InterruptedException();
+            throw new InterruptedException("Checkout skipped");
         }
         
         if (StringUtils.isEmpty(scm.getDepot())) {

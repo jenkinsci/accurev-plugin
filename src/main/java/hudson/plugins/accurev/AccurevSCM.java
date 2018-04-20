@@ -70,7 +70,6 @@ import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
 
-
 /**
  * Accurev SCM plugin for Jenkins
  */
@@ -701,7 +700,6 @@ public class AccurevSCM extends SCM {
         private boolean usePromoteListen;
         private boolean serverDisabled;
 
-      
 
         @DataBoundConstructor
         public AccurevServer(//
