@@ -55,19 +55,21 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.plugins.accurev.delegates.AbstractModeDelegate;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCMRevisionState;
 import hudson.security.ACL;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
-import hudson.plugins.accurev.delegates.AbstractModeDelegate;
+
 
 /**
  * Accurev SCM plugin for Jenkins
@@ -370,9 +372,16 @@ public class AccurevSCM extends SCM {
                          @Nonnull TaskListener listener, @CheckForNull File changelogFile,
                          @CheckForNull SCMRevisionState baseline) throws IOException, InterruptedException {
 //        TODO: Implement SCMRevisionState?
+    	final AccurevServer server = getServer();
+        boolean serverDisabled = server != null && server.isServerDisabled();
+        if (!serverDisabled) {
         boolean checkout = AccurevMode.findDelegate(this).checkout(build, launcher, workspace, listener, changelogFile);
         if (checkout) listener.getLogger().println("Checkout done");
         else listener.getLogger().println("Checkout failed");
+    	}else{
+    	    listener.getLogger().println("Checkout skipped due to server disabled");
+            throw new InterruptedException();
+    	}
     }
 
     /**
@@ -615,6 +624,7 @@ public class AccurevSCM extends SCM {
          *
          * @param pollOnMaster poll on aster
          */
+        @DataBoundSetter
         public void setPollOnMaster(boolean pollOnMaster) {
             this.pollOnMaster = pollOnMaster;
         }
@@ -664,6 +674,18 @@ public class AccurevSCM extends SCM {
         public boolean isApplicable(Job project) {
             return true;
         }
+
+        public FormValidation doCheckServerName(@QueryParameter String value) throws IOException {
+            if (StringUtils.isBlank(value) && !getServers().isEmpty())
+                value = getServers().get(0).getUuid();
+            if (null != value) {
+                AccurevServer server = getServer(value);
+                if (null != server && server.isServerDisabled()) {
+                    return FormValidation.error("This server is disabled");
+                }
+            }
+            return FormValidation.ok();
+        }
     }
 
     public static final class AccurevServer extends AbstractDescribableImpl<AccurevServer> {
@@ -684,6 +706,9 @@ public class AccurevSCM extends SCM {
         private boolean useRestrictedShowStreams;
         private boolean useColor;
         private boolean usePromoteListen;
+        private boolean serverDisabled;
+
+      
 
         @DataBoundConstructor
         public AccurevServer(//
@@ -876,6 +901,15 @@ public class AccurevSCM extends SCM {
         @DataBoundSetter
         public void setUsePromoteListen(boolean usePromoteListen) {
             this.usePromoteListen = usePromoteListen;
+        }
+
+        public boolean isServerDisabled() {
+            return serverDisabled;
+        }
+
+        @DataBoundSetter
+        public void setServerDisabled(boolean serverDisabled) {
+            this.serverDisabled = serverDisabled;
         }
 
         public boolean migrateCredentials() {
