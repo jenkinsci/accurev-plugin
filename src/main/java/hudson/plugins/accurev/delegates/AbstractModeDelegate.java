@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
@@ -30,11 +29,13 @@ import hudson.model.TaskListener;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import jenkins.model.Jenkins;
+import jenkins.plugins.accurevclient.Accurev;
+import jenkins.plugins.accurevclient.AccurevClient;
+import jenkins.plugins.accurevclient.model.AccurevStream;
 
 import hudson.plugins.accurev.AccuRevHiddenParametersAction;
 import hudson.plugins.accurev.AccurevElement;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevTransaction;
 import hudson.plugins.accurev.GetConfigWebURL;
 import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
@@ -45,7 +46,6 @@ import hudson.plugins.accurev.cmd.History;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.PopulateCmd;
 import hudson.plugins.accurev.cmd.SetProperty;
-import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.cmd.Synctime;
 
 /**
@@ -75,6 +75,7 @@ public abstract class AbstractModeDelegate {
     protected FilePath accurevWorkingSpace;
     protected String localStream;
     protected Date startDateOfPopulate;
+    protected AccurevClient client;
 
     public AbstractModeDelegate(AccurevSCM scm) {
         this.scm = scm;
@@ -117,6 +118,11 @@ public abstract class AbstractModeDelegate {
                 }
             }
         }
+        client = Accurev
+            .with(listener, accurevEnv)
+            .at(jenkinsWorkspace)
+            .on(server.getUrl())
+            .getClient();
     }
 
     public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath jenkinsWorkspace, TaskListener listener, SCMRevisionState state) throws IOException, InterruptedException {
@@ -165,9 +171,8 @@ public abstract class AbstractModeDelegate {
         localStream = environment.expand(scm.getStream());
 
         listener.getLogger().println("Getting a list of streams...");
-        final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server, accurevEnv, jenkinsWorkspace, listener,
-            launcher);
-        if (streams == null) {
+        final Map<String, AccurevStream> streams = client.getStreams(scm.getDepot()).getMap();
+        if (streams.isEmpty()) {
             throw new IllegalStateException("Stream(s) not found");
         }
 
@@ -354,12 +359,6 @@ public abstract class AbstractModeDelegate {
 
     // TODO: As part of rewrite I should get accurev transaction onto environment as part of this
     public void buildEnvVars(Run<?, ?> build, Map<String, String> env) {
-        try {
-            setup(null, null, TaskListener.NULL);
-        } catch (IOException | InterruptedException ex) {
-            logger.log(Level.SEVERE, "buildEnvVars", ex);
-        }
-
         if (scm.getDepot() != null) {
             env.put(ACCUREV_DEPOT, scm.getDepot());
         } else {
@@ -372,6 +371,7 @@ public abstract class AbstractModeDelegate {
             env.put(ACCUREV_STREAM, "");
         }
 
+        AccurevSCM.AccurevServer server = scm.getServer();
         if (server != null && server.getName() != null) {
             env.put(ACCUREV_SERVER, server.getName());
         } else {

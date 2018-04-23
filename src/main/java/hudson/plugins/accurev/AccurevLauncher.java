@@ -28,9 +28,7 @@ import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
 
-import jenkins.plugins.accurev.AccurevTool;
 import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
 import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
 import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
@@ -39,7 +37,8 @@ import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
  * Utility class that knows how to run AccuRev commands and (optionally) have
  * something parse their output.
  */
-public final class AccurevLauncher {
+@Deprecated
+public final class AccurevLauncaher {
     private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
 
     /**
@@ -291,55 +290,6 @@ public final class AccurevLauncher {
         }
     }
 
-    public static AccurevTool resolveAccurevTool(String accurevTool, TaskListener listener) {
-        if (StringUtils.isBlank(accurevTool)) {
-            AccurevTool defaultInstallation = AccurevTool.getDefaultInstallation();
-            listener.getLogger().println(
-                String.format(
-                    "No Accurv tool is chosen, reverting to %s (%s)",
-                    defaultInstallation.getName(),
-                    defaultInstallation.getHome()
-                )
-            );
-            return defaultInstallation;
-        }
-
-        AccurevTool accurev = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallation(accurevTool);
-        if (accurev == null) {
-            accurev = AccurevTool.getDefaultInstallation();
-            listener.getLogger().println(
-                String.format(
-                    "Selected Accurev installation does not exist. Using Default %s (%s)",
-                    accurev.getName(),
-                    accurev.getHome()
-                )
-            );
-        }
-        return accurev;
-    }
-
-
-    /**
-     * @param accurevTool Which tool to find
-     * @param builtOn     node where build was performed
-     * @param env         environment variables used in the build
-     * @param listener    build log
-     * @return accurev exe for builtOn node, often "Default"
-     */
-    public static String getAccurevExe(String accurevTool, Node builtOn, EnvVars env, TaskListener listener) {
-        AccurevTool tool = resolveAccurevTool(accurevTool, listener);
-        if (builtOn != null) {
-            try {
-                tool = tool.forNode(builtOn, listener);
-            } catch (IOException | InterruptedException e) {
-                listener.getLogger().println("Failed to get accurev executable");
-            }
-        }
-        if (env != null) {
-            tool = tool.forEnvironment(env);
-        }
-        return tool.getHome();
-    }
 
     private static Integer runCommandToCompletion(//
                                                   final ProcStarter starter, //
@@ -364,7 +314,7 @@ public final class AccurevLauncher {
         @Nonnull TaskListener listener,
         @Nonnull final OutputStream stdoutStream,
         @Nonnull final OutputStream stderrStream, String accurevTool) throws IllegalStateException, IOException, InterruptedException {
-        String accurevPath = getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener);
+        String accurevPath = AccurevSCM.getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener);
         if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
         if (!accurevPath.equals(machineReadableCommand.toCommandArray()[0]))
             machineReadableCommand.prepend(accurevPath);

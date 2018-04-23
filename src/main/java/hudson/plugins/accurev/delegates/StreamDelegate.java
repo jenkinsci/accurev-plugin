@@ -9,11 +9,10 @@ import java.util.logging.Logger;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.scm.PollingResult;
+import jenkins.plugins.accurevclient.model.AccurevStream;
 
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.CheckForChanges;
-import hudson.plugins.accurev.cmd.ShowStreams;
 
 /**
  * @author raymond
@@ -69,9 +68,8 @@ public class StreamDelegate extends AbstractModeDelegate {
             listener.getLogger().println(ex.getMessage());
             return PollingResult.NO_CHANGES;
         }
-        final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server,
-            accurevEnv, jenkinsWorkspace, listener, launcher);
-        if (streams == null) {
+        final Map<String, AccurevStream> streams = client.getStreams(scm.getDepot()).getMap();
+        if (streams.isEmpty()) {
             listener.getLogger().println("Could not retrieve any Streams from Accurev, please check credentials");
             return PollingResult.NO_CHANGES;
         }

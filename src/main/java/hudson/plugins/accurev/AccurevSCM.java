@@ -49,6 +49,7 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Job;
 import hudson.model.ModelObject;
+import hudson.model.Node;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
@@ -121,6 +122,47 @@ public class AccurevSCM extends SCM {
 
     public static AccurevSCMDescriptor configuration() {
         return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
+    }
+
+    /**
+     * @param builtOn     node where build was performed
+     * @param env         environment variables used in the build
+     * @param listener    build log
+     * @return accurev exe for builtOn node, often "Default"
+     */
+    public String getAccurevExe(Node builtOn, EnvVars env, TaskListener listener) {
+        AccurevTool tool = resolveAccurevTool(listener);
+        if (builtOn != null) {
+            try {
+                tool = tool.forNode(builtOn, listener);
+            } catch (IOException | InterruptedException e) {
+                listener.getLogger().println("Failed to get accurev executable");
+            }
+        }
+        if (env != null) {
+            tool = tool.forEnvironment(env);
+        }
+        return tool.getHome();
+    }
+
+    @edu.umd.cs.findbugs.annotations.CheckForNull
+    public AccurevTool resolveAccurevTool(TaskListener listener) {
+        if (StringUtils.isBlank(accurevTool)) {
+            return AccurevTool.getDefaultInstallation();
+        }
+
+        AccurevTool accurev = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallation(accurevTool);
+        if (accurev == null) {
+            accurev = AccurevTool.getDefaultInstallation();
+            listener.getLogger().println(
+                String.format(
+                    "Selected Accurev installation does not exist. Using Default %s (%s)",
+                    accurev.getName(),
+                    accurev.getHome()
+                )
+            );
+        }
+        return accurev;
     }
 
     public String getDepot() {
@@ -791,6 +833,7 @@ public class AccurevSCM extends SCM {
          *
          * @return Value for property 'credentialsId'.
          */
+        @edu.umd.cs.findbugs.annotations.CheckForNull
         public String getCredentialsId() {
             return credentialsId;
         }
@@ -798,6 +841,10 @@ public class AccurevSCM extends SCM {
         @DataBoundSetter
         public void setCredentialsId(String credentialsId) {
             this.credentialsId = credentialsId;
+        }
+
+        public String getUrl() {
+            return getHost() + ":" + getPort();
         }
 
         /**
