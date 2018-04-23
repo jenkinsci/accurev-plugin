@@ -58,7 +58,7 @@ public abstract class AbstractModeDelegate {
     private static final Logger logger = Logger.getLogger(AbstractModeDelegate.class.getName());
     private static final String ACCUREV_DEPOT = "ACCUREV_DEPOT";
     private static final String ACCUREV_STREAM = "ACCUREV_STREAM";
-    private static final String ACCUREV_SERVER = "ACCUREV_SERVER";
+    private static final String ACCUREV_SERVER = "JENKINS_ACCUREV_SERVER";
     private static final String ACCUREV_SERVER_HOSTNAME = "ACCUREV_SERVER_HOSTNAME";
     private static final String ACCUREV_SERVER_PORT = "ACCUREV_SERVER_PORT";
     private static final String ACCUREV_SUBPATH = "ACCUREV_SUBPATH";
@@ -147,6 +147,11 @@ public abstract class AbstractModeDelegate {
 
         setup(launcher, jenkinsWorkspace, listener);
 
+        if(server.isServerDisabled()){
+            listener.fatalError("Checkout skipped due to server disabled!");
+            throw new InterruptedException("Checkout skipped");
+        }
+        
         if (StringUtils.isEmpty(scm.getDepot())) {
             throw new IllegalStateException("Must specify a depot");
         }
