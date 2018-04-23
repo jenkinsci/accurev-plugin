@@ -700,7 +700,6 @@ public class AccurevSCM extends SCM {
         private boolean usePromoteListen;
         private boolean serverDisabled;
 
-
         @DataBoundConstructor
         public AccurevServer(//
                              String uuid,
