@@ -27,6 +27,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -975,18 +976,23 @@ public class AccurevSCM extends SCM {
             }
 
             @SuppressWarnings("unused")
-            public FormValidation doTest(@QueryParameter String name, @QueryParameter String host, @QueryParameter int port,@QueryParameter String credentialsId) throws IOException {
+            @RequirePOST
+            public FormValidation doTest(@QueryParameter String name, @QueryParameter String host, @QueryParameter int port, @QueryParameter String credentialsId) {
+                if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                    return FormValidation.ok();
+                }
+                if (null == host || host.isEmpty()) {
+                    return FormValidation.warning("No Host Provided");
+                }
+
+                AccurevServer server = new AccurevServer("", name, host);
+                server.setPort(port);
+                server.setCredentialsId(credentialsId);
                 try {
-                    if(null == host || host.isEmpty()){
-                        return FormValidation.warning("No Host Provided");
+                    if (Login.accurevLoginFromGlobalConfig(server)) {
+                        return FormValidation.ok("SUCCESS");
                     }
-                   AccurevServer server = new AccurevServer("", name, host);
-                   server.setPort(port);
-                   server.setCredentialsId(credentialsId);
-                   if (Login.accurevLoginFromGlobalConfig(server)) {
-                       return FormValidation.ok("SUCCESS");
-                   }
-                        return FormValidation.error("FAILURE");
+                    return FormValidation.error("FAILURE");
                 } catch (Exception e) {
                     return FormValidation.error("FAILURE : " + e.getMessage());
                 }
