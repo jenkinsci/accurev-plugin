@@ -63,11 +63,11 @@ public class Login extends Command {
                 final String currentUsername = getLoggedInUsername(accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
                 if (StringUtils.isEmpty(currentUsername)) {
                     loginRequired = true;
-                    listener.getLogger().println("Not currently authenticated with Accurev server");
+                    listener.getLogger().println("Not currently authenticated with AccuRev server");
                 } else {
                     loginRequired = !currentUsername.equals(requiredUsername);
                     listener.getLogger().println(
-                        "Currently authenticated with Accurev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
+                        "Currently authenticated with AccuRev server as '" + currentUsername + (loginRequired ? "', login required" : "', not logging in again."));
                 }
             } else {
                 loginRequired = true;
@@ -95,7 +95,7 @@ public class Login extends Command {
             listener.getLogger().println("Credentials username cannot be blank");
             return false;
         }
-        listener.getLogger().println("Authenticating with Accurev server...");
+        listener.getLogger().println("Authenticating with AccuRev server...");
         final ArgumentListBuilder cmd = new ArgumentListBuilder();
         cmd.add("login");
         addServer(cmd, server);

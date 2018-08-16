@@ -180,7 +180,28 @@ public abstract class AbstractModeDelegate {
             setStreamColor();
         }
 
-        return checkout(build, changelogFile) && populate(build) && captureChangeLog(build, changelogFile, streams);
+        boolean isSuccess = true;
+        String errorMessage = "Failed to";
+        if(!checkout(build, changelogFile) ){
+            errorMessage+=" checkout";
+            isSuccess = false;
+        }
+
+        if(isSuccess && !populate(build)){
+            errorMessage+=" Populate";
+            isSuccess = false;
+        }
+
+        if(isSuccess && !captureChangeLog(build, changelogFile, streams)){
+            errorMessage+=" captureChangeLog";
+            isSuccess = false;
+        }
+
+        if(!isSuccess){
+            throw new IllegalStateException(errorMessage);
+        }
+
+        return isSuccess;
 
     }
 

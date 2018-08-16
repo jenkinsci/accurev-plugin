@@ -9,6 +9,6 @@ f = namespace("/lib/form")
 f.entry(field: "name", title: _("Name")) {
     f.textbox()
 }
-f.entry(field: "home", title: _("Path to Accurev executable")) {
+f.entry(field: "home", title: _("Path to AccuRev executable")) {
     f.textbox()
 }
