@@ -1,5 +1,11 @@
 package hudson.plugins.accurev;
 
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.TaskListener;
+import hudson.plugins.accurev.AccurevSCM.AccurevServer;
+import hudson.plugins.accurev.cmd.History;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -8,148 +14,161 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.lang.StringUtils;
 
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.TaskListener;
-
-import hudson.plugins.accurev.AccurevSCM.AccurevServer;
-import hudson.plugins.accurev.cmd.History;
-
 public class CheckForChanges {
 
-    /**
-     * @param server     server
-     * @param accurevEnv accurev environment
-     * @param workspace  workspace
-     * @param listener   listener
-     * @param launcher   launcher
-     * @param stream     stream
-     * @param buildDate  build Date
-     * @param logger     logger
-     * @param scm        Accurev SCm
-     * @return if there are any new transactions in the stream since the last build was done
-     */
-    //stream param is of type AccurevStream
-    public static boolean checkStreamForChanges(AccurevServer server,
-                                                EnvVars accurevEnv,
-                                                FilePath workspace,
-                                                TaskListener listener,
-                                                Launcher launcher,
-                                                AccurevStream stream,
-                                                Date buildDate,
-                                                Logger logger,
-                                                AccurevSCM scm) {
-        AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
-        String filterForPollSCM = scm.getFilterForPollSCM();
-        String subPath = scm.getSubPath();
-        latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
+  /**
+   * @param server server
+   * @param accurevEnv accurev environment
+   * @param workspace workspace
+   * @param listener listener
+   * @param launcher launcher
+   * @param stream stream
+   * @param buildDate build Date
+   * @param logger logger
+   * @param scm Accurev SCm
+   * @return if there are any new transactions in the stream since the last build was done
+   */
+  // stream param is of type AccurevStream
+  public static boolean checkStreamForChanges(
+      AccurevServer server,
+      EnvVars accurevEnv,
+      FilePath workspace,
+      TaskListener listener,
+      Launcher launcher,
+      AccurevStream stream,
+      Date buildDate,
+      Logger logger,
+      AccurevSCM scm) {
+    AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
+    String filterForPollSCM = scm.getFilterForPollSCM();
+    String subPath = scm.getSubPath();
+    latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
 
-        //query AccuRev for the latest transactions of each kind defined in transactionTypes using getTimeOfLatestTransaction
-        List<String> validTransactionTypes;
-        if (stream.getType().name().equalsIgnoreCase("workspace")) {
-            validTransactionTypes = AccurevSCM.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
+    // query AccuRev for the latest transactions of each kind defined in transactionTypes using
+    // getTimeOfLatestTransaction
+    List<String> validTransactionTypes;
+    if (stream.getType().name().equalsIgnoreCase("workspace")) {
+      validTransactionTypes = AccurevSCM.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
+    } else {
+      validTransactionTypes = AccurevSCM.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
+    }
+    listener
+        .getLogger()
+        .println( //
+            "Checking transactions of type "
+                + String.join(", ", validTransactionTypes)
+                + //
+                " in stream ["
+                + stream.getName()
+                + "]");
+    boolean isTransLatestThanBuild = false;
+
+    Collection<String> serverPaths;
+    Set<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
+
+    for (final String transactionType : validTransactionTypes) {
+      try {
+        final AccurevTransaction tempTransaction =
+            History.getLatestTransaction(
+                scm,
+                server,
+                accurevEnv,
+                workspace,
+                listener,
+                launcher,
+                stream.getName(),
+                transactionType);
+        if (tempTransaction != null) {
+          listener
+              .getLogger()
+              .println("Last transaction of type [" + transactionType + "] is " + tempTransaction);
+
+          if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
+            // check the affected
+            serverPaths = tempTransaction.getAffectedPaths();
+            if (tempTransaction.getAffectedPaths().size() > 0) {
+              if (!changesMatchFilter(serverPaths, pollingFilters)) {
+                // Continue to next transaction (that may have a match)
+                continue;
+              }
+            }
+          }
+          latestCodeChangeTransaction = tempTransaction;
+          if (latestCodeChangeTransaction.getDate().equals(AccurevSCM.NO_TRANS_DATE)) {
+            listener.getLogger().println("No last transaction found.");
+          }
+          // log last transaction information if retrieved
+          if (buildDate != null && buildDate.before(latestCodeChangeTransaction.getDate())) {
+            listener.getLogger().println("Last valid trans " + latestCodeChangeTransaction);
+            isTransLatestThanBuild = true;
+          }
+
         } else {
-            validTransactionTypes = AccurevSCM.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
+          listener.getLogger().println("No transactions of type [" + transactionType + "]");
         }
-        listener.getLogger().println(//
-            "Checking transactions of type " + String.join(", ", validTransactionTypes) + //
-                " in stream [" + stream.getName() + "]");
-        boolean isTransLatestThanBuild = false;
+      } catch (Exception e) {
+        final String msg =
+            "getLatestTransaction failed when checking the stream "
+                + stream.getName()
+                + " for changes with transaction type "
+                + transactionType;
+        listener.getLogger().println(msg);
+        e.printStackTrace(listener.getLogger());
+        logger.log(Level.WARNING, msg, e);
+      }
+    }
+    return isTransLatestThanBuild;
+  }
 
-        Collection<String> serverPaths;
-        Set<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
-
-        for (final String transactionType : validTransactionTypes) {
-            try {
-                final AccurevTransaction tempTransaction = History.getLatestTransaction(scm, server, accurevEnv, workspace,
-                    listener, launcher, stream.getName(), transactionType);
-                if (tempTransaction != null) {
-                    listener.getLogger().println(
-                        "Last transaction of type [" + transactionType + "] is " + tempTransaction);
-
-                    if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
-                        //check the affected
-                        serverPaths = tempTransaction.getAffectedPaths();
-                        if (tempTransaction.getAffectedPaths().size() > 0) {
-                            if (!changesMatchFilter(serverPaths, pollingFilters)) {
-                                // Continue to next transaction (that may have a match)
-                                continue;
-                            }
-                        }
-                    }
-                    latestCodeChangeTransaction = tempTransaction;
-                    if (latestCodeChangeTransaction.getDate().equals(AccurevSCM.NO_TRANS_DATE)) {
-                        listener.getLogger().println("No last transaction found.");
-                    }
-                    //log last transaction information if retrieved
-                    if (buildDate != null && buildDate.before(latestCodeChangeTransaction.getDate())) {
-                        listener.getLogger().println("Last valid trans " + latestCodeChangeTransaction);
-                        isTransLatestThanBuild = true;
-                    }
-
-                } else {
-                    listener.getLogger().println("No transactions of type [" + transactionType + "]");
-                }
-            } catch (Exception e) {
-                final String msg = "getLatestTransaction failed when checking the stream " + stream.getName() + " for changes with transaction type " + transactionType;
-                listener.getLogger().println(msg);
-                e.printStackTrace(listener.getLogger());
-                logger.log(Level.WARNING, msg, e);
-            }
-        }
-        return isTransLatestThanBuild;
+  public static boolean changesMatchFilter(
+      Collection<String> serverPaths, Collection<String> filters) {
+    if (CollectionUtils.isEmpty(filters)) {
+      // No filters, so always a match.
+      return true;
     }
 
-    public static boolean changesMatchFilter(Collection<String> serverPaths, Collection<String> filters) {
-        if (CollectionUtils.isEmpty(filters)) {
-            // No filters, so always a match.
-            return true;
+    for (String path : serverPaths) {
+      path = sanitizeSlashes(path);
+      for (String filter : filters) {
+        if (pathMatcher(path, filter)) {
+          return true;
         }
+      }
+    }
+    return false;
+  }
 
-        for (String path : serverPaths) {
-            path = sanitizeSlashes(path);
-            for (String filter : filters) {
-                if (pathMatcher(path, filter)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+  public static boolean pathMatcher(String path, String wildcard) {
+    return FilenameUtils.wildcardMatch(path, wildcard, IOCase.INSENSITIVE);
+  }
+
+  private static Set<String> getListOfPollingFilters(String filterForPollSCM, String subPath) {
+    if (StringUtils.isNotBlank(filterForPollSCM)) {
+      return splitAndSanitizeFilters(filterForPollSCM);
     }
 
-    public static boolean pathMatcher(String path, String wildcard) {
-        return FilenameUtils.wildcardMatch(path, wildcard, IOCase.INSENSITIVE);
+    return splitAndSanitizeFilters(subPath);
+  }
+
+  private static Set<String> splitAndSanitizeFilters(String input) {
+    if (StringUtils.isBlank(input)) {
+      return null;
     }
 
-    private static Set<String> getListOfPollingFilters(String filterForPollSCM, String subPath) {
-        if (StringUtils.isNotBlank(filterForPollSCM)) {
-            return splitAndSanitizeFilters(filterForPollSCM);
-        }
+    final char DELIMITER = ',';
+    final String STRIP_CHARS = " \t\n\r/";
+    String[] filters = StringUtils.split(sanitizeSlashes(input), DELIMITER);
+    filters = StringUtils.stripAll(filters, STRIP_CHARS);
 
-        return splitAndSanitizeFilters(subPath);
-    }
+    return new HashSet<>(Arrays.asList(filters));
+  }
 
-    private static Set<String> splitAndSanitizeFilters(String input) {
-        if (StringUtils.isBlank(input)) {
-            return null;
-        }
-
-        final char DELIMITER = ',';
-        final String STRIP_CHARS = " \t\n\r/";
-        String[] filters = StringUtils.split(sanitizeSlashes(input), DELIMITER);
-        filters = StringUtils.stripAll(filters, STRIP_CHARS);
-
-        return new HashSet<>(Arrays.asList(filters));
-    }
-
-    private static String sanitizeSlashes(String input) {
-        return input.replace('\\', '/');
-    }
+  private static String sanitizeSlashes(String input) {
+    return input.replace('\\', '/');
+  }
 }

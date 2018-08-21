@@ -7,8 +7,8 @@ package jenkins.plugins.accurev.AccurevTool
 f = namespace("/lib/form")
 
 f.entry(field: "name", title: _("Name")) {
-    f.textbox()
+  f.textbox()
 }
 f.entry(field: "home", title: _("Path to AccuRev executable")) {
-    f.textbox()
+  f.textbox()
 }
