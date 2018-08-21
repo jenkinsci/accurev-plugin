@@ -1,5 +1,5 @@
 <!--
-  Displays the Accurev change log digest.
+  Displays the AccuRev change log digest.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core"

@@ -18,7 +18,7 @@
           <f:textbox />
         </f:entry>
         <j:if test="${descriptor.showAccurevToolOptions()}">
-          <f:entry title="${%Accurev executable}" field="accurevTool">
+          <f:entry title="${%AccuRev executable}" field="accurevTool">
             <f:select/>
           </f:entry>
         </j:if>

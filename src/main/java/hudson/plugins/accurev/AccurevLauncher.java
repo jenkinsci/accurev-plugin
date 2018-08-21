@@ -291,31 +291,26 @@ public final class AccurevLauncher {
         }
     }
 
-    public static AccurevTool resolveAccurevTool(String accurevTool, TaskListener listener) {
-        if (StringUtils.isBlank(accurevTool)) {
-            AccurevTool defaultInstallation = AccurevTool.getDefaultInstallation();
-            listener.getLogger().println(
-                String.format(
-                    "No Accurv tool is chosen, reverting to %s (%s)",
-                    defaultInstallation.getName(),
-                    defaultInstallation.getHome()
-                )
-            );
-            return defaultInstallation;
+    public static AccurevTool resolveAccurevTool(String accurevToolValue, TaskListener listener, String command) {
+        AccurevTool accurevTool = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallation(accurevToolValue);
+        boolean isValidCommand = command.equals("info")||command.equals("login");
+        if (accurevTool == null ) {
+            accurevTool = AccurevTool.getDefaultInstallation();
+            String path = accurevTool.getHome();
+            handleConsoleMessage(listener, isValidCommand, path);
+        }else{
+            String path = accurevTool.getHome();
+            handleConsoleMessage(listener, isValidCommand, path);
         }
+        return accurevTool;
+    }
 
-        AccurevTool accurev = Jenkins.getInstance().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallation(accurevTool);
-        if (accurev == null) {
-            accurev = AccurevTool.getDefaultInstallation();
-            listener.getLogger().println(
-                String.format(
-                    "Selected Accurev installation does not exist. Using Default %s (%s)",
-                    accurev.getName(),
-                    accurev.getHome()
-                )
-            );
+    private static void handleConsoleMessage(TaskListener listener, boolean isValidCommand, String path) {
+        boolean isValidPath = false;
+        isValidPath = (path != null && (path.isEmpty() || path.equals("accurev")));
+        if (isValidCommand && isValidPath) {
+            listener.getLogger().println("No AccuRev tool configured, using default");
         }
-        return accurev;
     }
 
 
@@ -324,10 +319,11 @@ public final class AccurevLauncher {
      * @param builtOn     node where build was performed
      * @param env         environment variables used in the build
      * @param listener    build log
+     * @param command 
      * @return accurev exe for builtOn node, often "Default"
      */
-    public static String getAccurevExe(String accurevTool, Node builtOn, EnvVars env, TaskListener listener) {
-        AccurevTool tool = resolveAccurevTool(accurevTool, listener);
+    public static String getAccurevExe(String accurevTool, Node builtOn, EnvVars env, TaskListener listener, String command) {
+        AccurevTool tool = resolveAccurevTool(accurevTool, listener, command);
         if (builtOn != null) {
             try {
                 tool = tool.forNode(builtOn, listener);
@@ -364,7 +360,7 @@ public final class AccurevLauncher {
         @Nonnull TaskListener listener,
         @Nonnull final OutputStream stdoutStream,
         @Nonnull final OutputStream stderrStream, String accurevTool) throws IllegalStateException, IOException, InterruptedException {
-        String accurevPath = getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener);
+        String accurevPath = getAccurevExe(accurevTool, workspaceToNode(directoryToRunCommandFrom), environmentVariables, listener,machineReadableCommand.toCommandArray()[0]);
         if (StringUtils.isBlank(accurevPath)) accurevPath = "accurev";
         if (!accurevPath.equals(machineReadableCommand.toCommandArray()[0]))
             machineReadableCommand.prepend(accurevPath);

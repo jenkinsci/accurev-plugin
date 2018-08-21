@@ -1,4 +1,4 @@
-# Jenkins Accurev Plugin
+# Jenkins AccuRev Plugin
 [![Build Status](https://ci.jenkins.io/job/Plugins/job/accurev-plugin/job/master/badge/icon)](https://ci.jenkins.io/job/Plugins/job/accurev-plugin/job/master/)
 
 Read more: [https://plugins.jenkins.io/accurev](https://plugins.jenkins.io/accurev)

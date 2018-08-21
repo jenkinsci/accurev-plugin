@@ -72,7 +72,7 @@ public class StreamDelegate extends AbstractModeDelegate {
         final Map<String, AccurevStream> streams = ShowStreams.getStreams(scm, localStream, server,
             accurevEnv, jenkinsWorkspace, listener, launcher);
         if (streams == null) {
-            listener.getLogger().println("Could not retrieve any Streams from Accurev, please check credentials");
+            listener.getLogger().println("Could not retrieve any Streams from AccuRev, please check credentials");
             return PollingResult.NO_CHANGES;
         }
         AccurevStream stream = streams.get(localStream);

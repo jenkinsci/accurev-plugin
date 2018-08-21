@@ -131,7 +131,7 @@ public class AccurevTool extends ToolInstallation implements NodeSpecific<Accure
         @Override
         @Nonnull
         public String getDisplayName() {
-            return "Accurev";
+            return "AccuRev";
         }
 
         @SuppressWarnings("SuspiciousToArrayCall")

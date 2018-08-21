@@ -67,7 +67,7 @@ public class AccurevToolTest {
     @Test
     public void testGetDescriptor() throws Exception {
         AccurevTool.DescriptorImpl descriptor = accurevTool.getDescriptor();
-        assertEquals("Accurev", descriptor.getDisplayName());
+        assertEquals("AccuRev", descriptor.getDisplayName());
     }
 
     @Test
