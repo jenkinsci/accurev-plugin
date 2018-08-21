@@ -182,22 +182,22 @@ public abstract class AbstractModeDelegate {
 
         boolean isSuccess = true;
         String errorMessage = "Failed to";
-        if(!checkout(build, changelogFile) ){
-            errorMessage+=" checkout";
+        if (!checkout(build, changelogFile)) {
+            errorMessage += " Checkout";
             isSuccess = false;
         }
 
-        if(isSuccess && !populate(build)){
-            errorMessage+=" Populate";
+        if (isSuccess && !populate(build)) {
+            errorMessage += " Populate";
             isSuccess = false;
         }
 
-        if(isSuccess && !captureChangeLog(build, changelogFile, streams)){
-            errorMessage+=" captureChangeLog";
+        if (isSuccess && !captureChangeLog(build, changelogFile, streams)) {
+            errorMessage += " CaptureChangeLog";
             isSuccess = false;
         }
 
-        if(!isSuccess){
+        if (!isSuccess) {
             throw new IllegalStateException(errorMessage);
         }
 

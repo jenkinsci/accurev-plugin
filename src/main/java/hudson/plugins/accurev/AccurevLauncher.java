@@ -305,17 +305,11 @@ public final class AccurevLauncher {
         return accurevTool;
     }
 
-    private static void handleConsoleMessage(TaskListener listener, boolean isValidCommand,
-            String path) {
+    private static void handleConsoleMessage(TaskListener listener, boolean isValidCommand, String path) {
         boolean isValidPath = false;
-        isValidPath = path!=null && (path.isEmpty() || path.equals("accurev"));
-        if(isValidCommand && isValidPath)
-        {
-        listener.getLogger().println(
-            String.format(
-                "No AccuRev tool configured, using default"
-            )
-        );
+        isValidPath = (path != null && (path.isEmpty() || path.equals("accurev")));
+        if (isValidCommand && isValidPath) {
+            listener.getLogger().println(String.format("No AccuRev tool configured, using default"));
         }
     }
 
