@@ -309,7 +309,7 @@ public final class AccurevLauncher {
         boolean isValidPath = false;
         isValidPath = (path != null && (path.isEmpty() || path.equals("accurev")));
         if (isValidCommand && isValidPath) {
-            listener.getLogger().println(String.format("No AccuRev tool configured, using default"));
+            listener.getLogger().println("No AccuRev tool configured, using default");
         }
     }
 
