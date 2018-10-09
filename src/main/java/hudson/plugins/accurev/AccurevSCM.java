@@ -17,7 +17,6 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Job;
@@ -42,6 +41,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +69,8 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /** Accurev SCM plugin for Jenkins */
-public class AccurevSCM extends SCM {
+public class AccurevSCM extends SCM implements Serializable {
+  private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
 
   protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES =
       Collections.unmodifiableList(
@@ -114,11 +115,24 @@ public class AccurevSCM extends SCM {
   @CheckForNull private String accurevTool = null;
   private Job<?, ?> activeProject;
 
-  @DataBoundConstructor
+  @Deprecated
   public AccurevSCM(String serverName, String depot, String stream) {
     this.depot = depot;
     this.stream = stream;
     AccurevServer server = getDescriptor().getServer(serverName);
+    if (server != null) {
+      setServerName(server.getName());
+      setServerUUID(server.getUuid());
+    }
+    updateMode();
+  }
+
+  @DataBoundConstructor
+  public AccurevSCM(String serverName, String serverUUID, String depot, String stream) {
+    this.depot = depot;
+    this.stream = stream;
+    AccurevServer server =
+        getDescriptor().getServer((serverName != null) ? serverName : serverUUID);
     if (server != null) {
       setServerName(server.getName());
       setServerUUID(server.getUuid());
@@ -138,6 +152,7 @@ public class AccurevSCM extends SCM {
     return serverName;
   }
 
+  @DataBoundSetter
   public void setServerName(String serverName) {
     this.serverName = serverName;
   }
@@ -146,6 +161,7 @@ public class AccurevSCM extends SCM {
     return serverUUID;
   }
 
+  @DataBoundSetter
   public void setServerUUID(String uuid) {
     serverUUID = uuid;
   }
@@ -351,13 +367,7 @@ public class AccurevSCM extends SCM {
    * @param env enviroments
    * @since 0.6.9
    */
-  // TODO: 2.60+ Delete this override.
   @Override
-  public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
-    buildEnvironment(build, env);
-  }
-
-  // TODO: 2.60+ - add @Override.
   public void buildEnvironment(Run<?, ?> build, Map<String, String> env) {
     AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
     delegate.buildEnvVars(build, env);
@@ -666,11 +676,11 @@ public class AccurevSCM extends SCM {
 
     @CheckForNull
     public AccurevServer getServer(String uuid) {
-      if (uuid == null || this._servers == null) {
+      if (uuid == null || getServers().isEmpty()) {
         LOGGER.fine("No server found. - getServer(NULL)");
         return null;
       }
-      for (AccurevServer server : this._servers) {
+      for (AccurevServer server : getServers()) {
         if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUuid())) {
           return server;
         } else if (uuid.equals(server.getName())) {
@@ -685,12 +695,12 @@ public class AccurevSCM extends SCM {
     @SuppressWarnings("unused") // Used by stapler
     public ListBoxModel doFillServerNameItems() {
       ListBoxModel s = new ListBoxModel();
-      if (this._servers == null) {
+      if (getServers().isEmpty()) {
         DESCRIPTORLOGGER.warning(
             "Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
         return s;
       }
-      for (AccurevServer server : this._servers) {
+      for (AccurevServer server : getServers()) {
         s.add(server.getName());
       }
 
@@ -1002,6 +1012,10 @@ public class AccurevSCM extends SCM {
 
     @Extension
     public static class DescriptorImpl extends Descriptor<AccurevServer> {
+
+      public DescriptorImpl() {
+        load();
+      }
 
       @Nonnull
       @Override
