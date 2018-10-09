@@ -54,7 +54,7 @@ public class SnapshotDelegate extends StreamDelegate {
         scm.getAccurevTool(),
         launcher,
         mksnapcmd,
-        scm.getOptionalLock(),
+        scm.getOptionalLock(jenkinsWorkspace),
         accurevEnv,
         jenkinsWorkspace,
         listener,

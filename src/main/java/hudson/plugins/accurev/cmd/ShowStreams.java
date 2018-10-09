@@ -14,7 +14,7 @@ import hudson.util.ArgumentListBuilder;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -46,7 +46,7 @@ public class ShowStreams extends Command {
               scm,
               server,
               scm.getDepot(),
-              scm.getOptionalLock(),
+              scm.getOptionalLock(workspace),
               accurevEnv,
               workspace,
               listener,
@@ -59,7 +59,7 @@ public class ShowStreams extends Command {
       AccurevSCM scm,
       final AccurevServer server, //
       final String depot, //
-      final Lock lock, //
+      final ReentrantLock lock, //
       final EnvVars accurevEnv, //
       final FilePath workspace, //
       final TaskListener listener, //
@@ -148,7 +148,7 @@ public class ShowStreams extends Command {
         scm.getAccurevTool(),
         launcher,
         cmd,
-        scm.getOptionalLock(),
+        scm.getOptionalLock(workspace),
         accurevEnv,
         workspace,
         listener,

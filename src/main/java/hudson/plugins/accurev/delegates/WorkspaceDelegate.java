@@ -144,7 +144,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
         scm.getAccurevTool(),
         launcher,
         cmd,
-        scm.getOptionalLock(),
+        scm.getOptionalLock(jenkinsWorkspace),
         accurevEnv,
         jenkinsWorkspace,
         listener,

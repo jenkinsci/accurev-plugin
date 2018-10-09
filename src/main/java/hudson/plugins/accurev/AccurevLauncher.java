@@ -19,7 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
@@ -64,7 +64,7 @@ public final class AccurevLauncher {
       String accurevTool,
       @Nonnull final Launcher launcher, //
       @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final Lock synchronizationLockObjectOrNull, //
+      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
       @Nonnull final EnvVars environmentVariables, //
       @Nonnull final FilePath directoryToRunCommandFrom, //
       @Nonnull final TaskListener listenerToLogFailuresTo, //
@@ -140,7 +140,7 @@ public final class AccurevLauncher {
       String accurevTool,
       @Nonnull final Launcher launcher, //
       @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final Lock synchronizationLockObjectOrNull, //
+      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
       @Nonnull final EnvVars environmentVariables, //
       @Nonnull final FilePath directoryToRunCommandFrom, //
       @Nonnull final TaskListener listenerToLogFailuresTo, //
@@ -226,7 +226,7 @@ public final class AccurevLauncher {
       String accurevTool,
       @Nonnull final Launcher launcher, //
       @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final Lock synchronizationLockObjectOrNull, //
+      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
       @Nonnull final EnvVars environmentVariables, //
       @Nonnull final FilePath directoryToRunCommandFrom, //
       @Nonnull final TaskListener listenerToLogFailuresTo, //
@@ -313,7 +313,7 @@ public final class AccurevLauncher {
       String accurevTool,
       @Nonnull final Launcher launcher, //
       @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final Lock synchronizationLockObjectOrNull, //
+      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
       @Nonnull final EnvVars environmentVariables, //
       @Nonnull final FilePath directoryToRunCommandFrom, //
       @Nonnull final TaskListener listenerToLogFailuresTo, //
@@ -432,13 +432,14 @@ public final class AccurevLauncher {
   }
 
   private static Integer runCommandToCompletion( //
-      final ProcStarter starter, //
-      final Lock synchronizationLockObjectOrNull)
+      @Nonnull final ProcStarter starter, //
+      final ReentrantLock synchronizationLockObjectOrNull)
       throws IOException, InterruptedException {
+    if (synchronizationLockObjectOrNull != null) {
+      synchronizationLockObjectOrNull.lockInterruptibly();
+    }
+
     try {
-      if (synchronizationLockObjectOrNull != null) {
-        synchronizationLockObjectOrNull.lock();
-      }
       return starter.join(); // Exit Code from Command
     } finally {
       if (synchronizationLockObjectOrNull != null) {
