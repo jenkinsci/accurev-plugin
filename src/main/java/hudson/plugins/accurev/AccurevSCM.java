@@ -544,7 +544,7 @@ public class AccurevSCM extends SCM implements Serializable {
 
         if (defaultValue instanceof StringParameterValue) {
           StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-          keyValues.put(defaultValue.getName(), strdefvalue.value);
+          keyValues.put(defaultValue.getName(), strdefvalue.getValue().toString());
         }
       }
 
