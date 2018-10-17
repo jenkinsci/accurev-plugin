@@ -41,7 +41,6 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +68,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /** Accurev SCM plugin for Jenkins */
-public class AccurevSCM extends SCM implements Serializable {
+public class AccurevSCM extends SCM {
   private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
 
   protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES =
