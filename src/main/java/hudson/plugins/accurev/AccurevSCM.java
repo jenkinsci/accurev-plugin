@@ -456,15 +456,15 @@ public class AccurevSCM extends SCM {
    */
   public synchronized ReentrantLock getMandatoryLock(FilePath workspace) {
     Node node = workspaceToNode(workspace);
-    String nodeName = node.getNodeName();
+    String nodeName = (node != null) ? node.getNodeName() : "";
 
     if (nodeName.isEmpty()) {
       return MASTER_LOCK;
     } else {
-      ReentrantLock lock = nodeLockMap.get(node.getNodeName());
+      ReentrantLock lock = nodeLockMap.get(nodeName);
 
       if (lock == null) {
-        nodeLockMap.put(node.getNodeName(), lock = new ReentrantLock(true));
+        nodeLockMap.put(nodeName, lock = new ReentrantLock(true));
       }
 
       return lock;
