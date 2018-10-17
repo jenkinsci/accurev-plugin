@@ -536,7 +536,9 @@ public class AccurevSCM extends SCM {
 
         if (defaultValue instanceof StringParameterValue) {
           StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-          keyValues.put(defaultValue.getName(), strdefvalue.getValue().toString());
+          Object v = strdefvalue.getValue();
+
+          keyValues.put(defaultValue.getName(), (v != null) ? v.toString() : "");
         }
       }
 
