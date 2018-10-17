@@ -116,14 +116,7 @@ public class AccurevSCM extends SCM {
 
   @Deprecated
   public AccurevSCM(String serverName, String depot, String stream) {
-    this.depot = depot;
-    this.stream = stream;
-    AccurevServer server = getDescriptor().getServer(serverName);
-    if (server != null) {
-      setServerName(server.getName());
-      setServerUUID(server.getUuid());
-    }
-    updateMode();
+    this(serverName, null, depot, stream);
   }
 
   @DataBoundConstructor
