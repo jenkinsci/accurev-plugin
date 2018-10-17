@@ -48,7 +48,7 @@ public final class AccurevLauncher {
    * @param accurevTool Which tool to find
    * @param launcher Means of executing the command.
    * @param machineReadableCommand The command to be executed.
-   * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
+   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent concurrent
    *     execution on the same machine, or <code>null</code> if no synchronization is required.
    * @param environmentVariables The environment variables to be passed to the command.
    * @param directoryToRunCommandFrom The direction that the command should be run in.
@@ -112,7 +112,7 @@ public final class AccurevLauncher {
   }
 
   /**
-   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath,
+   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars, FilePath,
    * TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link ICmdOutputXmlParser}
    * instead.
    *
@@ -198,7 +198,7 @@ public final class AccurevLauncher {
   }
 
   /**
-   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, Lock, EnvVars, FilePath,
+   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars, FilePath,
    * TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link ICmdOutputXmlParser}
    * instead.
    *
@@ -295,7 +295,7 @@ public final class AccurevLauncher {
    * @param accurevTool Which tool to find
    * @param launcher Means of executing the command.
    * @param machineReadableCommand The command to be executed.
-   * @param synchronizationLockObjectOrNull The {@link Lock} object to be used to prevent concurrent
+   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent concurrent
    *     execution on the same machine, or <code>null</code> if no synchronization is required.
    * @param environmentVariables The environment variables to be passed to the command.
    * @param directoryToRunCommandFrom The direction that the command should be run in.
@@ -413,6 +413,7 @@ public final class AccurevLauncher {
    * @param builtOn node where build was performed
    * @param env environment variables used in the build
    * @param listener build log
+   * @param command AccuRev command to use
    * @return accurev exe for builtOn node, often "Default"
    */
   public static String getAccurevExe(
