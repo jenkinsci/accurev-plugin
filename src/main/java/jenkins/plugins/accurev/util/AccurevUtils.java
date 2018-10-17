@@ -2,11 +2,11 @@ package jenkins.plugins.accurev.util;
 
 import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_SECOND;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.FilePath;
 import hudson.model.Computer;
 import hudson.model.Node;
 import java.util.Date;
-import javax.annotation.CheckForNull;
 import jenkins.model.Jenkins;
 
 public class AccurevUtils {
