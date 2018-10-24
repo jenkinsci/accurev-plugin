@@ -44,7 +44,7 @@ public class SetProperty extends Command {
             scm.getAccurevTool(),
             launcher,
             cmd,
-            scm.getOptionalLock(),
+            scm.getOptionalLock(workspace),
             accurevEnv,
             workspace,
             listener,

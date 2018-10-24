@@ -7,12 +7,12 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
-import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.parsers.output.ParseInfoToLoginName;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.Secret;
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -71,7 +71,10 @@ public class Login extends Command {
       listener.getLogger().println("Authentication failure - Username blank");
       return false;
     }
-    AccurevSCMDescriptor.lock();
+    ReentrantLock lock =
+        (scm == null) ? AccurevSCM.MASTER_LOCK : scm.getMandatoryLock(pathToRunCommandsIn);
+    lock.lock();
+
     try {
       final boolean loginRequired;
       if (server.isMinimiseLogins()) {
@@ -98,7 +101,7 @@ public class Login extends Command {
             accurevTool, server, accurevEnv, pathToRunCommandsIn, listener, launcher);
       }
     } finally {
-      AccurevSCMDescriptor.unlock();
+      lock.unlock();
     }
     return true;
   }

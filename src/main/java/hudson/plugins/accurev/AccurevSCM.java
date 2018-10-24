@@ -2,6 +2,7 @@ package hudson.plugins.accurev;
 
 import static hudson.Util.fixEmpty;
 import static hudson.Util.fixNull;
+import static jenkins.plugins.accurev.util.AccurevUtils.workspaceToNode;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -21,6 +22,7 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Job;
 import hudson.model.ModelObject;
+import hudson.model.Node;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
@@ -45,11 +47,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
@@ -422,25 +424,51 @@ public class AccurevSCM extends SCM {
    * Gets the lock to be used on "normal" accurev commands, or <code>null</code> if command
    * synchronization is switched off.
    *
+   * @param workspace The workspace the command will run in
    * @return See above.
    */
-  public Lock getOptionalLock() {
+  public synchronized ReentrantLock getOptionalLock(FilePath workspace) {
     final AccurevServer server = getServer();
     final boolean shouldLock = server != null && server.isSyncOperations();
     if (shouldLock) {
-      return getMandatoryLock();
+      return getMandatoryLock(workspace);
     } else {
       return null;
     }
   }
 
   /**
+   * The accurev server has been known to crash if more than one copy of the accurev has been run
+   * concurrently on the local machine. <br>
+   * Also, the accurev client has been known to complain that it's not logged in if another client
+   * on the same machine logs in again.
+   */
+  public static final ReentrantLock MASTER_LOCK = new ReentrantLock(true);
+
+  private static final Map<String, ReentrantLock> nodeLockMap =
+      new HashMap<String, ReentrantLock>();
+
+  /**
    * Gets the lock to be used on accurev commands where synchronization is mandatory.
    *
+   * @param workspace The workspace the command will run in
    * @return See above.
    */
-  private Lock getMandatoryLock() {
-    return AccurevSCMDescriptor.ACCUREV_LOCK;
+  public synchronized ReentrantLock getMandatoryLock(FilePath workspace) {
+    Node node = workspaceToNode(workspace);
+    String nodeName = (node != null) ? node.getNodeName() : "";
+
+    if (nodeName.isEmpty()) {
+      return MASTER_LOCK;
+    } else {
+      ReentrantLock lock = nodeLockMap.get(nodeName);
+
+      if (lock == null) {
+        nodeLockMap.put(nodeName, lock = new ReentrantLock(true));
+      }
+
+      return lock;
+    }
   }
 
   @Override
@@ -527,14 +555,6 @@ public class AccurevSCM extends SCM {
   public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM>
       implements ModelObject {
 
-    /**
-     * The accurev server has been known to crash if more than one copy of the accurev has been run
-     * concurrently on the local machine. <br>
-     * Also, the accurev client has been known to complain that it's not logged in if another client
-     * on the same machine logs in again.
-     */
-    static final transient Lock ACCUREV_LOCK = new ReentrantLock();
-
     private static final Logger DESCRIPTORLOGGER =
         Logger.getLogger(AccurevSCMDescriptor.class.getName());
     private List<AccurevServer> _servers;
@@ -547,14 +567,6 @@ public class AccurevSCM extends SCM {
     public AccurevSCMDescriptor() {
       super(AccurevSCM.class, null);
       load();
-    }
-
-    public static void lock() {
-      ACCUREV_LOCK.lock();
-    }
-
-    public static void unlock() {
-      ACCUREV_LOCK.unlock();
     }
 
     /**
