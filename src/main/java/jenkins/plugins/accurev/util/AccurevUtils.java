@@ -7,7 +7,6 @@ import hudson.model.Computer;
 import hudson.model.Node;
 import java.util.Date;
 import jenkins.model.Jenkins;
-import org.eclipse.jdt.annotation.Nullable;
 
 public class AccurevUtils {
 
@@ -15,7 +14,8 @@ public class AccurevUtils {
     return str.replace("\\", "/").replaceFirst("^/[.]/", "");
   }
 
-  @Nullable
+  @SuppressWarnings("deprecation")
+  @edu.umd.cs.findbugs.annotations.CheckForNull
   public static Node workspaceToNode(FilePath workspace) {
     Computer computer = workspace.toComputer();
     Node node = null;
@@ -44,7 +44,9 @@ public class AccurevUtils {
    * @param timeInSeconds The accurev timestamp.
    * @return A {@link Date} set to the time for the accurev timestamp.
    */
-  public static Date convertAccurevTimestamp(@Nullable String timeInSeconds) {
+  public static Date convertAccurevTimestamp(
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.CheckForNull
+          String timeInSeconds) {
     if (timeInSeconds == null) {
       return null;
     }

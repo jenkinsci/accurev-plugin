@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.eclipse.jdt.annotation.NonNull;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -102,7 +101,9 @@ public class AccurevTool extends ToolInstallation
     }
   }
 
-  public AccurevTool forNode(@NonNull Node node, TaskListener log)
+  public AccurevTool forNode(
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull Node node,
+      TaskListener log)
       throws IOException, InterruptedException {
     return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
   }
@@ -127,7 +128,8 @@ public class AccurevTool extends ToolInstallation
     }
 
     @Override
-    @NonNull
+    @SuppressWarnings("deprecation")
+    @edu.umd.cs.findbugs.annotations.NonNull
     public String getDisplayName() {
       return "AccuRev";
     }
