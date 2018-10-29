@@ -139,7 +139,7 @@ public abstract class AbstractModeDelegate {
       // from the project folder on the master.
       final File projectDir = project.getRootDir();
       jenkinsWorkspace = new FilePath(projectDir);
-      launcher = Jenkins.getInstance().createLauncher(listener);
+      launcher = Jenkins.get().createLauncher(listener);
     }
     listener.getLogger().println("Running commands from folder \"" + jenkinsWorkspace + '"');
     setup(launcher, jenkinsWorkspace, listener);

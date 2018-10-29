@@ -22,7 +22,7 @@ public class AccurevUtils {
     if (null != computer) {
       node = computer.getNode();
     }
-    return null != node ? node : Jenkins.getInstance();
+    return null != node ? node : Jenkins.get();
   }
 
   public static String getRootPath(FilePath workspace) {

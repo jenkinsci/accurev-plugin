@@ -133,7 +133,7 @@ public class AccurevSCM extends SCM {
   }
 
   public static AccurevSCMDescriptor configuration() {
-    return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
+    return Jenkins.get().getDescriptorByType(AccurevSCMDescriptor.class);
   }
 
   public String getDepot() {
@@ -586,7 +586,7 @@ public class AccurevSCM extends SCM {
 
     @SuppressWarnings("unused") // used by stapler
     public boolean showAccurevToolOptions() {
-      return Jenkins.getInstance()
+      return Jenkins.get()
               .getDescriptorByType(AccurevTool.DescriptorImpl.class)
               .getInstallations()
               .length
@@ -600,9 +600,7 @@ public class AccurevSCM extends SCM {
      */
     public List<AccurevTool> getAccurevTools() {
       AccurevTool[] accurevToolInstallations =
-          Jenkins.getInstance()
-              .getDescriptorByType(AccurevTool.DescriptorImpl.class)
-              .getInstallations();
+          Jenkins.get().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations();
       return Arrays.asList(accurevToolInstallations);
     }
 
@@ -864,7 +862,7 @@ public class AccurevSCM extends SCM {
         return CredentialsMatchers.firstOrNull(
             CredentialsProvider.lookupCredentials(
                 StandardUsernamePasswordCredentials.class,
-                Jenkins.getInstance(),
+                Jenkins.get(),
                 ACL.SYSTEM,
                 URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build()),
             CredentialsMatchers.withId(credentialsId));
@@ -965,7 +963,7 @@ public class AccurevSCM extends SCM {
             CredentialsMatchers.filter(
                 CredentialsProvider.lookupCredentials(
                     StandardUsernamePasswordCredentials.class,
-                    Jenkins.getInstance(),
+                    Jenkins.get(),
                     ACL.SYSTEM,
                     domainRequirements),
                 CredentialsMatchers.withUsername(username));
@@ -1001,7 +999,7 @@ public class AccurevSCM extends SCM {
 
     @Override
     public DescriptorImpl getDescriptor() {
-      return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
+      return (DescriptorImpl) Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     @Extension
@@ -1022,14 +1020,14 @@ public class AccurevSCM extends SCM {
           @QueryParameter String host,
           @QueryParameter int port,
           @QueryParameter String credentialsId) {
-        if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
           return new StandardListBoxModel().includeCurrentValue(credentialsId);
         }
         return new StandardListBoxModel()
             .includeEmptyValue()
             .includeMatchingAs(
                 ACL.SYSTEM,
-                Jenkins.getInstance(),
+                Jenkins.get(),
                 StandardUsernamePasswordCredentials.class,
                 URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
                 CredentialsMatchers.always());
@@ -1042,7 +1040,7 @@ public class AccurevSCM extends SCM {
           @QueryParameter String host,
           @QueryParameter int port,
           @QueryParameter String credentialsId) {
-        if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
           return FormValidation.ok();
         }
         if (null == host || host.isEmpty()) {

@@ -97,7 +97,7 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
   }
 
   public void setUser(String author) {
-    this.author = User.get(author);
+    this.author = User.getById(author, false);
   }
 
   @Exported

@@ -160,7 +160,7 @@ public class Login extends Command {
   public static boolean accurevLoginFromGlobalConfig( //
       final AccurevServer server) throws IOException {
 
-    Jenkins jenkins = Jenkins.getInstance();
+    Jenkins jenkins = Jenkins.get();
     TaskListener listener = TaskListener.NULL;
     Launcher launcher = jenkins.createLauncher(listener);
     EnvVars accurevEnv = new EnvVars();

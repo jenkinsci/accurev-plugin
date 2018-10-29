@@ -19,7 +19,7 @@ public class ShowDepots extends Command {
   public static List<String> getDepots( //
       final AccurevServer server, final Logger descriptorLogger) throws IOException {
 
-    Jenkins jenkins = Jenkins.getInstance();
+    Jenkins jenkins = Jenkins.get();
     TaskListener listener = TaskListener.NULL;
     Launcher launcher = jenkins.createLauncher(listener);
     EnvVars accurevEnv = new EnvVars();

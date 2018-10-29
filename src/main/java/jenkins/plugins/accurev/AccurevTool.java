@@ -62,7 +62,7 @@ public class AccurevTool extends ToolInstallation
    * @return default installation
    */
   public static AccurevTool getDefaultInstallation() {
-    Jenkins jenkinsInstance = Jenkins.getInstance();
+    Jenkins jenkinsInstance = Jenkins.get();
     DescriptorImpl AccurevTools =
         jenkinsInstance.getDescriptorByType(AccurevTool.DescriptorImpl.class);
     AccurevTool tool = AccurevTools.getInstallation(AccurevTool.DEFAULT);
@@ -84,7 +84,7 @@ public class AccurevTool extends ToolInstallation
     // Creates default tool installation if needed. Uses "accurev" or migrates data from previous
     // versions
 
-    Jenkins jenkinsInstance = Jenkins.getInstance();
+    Jenkins jenkinsInstance = Jenkins.get();
 
     DescriptorImpl descriptor = (DescriptorImpl) jenkinsInstance.getDescriptor(AccurevTool.class);
     AccurevTool[] installations = getInstallations(descriptor);
@@ -113,7 +113,7 @@ public class AccurevTool extends ToolInstallation
 
   @Override
   public DescriptorImpl getDescriptor() {
-    Jenkins jenkinsInstance = Jenkins.getInstance();
+    Jenkins jenkinsInstance = Jenkins.get();
     return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
   }
 
@@ -141,7 +141,7 @@ public class AccurevTool extends ToolInstallation
     }
 
     public FormValidation doCheckHome(@QueryParameter File value) {
-      Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+      Jenkins.get().checkPermission(Jenkins.ADMINISTER);
       String path = value.getPath();
 
       return FormValidation.validateExecutable(path);

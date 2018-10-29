@@ -384,7 +384,7 @@ public final class AccurevLauncher {
   public static AccurevTool resolveAccurevTool(
       String accurevToolValue, TaskListener listener, String command) {
     AccurevTool accurevTool =
-        Jenkins.getInstance()
+        Jenkins.get()
             .getDescriptorByType(AccurevTool.DescriptorImpl.class)
             .getInstallation(accurevToolValue);
     boolean isValidCommand = command.equals("info") || command.equals("login");
