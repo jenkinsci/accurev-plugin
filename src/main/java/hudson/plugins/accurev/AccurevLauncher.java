@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.AccurevTool;
 import org.apache.commons.lang.StringUtils;
@@ -48,8 +46,9 @@ public final class AccurevLauncher {
    * @param accurevTool Which tool to find
    * @param launcher Means of executing the command.
    * @param machineReadableCommand The command to be executed.
-   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent concurrent
-   *     execution on the same machine, or <code>null</code> if no synchronization is required.
+   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent
+   *     concurrent execution on the same machine, or <code>null</code> if no synchronization is
+   *     required.
    * @param environmentVariables The environment variables to be passed to the command.
    * @param directoryToRunCommandFrom The direction that the command should be run in.
    * @param listenerToLogFailuresTo One possible place to log failures, or <code>null</code>.
@@ -60,16 +59,25 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static boolean runCommand( //
-      @Nonnull final String humanReadableCommandName, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nullable final boolean... optionalFlagToCopyAllOutputToTaskListener)
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Launcher launcher, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ArgumentListBuilder machineReadableCommand, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final ReentrantLock synchronizationLockObjectOrNull, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final EnvVars environmentVariables, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final FilePath directoryToRunCommandFrom, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final TaskListener listenerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Logger loggerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final boolean... optionalFlagToCopyAllOutputToTaskListener)
       throws IOException {
     final Boolean result;
     final boolean shouldLogEverything =
@@ -112,9 +120,9 @@ public final class AccurevLauncher {
   }
 
   /**
-   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars, FilePath,
-   * TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link ICmdOutputXmlParser}
-   * instead.
+   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars,
+   * FilePath, TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link
+   * ICmdOutputXmlParser} instead.
    *
    * @param <TResult> The type of the result returned by the parser.
    * @param <TContext> The type of data to be passed to the parser. Can be
@@ -136,18 +144,29 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static <TResult, TContext> TResult runCommand( //
-      @Nonnull final String humanReadableCommandName, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nonnull final XmlPullParserFactory xmlParserFactory, //
-      @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
-      @Nullable final TContext commandOutputParserContext)
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Launcher launcher, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ArgumentListBuilder machineReadableCommand, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final ReentrantLock synchronizationLockObjectOrNull, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final EnvVars environmentVariables, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final FilePath directoryToRunCommandFrom, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final TaskListener listenerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Logger loggerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final XmlPullParserFactory xmlParserFactory, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final TContext commandOutputParserContext)
       throws IOException {
     return runCommand(
         humanReadableCommandName,
@@ -198,9 +217,9 @@ public final class AccurevLauncher {
   }
 
   /**
-   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars, FilePath,
-   * TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link ICmdOutputXmlParser}
-   * instead.
+   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars,
+   * FilePath, TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link
+   * ICmdOutputXmlParser} instead.
    *
    * @param <TResult> The type of the result returned by the parser.
    * @param <TContext> The type of data to be passed to the parser. Can be
@@ -222,18 +241,29 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static <TResult, TContext> TResult runHistCommandForAll( //
-      @Nonnull final String humanReadableCommandName, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nonnull final XmlPullParserFactory xmlParserFactory, //
-      @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
-      @Nullable final TContext commandOutputParserContext)
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Launcher launcher, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ArgumentListBuilder machineReadableCommand, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final ReentrantLock synchronizationLockObjectOrNull, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final EnvVars environmentVariables, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final FilePath directoryToRunCommandFrom, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final TaskListener listenerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Logger loggerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final XmlPullParserFactory xmlParserFactory, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final TContext commandOutputParserContext)
       throws IOException {
     return runCommand(
         humanReadableCommandName,
@@ -295,8 +325,9 @@ public final class AccurevLauncher {
    * @param accurevTool Which tool to find
    * @param launcher Means of executing the command.
    * @param machineReadableCommand The command to be executed.
-   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent concurrent
-   *     execution on the same machine, or <code>null</code> if no synchronization is required.
+   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent
+   *     concurrent execution on the same machine, or <code>null</code> if no synchronization is
+   *     required.
    * @param environmentVariables The environment variables to be passed to the command.
    * @param directoryToRunCommandFrom The direction that the command should be run in.
    * @param listenerToLogFailuresTo One possible place to log failures, or <code>null</code>.
@@ -309,17 +340,27 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static <TResult, TContext> TResult runCommand( //
-      @Nonnull final String humanReadableCommandName, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
-      @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nonnull final ICmdOutputParser<TResult, TContext> commandOutputParser, //
-      @Nullable final TContext commandOutputParserContext)
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Launcher launcher, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ArgumentListBuilder machineReadableCommand, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final ReentrantLock synchronizationLockObjectOrNull, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final EnvVars environmentVariables, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final FilePath directoryToRunCommandFrom, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final TaskListener listenerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Logger loggerToLogFailuresTo, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ICmdOutputParser<TResult, TContext> commandOutputParser, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable
+          final TContext commandOutputParserContext)
       throws IOException {
     try (final ByteArrayStream stdout = new ByteArrayStream();
         final ByteArrayStream stderr = new ByteArrayStream()) {
@@ -433,7 +474,8 @@ public final class AccurevLauncher {
   }
 
   private static Integer runCommandToCompletion( //
-      @Nonnull final ProcStarter starter, //
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ProcStarter starter, //
       final ReentrantLock synchronizationLockObjectOrNull)
       throws IOException, InterruptedException {
     if (synchronizationLockObjectOrNull != null) {
@@ -450,13 +492,20 @@ public final class AccurevLauncher {
   }
 
   private static ProcStarter createProcess(
-      @Nonnull final Launcher launcher,
-      @Nonnull final ArgumentListBuilder machineReadableCommand,
-      @Nonnull final EnvVars environmentVariables,
-      @Nonnull final FilePath directoryToRunCommandFrom,
-      @Nonnull TaskListener listener,
-      @Nonnull final OutputStream stdoutStream,
-      @Nonnull final OutputStream stderrStream,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final Launcher launcher,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final ArgumentListBuilder machineReadableCommand,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final EnvVars environmentVariables,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final FilePath directoryToRunCommandFrom,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          TaskListener listener,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final OutputStream stdoutStream,
+      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
+          final OutputStream stderrStream,
       String accurevTool)
       throws IllegalStateException, IOException, InterruptedException {
     String accurevPath =

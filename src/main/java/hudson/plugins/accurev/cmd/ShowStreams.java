@@ -16,14 +16,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 public class ShowStreams extends Command {
 
   private static final Logger LOGGER = Logger.getLogger(ShowStreams.class.getName());
 
-  @CheckForNull
+  @SuppressWarnings("deprecation")
+  @edu.umd.cs.findbugs.annotations.CheckForNull
   public static Map<String, AccurevStream> getStreams( //
       final AccurevSCM scm, //
       final String nameOfStreamRequired, //
