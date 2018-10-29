@@ -1,0 +1,15 @@
+unclassified:
+    accurev:
+       pollOnMaster: true 
+       servers:
+        - name: 'testserver1'
+          host: 'testhost'
+          port: 1234
+          credentialsId: 'abc123'
+          syncOperations: true
+          minimiseLogins: true
+          useNonexpiringLogin: true
+          useRestrictedShowStreams: true
+          useColor: true
+          usePromoteListen: true
+          serverDisabled: true

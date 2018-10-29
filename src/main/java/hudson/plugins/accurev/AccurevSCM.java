@@ -58,6 +58,7 @@ import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -565,6 +566,7 @@ public class AccurevSCM extends SCM {
   }
 
   @Extension
+  @Symbol("accurev")
   public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM>
       implements ModelObject {
 
@@ -1016,6 +1018,7 @@ public class AccurevSCM extends SCM {
     }
 
     @Extension
+    @Symbol("accurevServer")
     public static class DescriptorImpl extends Descriptor<AccurevServer> {
 
       public DescriptorImpl() {

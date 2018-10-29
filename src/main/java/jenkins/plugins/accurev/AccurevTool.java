@@ -119,7 +119,7 @@ public class AccurevTool extends ToolInstallation
   }
 
   @Extension
-  @Symbol("accurev")
+  @Symbol("accurevTool")
   public static class DescriptorImpl extends ToolDescriptor<AccurevTool> {
 
     public DescriptorImpl() {

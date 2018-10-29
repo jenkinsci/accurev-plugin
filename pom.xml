@@ -45,6 +45,12 @@
       <version>2.8.9</version>
       <scope>test</scope>
     </dependency>
+	<dependency>
+      <groupId>io.jenkins</groupId>
+      <artifactId>configuration-as-code</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+	</dependency>
   </dependencies>
 
   <scm>
