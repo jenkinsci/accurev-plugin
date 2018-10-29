@@ -13,6 +13,9 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -53,9 +56,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
@@ -379,10 +379,10 @@ public class AccurevSCM extends SCM {
    * @throws java.lang.InterruptedException on failing interrupt
    */
   public void checkout(
-      @Nonnull Run<?, ?> build,
-      @Nonnull Launcher launcher,
-      @Nonnull FilePath workspace,
-      @Nonnull TaskListener listener,
+      @NonNull Run<?, ?> build,
+      @NonNull Launcher launcher,
+      @NonNull FilePath workspace,
+      @NonNull TaskListener listener,
       @CheckForNull File changelogFile,
       @CheckForNull SCMRevisionState baseline)
       throws IOException, InterruptedException {
@@ -476,10 +476,10 @@ public class AccurevSCM extends SCM {
 
   @Override
   public SCMRevisionState calcRevisionsFromBuild(
-      @Nonnull Run<?, ?> build,
+      @NonNull Run<?, ?> build,
       @Nullable FilePath workspace,
       @Nullable Launcher launcher,
-      @Nonnull TaskListener listener)
+      @NonNull TaskListener listener)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     return SCMRevisionState.NONE;
@@ -487,11 +487,11 @@ public class AccurevSCM extends SCM {
 
   @Override
   public PollingResult compareRemoteRevisionWith(
-      @Nonnull Job<?, ?> project,
+      @NonNull Job<?, ?> project,
       @Nullable Launcher launcher,
       @Nullable FilePath workspace,
-      @Nonnull TaskListener listener,
-      @Nonnull SCMRevisionState baseline)
+      @NonNull TaskListener listener,
+      @NonNull SCMRevisionState baseline)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     if (activeProject != null && activeProject.isBuilding()) {
@@ -581,7 +581,7 @@ public class AccurevSCM extends SCM {
      * @return String
      */
     @Override
-    @Nonnull
+    @NonNull
     public String getDisplayName() {
       return "AccuRev";
     }
@@ -626,7 +626,7 @@ public class AccurevSCM extends SCM {
      *
      * @return Value for property 'servers'.
      */
-    @Nonnull
+    @NonNull
     public List<AccurevServer> getServers() {
       if (this._servers == null) {
         this._servers = new ArrayList<>();
@@ -1012,7 +1012,7 @@ public class AccurevSCM extends SCM {
         load();
       }
 
-      @Nonnull
+      @NonNull
       @Override
       public String getDisplayName() {
         return "AccuRev Server";

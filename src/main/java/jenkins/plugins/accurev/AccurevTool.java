@@ -2,6 +2,7 @@ package jenkins.plugins.accurev;
 
 import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.init.Initializer;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
@@ -102,7 +102,7 @@ public class AccurevTool extends ToolInstallation
     }
   }
 
-  public AccurevTool forNode(@Nonnull Node node, TaskListener log)
+  public AccurevTool forNode(@NonNull Node node, TaskListener log)
       throws IOException, InterruptedException {
     return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
   }
@@ -127,7 +127,7 @@ public class AccurevTool extends ToolInstallation
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public String getDisplayName() {
       return "AccuRev";
     }
