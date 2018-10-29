@@ -53,6 +53,9 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
@@ -109,11 +112,7 @@ public class AccurevSCM extends SCM {
   private boolean useWorkspace;
   private boolean noWspaceNoReftree;
   private String serverUUID;
-
-  @SuppressWarnings("deprecation")
-  @edu.umd.cs.findbugs.annotations.CheckForNull
-  private String accurevTool = null;
-
+  @CheckForNull private String accurevTool = null;
   private Job<?, ?> activeProject;
 
   @Deprecated
@@ -165,8 +164,7 @@ public class AccurevSCM extends SCM {
    *
    * @return AccurevServer based on serverUUID (or serverName if serverUUID is null)
    */
-  @SuppressWarnings("deprecation")
-  @edu.umd.cs.findbugs.annotations.CheckForNull
+  @CheckForNull
   public AccurevServer getServer() {
     AccurevServer server;
     AccurevSCMDescriptor descriptor = getDescriptor();
@@ -223,8 +221,7 @@ public class AccurevSCM extends SCM {
     this.workspace = fixEmpty(workspace);
   }
 
-  @SuppressWarnings("deprecation")
-  @edu.umd.cs.findbugs.annotations.CheckForNull
+  @CheckForNull
   public String getAccurevTool() {
     return accurevTool;
   }
@@ -382,15 +379,12 @@ public class AccurevSCM extends SCM {
    * @throws java.lang.InterruptedException on failing interrupt
    */
   public void checkout(
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull Run<?, ?> build,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull Launcher launcher,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull FilePath workspace,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
-          TaskListener listener,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.CheckForNull
-          File changelogFile,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.CheckForNull
-          SCMRevisionState baseline)
+      @Nonnull Run<?, ?> build,
+      @Nonnull Launcher launcher,
+      @Nonnull FilePath workspace,
+      @Nonnull TaskListener listener,
+      @CheckForNull File changelogFile,
+      @CheckForNull SCMRevisionState baseline)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     boolean checkout =
@@ -482,11 +476,10 @@ public class AccurevSCM extends SCM {
 
   @Override
   public SCMRevisionState calcRevisionsFromBuild(
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull Run<?, ?> build,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable FilePath workspace,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable Launcher launcher,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
-          TaskListener listener)
+      @Nonnull Run<?, ?> build,
+      @Nullable FilePath workspace,
+      @Nullable Launcher launcher,
+      @Nonnull TaskListener listener)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     return SCMRevisionState.NONE;
@@ -494,13 +487,11 @@ public class AccurevSCM extends SCM {
 
   @Override
   public PollingResult compareRemoteRevisionWith(
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull Job<?, ?> project,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable Launcher launcher,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.Nullable FilePath workspace,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
-          TaskListener listener,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull
-          SCMRevisionState baseline)
+      @Nonnull Job<?, ?> project,
+      @Nullable Launcher launcher,
+      @Nullable FilePath workspace,
+      @Nonnull TaskListener listener,
+      @Nonnull SCMRevisionState baseline)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     if (activeProject != null && activeProject.isBuilding()) {
@@ -590,8 +581,7 @@ public class AccurevSCM extends SCM {
      * @return String
      */
     @Override
-    @SuppressWarnings("deprecation")
-    @edu.umd.cs.findbugs.annotations.NonNull
+    @Nonnull
     public String getDisplayName() {
       return "AccuRev";
     }
@@ -636,8 +626,7 @@ public class AccurevSCM extends SCM {
      *
      * @return Value for property 'servers'.
      */
-    @SuppressWarnings("deprecation")
-    @edu.umd.cs.findbugs.annotations.NonNull
+    @Nonnull
     public List<AccurevServer> getServers() {
       if (this._servers == null) {
         this._servers = new ArrayList<>();
@@ -679,8 +668,7 @@ public class AccurevSCM extends SCM {
       this.pollOnMaster = pollOnMaster;
     }
 
-    @SuppressWarnings("deprecation")
-    @edu.umd.cs.findbugs.annotations.CheckForNull
+    @CheckForNull
     public AccurevServer getServer(String uuid) {
       if (uuid == null || getServers().isEmpty()) {
         LOGGER.fine("No server found. - getServer(NULL)");
@@ -868,8 +856,7 @@ public class AccurevSCM extends SCM {
      *
      * @return Value for property 'credentials'.
      */
-    @SuppressWarnings("deprecation")
-    @edu.umd.cs.findbugs.annotations.CheckForNull
+    @CheckForNull
     public StandardUsernamePasswordCredentials getCredentials() {
       if (StringUtils.isBlank(credentialsId)) {
         return null;
@@ -1025,8 +1012,7 @@ public class AccurevSCM extends SCM {
         load();
       }
 
-      @SuppressWarnings("deprecation")
-      @edu.umd.cs.findbugs.annotations.NonNull
+      @Nonnull
       @Override
       public String getDisplayName() {
         return "AccuRev Server";

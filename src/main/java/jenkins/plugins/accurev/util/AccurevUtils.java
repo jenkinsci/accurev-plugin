@@ -2,6 +2,7 @@ package jenkins.plugins.accurev.util;
 
 import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_SECOND;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.FilePath;
 import hudson.model.Computer;
 import hudson.model.Node;
@@ -14,8 +15,7 @@ public class AccurevUtils {
     return str.replace("\\", "/").replaceFirst("^/[.]/", "");
   }
 
-  @SuppressWarnings("deprecation")
-  @edu.umd.cs.findbugs.annotations.CheckForNull
+  @CheckForNull
   public static Node workspaceToNode(FilePath workspace) {
     Computer computer = workspace.toComputer();
     Node node = null;
@@ -44,9 +44,7 @@ public class AccurevUtils {
    * @param timeInSeconds The accurev timestamp.
    * @return A {@link Date} set to the time for the accurev timestamp.
    */
-  public static Date convertAccurevTimestamp(
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.CheckForNull
-          String timeInSeconds) {
+  public static Date convertAccurevTimestamp(@CheckForNull String timeInSeconds) {
     if (timeInSeconds == null) {
       return null;
     }
