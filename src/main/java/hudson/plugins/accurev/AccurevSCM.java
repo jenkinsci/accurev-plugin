@@ -672,7 +672,7 @@ public class AccurevSCM extends SCM {
     /**
      * Setter for property 'pollOnMaster'.
      *
-     * @param pollOnMaster poll on aster
+     * @param pollOnMaster poll on master
      */
     @DataBoundSetter
     public void setPollOnMaster(boolean pollOnMaster) {
