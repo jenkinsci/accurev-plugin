@@ -2,6 +2,7 @@ package jenkins.plugins.accurev;
 
 import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.init.Initializer;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
@@ -62,7 +62,7 @@ public class AccurevTool extends ToolInstallation
    * @return default installation
    */
   public static AccurevTool getDefaultInstallation() {
-    Jenkins jenkinsInstance = Jenkins.getInstance();
+    Jenkins jenkinsInstance = Jenkins.get();
     DescriptorImpl AccurevTools =
         jenkinsInstance.getDescriptorByType(AccurevTool.DescriptorImpl.class);
     AccurevTool tool = AccurevTools.getInstallation(AccurevTool.DEFAULT);
@@ -84,7 +84,7 @@ public class AccurevTool extends ToolInstallation
     // Creates default tool installation if needed. Uses "accurev" or migrates data from previous
     // versions
 
-    Jenkins jenkinsInstance = Jenkins.getInstance();
+    Jenkins jenkinsInstance = Jenkins.get();
 
     DescriptorImpl descriptor = (DescriptorImpl) jenkinsInstance.getDescriptor(AccurevTool.class);
     AccurevTool[] installations = getInstallations(descriptor);
@@ -102,7 +102,7 @@ public class AccurevTool extends ToolInstallation
     }
   }
 
-  public AccurevTool forNode(@Nonnull Node node, TaskListener log)
+  public AccurevTool forNode(@NonNull Node node, TaskListener log)
       throws IOException, InterruptedException {
     return new AccurevTool(getName(), translateFor(node, log), Collections.emptyList());
   }
@@ -113,12 +113,12 @@ public class AccurevTool extends ToolInstallation
 
   @Override
   public DescriptorImpl getDescriptor() {
-    Jenkins jenkinsInstance = Jenkins.getInstance();
+    Jenkins jenkinsInstance = Jenkins.get();
     return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
   }
 
   @Extension
-  @Symbol("accurev")
+  @Symbol("accurevTool")
   public static class DescriptorImpl extends ToolDescriptor<AccurevTool> {
 
     public DescriptorImpl() {
@@ -127,7 +127,7 @@ public class AccurevTool extends ToolInstallation
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public String getDisplayName() {
       return "AccuRev";
     }
@@ -141,7 +141,7 @@ public class AccurevTool extends ToolInstallation
     }
 
     public FormValidation doCheckHome(@QueryParameter File value) {
-      Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+      Jenkins.get().checkPermission(Jenkins.ADMINISTER);
       String path = value.getPath();
 
       return FormValidation.validateExecutable(path);

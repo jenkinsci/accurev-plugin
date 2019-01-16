@@ -2,6 +2,8 @@ package hudson.plugins.accurev;
 
 import static jenkins.plugins.accurev.util.AccurevUtils.workspaceToNode;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -22,8 +24,6 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.AccurevTool;
 import org.apache.commons.lang.StringUtils;
@@ -48,8 +48,9 @@ public final class AccurevLauncher {
    * @param accurevTool Which tool to find
    * @param launcher Means of executing the command.
    * @param machineReadableCommand The command to be executed.
-   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent concurrent
-   *     execution on the same machine, or <code>null</code> if no synchronization is required.
+   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent
+   *     concurrent execution on the same machine, or <code>null</code> if no synchronization is
+   *     required.
    * @param environmentVariables The environment variables to be passed to the command.
    * @param directoryToRunCommandFrom The direction that the command should be run in.
    * @param listenerToLogFailuresTo One possible place to log failures, or <code>null</code>.
@@ -60,15 +61,15 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static boolean runCommand( //
-      @Nonnull final String humanReadableCommandName, //
+      @NonNull final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
+      @NonNull final Launcher launcher, //
+      @NonNull final ArgumentListBuilder machineReadableCommand, //
       @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
+      @NonNull final EnvVars environmentVariables, //
+      @NonNull final FilePath directoryToRunCommandFrom, //
+      @NonNull final TaskListener listenerToLogFailuresTo, //
+      @NonNull final Logger loggerToLogFailuresTo, //
       @Nullable final boolean... optionalFlagToCopyAllOutputToTaskListener)
       throws IOException {
     final Boolean result;
@@ -112,9 +113,9 @@ public final class AccurevLauncher {
   }
 
   /**
-   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars, FilePath,
-   * TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link ICmdOutputXmlParser}
-   * instead.
+   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars,
+   * FilePath, TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link
+   * ICmdOutputXmlParser} instead.
    *
    * @param <TResult> The type of the result returned by the parser.
    * @param <TContext> The type of data to be passed to the parser. Can be
@@ -136,17 +137,17 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static <TResult, TContext> TResult runCommand( //
-      @Nonnull final String humanReadableCommandName, //
+      @NonNull final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
+      @NonNull final Launcher launcher, //
+      @NonNull final ArgumentListBuilder machineReadableCommand, //
       @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nonnull final XmlPullParserFactory xmlParserFactory, //
-      @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+      @NonNull final EnvVars environmentVariables, //
+      @NonNull final FilePath directoryToRunCommandFrom, //
+      @NonNull final TaskListener listenerToLogFailuresTo, //
+      @NonNull final Logger loggerToLogFailuresTo, //
+      @NonNull final XmlPullParserFactory xmlParserFactory, //
+      @NonNull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
       @Nullable final TContext commandOutputParserContext)
       throws IOException {
     return runCommand(
@@ -198,9 +199,9 @@ public final class AccurevLauncher {
   }
 
   /**
-   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars, FilePath,
-   * TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link ICmdOutputXmlParser}
-   * instead.
+   * As {@link #runCommand(String, String, Launcher, ArgumentListBuilder, ReentrantLock, EnvVars,
+   * FilePath, TaskListener, Logger, ICmdOutputParser, Object)} but uses an {@link
+   * ICmdOutputXmlParser} instead.
    *
    * @param <TResult> The type of the result returned by the parser.
    * @param <TContext> The type of data to be passed to the parser. Can be
@@ -222,17 +223,17 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static <TResult, TContext> TResult runHistCommandForAll( //
-      @Nonnull final String humanReadableCommandName, //
+      @NonNull final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
+      @NonNull final Launcher launcher, //
+      @NonNull final ArgumentListBuilder machineReadableCommand, //
       @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nonnull final XmlPullParserFactory xmlParserFactory, //
-      @Nonnull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
+      @NonNull final EnvVars environmentVariables, //
+      @NonNull final FilePath directoryToRunCommandFrom, //
+      @NonNull final TaskListener listenerToLogFailuresTo, //
+      @NonNull final Logger loggerToLogFailuresTo, //
+      @NonNull final XmlPullParserFactory xmlParserFactory, //
+      @NonNull final ICmdOutputXmlParser<TResult, TContext> commandOutputParser, //
       @Nullable final TContext commandOutputParserContext)
       throws IOException {
     return runCommand(
@@ -295,8 +296,9 @@ public final class AccurevLauncher {
    * @param accurevTool Which tool to find
    * @param launcher Means of executing the command.
    * @param machineReadableCommand The command to be executed.
-   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent concurrent
-   *     execution on the same machine, or <code>null</code> if no synchronization is required.
+   * @param synchronizationLockObjectOrNull The {@link ReentrantLock} object to be used to prevent
+   *     concurrent execution on the same machine, or <code>null</code> if no synchronization is
+   *     required.
    * @param environmentVariables The environment variables to be passed to the command.
    * @param directoryToRunCommandFrom The direction that the command should be run in.
    * @param listenerToLogFailuresTo One possible place to log failures, or <code>null</code>.
@@ -309,16 +311,16 @@ public final class AccurevLauncher {
    * @throws IOException handle it above
    */
   public static <TResult, TContext> TResult runCommand( //
-      @Nonnull final String humanReadableCommandName, //
+      @NonNull final String humanReadableCommandName, //
       String accurevTool,
-      @Nonnull final Launcher launcher, //
-      @Nonnull final ArgumentListBuilder machineReadableCommand, //
+      @NonNull final Launcher launcher, //
+      @NonNull final ArgumentListBuilder machineReadableCommand, //
       @Nullable final ReentrantLock synchronizationLockObjectOrNull, //
-      @Nonnull final EnvVars environmentVariables, //
-      @Nonnull final FilePath directoryToRunCommandFrom, //
-      @Nonnull final TaskListener listenerToLogFailuresTo, //
-      @Nonnull final Logger loggerToLogFailuresTo, //
-      @Nonnull final ICmdOutputParser<TResult, TContext> commandOutputParser, //
+      @NonNull final EnvVars environmentVariables, //
+      @NonNull final FilePath directoryToRunCommandFrom, //
+      @NonNull final TaskListener listenerToLogFailuresTo, //
+      @NonNull final Logger loggerToLogFailuresTo, //
+      @NonNull final ICmdOutputParser<TResult, TContext> commandOutputParser, //
       @Nullable final TContext commandOutputParserContext)
       throws IOException {
     try (final ByteArrayStream stdout = new ByteArrayStream();
@@ -384,7 +386,7 @@ public final class AccurevLauncher {
   public static AccurevTool resolveAccurevTool(
       String accurevToolValue, TaskListener listener, String command) {
     AccurevTool accurevTool =
-        Jenkins.getInstance()
+        Jenkins.get()
             .getDescriptorByType(AccurevTool.DescriptorImpl.class)
             .getInstallation(accurevToolValue);
     boolean isValidCommand = command.equals("info") || command.equals("login");
@@ -433,7 +435,7 @@ public final class AccurevLauncher {
   }
 
   private static Integer runCommandToCompletion( //
-      @Nonnull final ProcStarter starter, //
+      @NonNull final ProcStarter starter, //
       final ReentrantLock synchronizationLockObjectOrNull)
       throws IOException, InterruptedException {
     if (synchronizationLockObjectOrNull != null) {
@@ -450,13 +452,13 @@ public final class AccurevLauncher {
   }
 
   private static ProcStarter createProcess(
-      @Nonnull final Launcher launcher,
-      @Nonnull final ArgumentListBuilder machineReadableCommand,
-      @Nonnull final EnvVars environmentVariables,
-      @Nonnull final FilePath directoryToRunCommandFrom,
-      @Nonnull TaskListener listener,
-      @Nonnull final OutputStream stdoutStream,
-      @Nonnull final OutputStream stderrStream,
+      @NonNull final Launcher launcher,
+      @NonNull final ArgumentListBuilder machineReadableCommand,
+      @NonNull final EnvVars environmentVariables,
+      @NonNull final FilePath directoryToRunCommandFrom,
+      @NonNull TaskListener listener,
+      @NonNull final OutputStream stdoutStream,
+      @NonNull final OutputStream stderrStream,
       String accurevTool)
       throws IllegalStateException, IOException, InterruptedException {
     String accurevPath =

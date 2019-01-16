@@ -28,7 +28,7 @@ public class AccurevPlugin {
    */
   @Initializer(after = JOB_LOADED, before = COMPLETED)
   public static void migrateJobsToServerUUID() throws Exception {
-    final Jenkins jenkins = Jenkins.getInstance();
+    final Jenkins jenkins = Jenkins.get();
     boolean changed = false;
     AccurevSCMDescriptor descriptor = jenkins.getDescriptorByType(AccurevSCMDescriptor.class);
     for (Project<?, ?> p : jenkins.getAllItems(Project.class)) {

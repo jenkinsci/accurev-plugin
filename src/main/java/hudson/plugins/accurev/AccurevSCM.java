@@ -13,11 +13,13 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Job;
@@ -54,14 +56,12 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.plugins.accurev.AccurevTool;
 import jenkins.plugins.accurev.util.UUIDUtils;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -70,6 +70,7 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /** Accurev SCM plugin for Jenkins */
 public class AccurevSCM extends SCM {
+  private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
 
   protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES =
       Collections.unmodifiableList(
@@ -114,11 +115,17 @@ public class AccurevSCM extends SCM {
   @CheckForNull private String accurevTool = null;
   private Job<?, ?> activeProject;
 
-  @DataBoundConstructor
+  @Deprecated
   public AccurevSCM(String serverName, String depot, String stream) {
+    this(serverName, null, depot, stream);
+  }
+
+  @DataBoundConstructor
+  public AccurevSCM(String serverName, String serverUUID, String depot, String stream) {
     this.depot = depot;
     this.stream = stream;
-    AccurevServer server = getDescriptor().getServer(serverName);
+    AccurevServer server =
+        getDescriptor().getServer((serverName != null) ? serverName : serverUUID);
     if (server != null) {
       setServerName(server.getName());
       setServerUUID(server.getUuid());
@@ -127,7 +134,7 @@ public class AccurevSCM extends SCM {
   }
 
   public static AccurevSCMDescriptor configuration() {
-    return Jenkins.getInstance().getDescriptorByType(AccurevSCMDescriptor.class);
+    return Jenkins.get().getDescriptorByType(AccurevSCMDescriptor.class);
   }
 
   public String getDepot() {
@@ -138,6 +145,7 @@ public class AccurevSCM extends SCM {
     return serverName;
   }
 
+  @DataBoundSetter
   public void setServerName(String serverName) {
     this.serverName = serverName;
   }
@@ -146,6 +154,7 @@ public class AccurevSCM extends SCM {
     return serverUUID;
   }
 
+  @DataBoundSetter
   public void setServerUUID(String uuid) {
     serverUUID = uuid;
   }
@@ -351,13 +360,7 @@ public class AccurevSCM extends SCM {
    * @param env enviroments
    * @since 0.6.9
    */
-  // TODO: 2.60+ Delete this override.
   @Override
-  public void buildEnvVars(AbstractBuild<?, ?> build, Map<String, String> env) {
-    buildEnvironment(build, env);
-  }
-
-  // TODO: 2.60+ - add @Override.
   public void buildEnvironment(Run<?, ?> build, Map<String, String> env) {
     AbstractModeDelegate delegate = AccurevMode.findDelegate(this);
     delegate.buildEnvVars(build, env);
@@ -376,10 +379,10 @@ public class AccurevSCM extends SCM {
    * @throws java.lang.InterruptedException on failing interrupt
    */
   public void checkout(
-      @Nonnull Run<?, ?> build,
-      @Nonnull Launcher launcher,
-      @Nonnull FilePath workspace,
-      @Nonnull TaskListener listener,
+      @NonNull Run<?, ?> build,
+      @NonNull Launcher launcher,
+      @NonNull FilePath workspace,
+      @NonNull TaskListener listener,
       @CheckForNull File changelogFile,
       @CheckForNull SCMRevisionState baseline)
       throws IOException, InterruptedException {
@@ -473,10 +476,10 @@ public class AccurevSCM extends SCM {
 
   @Override
   public SCMRevisionState calcRevisionsFromBuild(
-      @Nonnull Run<?, ?> build,
+      @NonNull Run<?, ?> build,
       @Nullable FilePath workspace,
       @Nullable Launcher launcher,
-      @Nonnull TaskListener listener)
+      @NonNull TaskListener listener)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     return SCMRevisionState.NONE;
@@ -484,11 +487,11 @@ public class AccurevSCM extends SCM {
 
   @Override
   public PollingResult compareRemoteRevisionWith(
-      @Nonnull Job<?, ?> project,
+      @NonNull Job<?, ?> project,
       @Nullable Launcher launcher,
       @Nullable FilePath workspace,
-      @Nonnull TaskListener listener,
-      @Nonnull SCMRevisionState baseline)
+      @NonNull TaskListener listener,
+      @NonNull SCMRevisionState baseline)
       throws IOException, InterruptedException {
     //        TODO: Implement SCMRevisionState?
     if (activeProject != null && activeProject.isBuilding()) {
@@ -534,7 +537,9 @@ public class AccurevSCM extends SCM {
 
         if (defaultValue instanceof StringParameterValue) {
           StringParameterValue strdefvalue = (StringParameterValue) defaultValue;
-          keyValues.put(defaultValue.getName(), strdefvalue.value);
+          Object v = strdefvalue.getValue();
+
+          keyValues.put(defaultValue.getName(), (v != null) ? v.toString() : "");
         }
       }
 
@@ -552,6 +557,7 @@ public class AccurevSCM extends SCM {
   }
 
   @Extension
+  @Symbol("accurev")
   public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM>
       implements ModelObject {
 
@@ -575,14 +581,14 @@ public class AccurevSCM extends SCM {
      * @return String
      */
     @Override
-    @Nonnull
+    @NonNull
     public String getDisplayName() {
       return "AccuRev";
     }
 
     @SuppressWarnings("unused") // used by stapler
     public boolean showAccurevToolOptions() {
-      return Jenkins.getInstance()
+      return Jenkins.get()
               .getDescriptorByType(AccurevTool.DescriptorImpl.class)
               .getInstallations()
               .length
@@ -596,9 +602,7 @@ public class AccurevSCM extends SCM {
      */
     public List<AccurevTool> getAccurevTools() {
       AccurevTool[] accurevToolInstallations =
-          Jenkins.getInstance()
-              .getDescriptorByType(AccurevTool.DescriptorImpl.class)
-              .getInstallations();
+          Jenkins.get().getDescriptorByType(AccurevTool.DescriptorImpl.class).getInstallations();
       return Arrays.asList(accurevToolInstallations);
     }
 
@@ -622,7 +626,7 @@ public class AccurevSCM extends SCM {
      *
      * @return Value for property 'servers'.
      */
-    @Nonnull
+    @NonNull
     public List<AccurevServer> getServers() {
       if (this._servers == null) {
         this._servers = new ArrayList<>();
@@ -657,7 +661,7 @@ public class AccurevSCM extends SCM {
     /**
      * Setter for property 'pollOnMaster'.
      *
-     * @param pollOnMaster poll on aster
+     * @param pollOnMaster poll on master
      */
     @DataBoundSetter
     public void setPollOnMaster(boolean pollOnMaster) {
@@ -666,11 +670,11 @@ public class AccurevSCM extends SCM {
 
     @CheckForNull
     public AccurevServer getServer(String uuid) {
-      if (uuid == null || this._servers == null) {
+      if (uuid == null || getServers().isEmpty()) {
         LOGGER.fine("No server found. - getServer(NULL)");
         return null;
       }
-      for (AccurevServer server : this._servers) {
+      for (AccurevServer server : getServers()) {
         if (UUIDUtils.isValid(uuid) && uuid.equals(server.getUuid())) {
           return server;
         } else if (uuid.equals(server.getName())) {
@@ -685,12 +689,12 @@ public class AccurevSCM extends SCM {
     @SuppressWarnings("unused") // Used by stapler
     public ListBoxModel doFillServerNameItems() {
       ListBoxModel s = new ListBoxModel();
-      if (this._servers == null) {
+      if (getServers().isEmpty()) {
         DESCRIPTORLOGGER.warning(
             "Failed to find AccuRev server. Add Server under AccuRev section in the Manage Jenkins > Configure System page.");
         return s;
       }
-      for (AccurevServer server : this._servers) {
+      for (AccurevServer server : getServers()) {
         s.add(server.getName());
       }
 
@@ -860,7 +864,7 @@ public class AccurevSCM extends SCM {
         return CredentialsMatchers.firstOrNull(
             CredentialsProvider.lookupCredentials(
                 StandardUsernamePasswordCredentials.class,
-                Jenkins.getInstance(),
+                Jenkins.get(),
                 ACL.SYSTEM,
                 URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build()),
             CredentialsMatchers.withId(credentialsId));
@@ -961,7 +965,7 @@ public class AccurevSCM extends SCM {
             CredentialsMatchers.filter(
                 CredentialsProvider.lookupCredentials(
                     StandardUsernamePasswordCredentials.class,
-                    Jenkins.getInstance(),
+                    Jenkins.get(),
                     ACL.SYSTEM,
                     domainRequirements),
                 CredentialsMatchers.withUsername(username));
@@ -997,13 +1001,18 @@ public class AccurevSCM extends SCM {
 
     @Override
     public DescriptorImpl getDescriptor() {
-      return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
+      return (DescriptorImpl) Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     @Extension
+    @Symbol("accurevServer")
     public static class DescriptorImpl extends Descriptor<AccurevServer> {
 
-      @Nonnull
+      public DescriptorImpl() {
+        load();
+      }
+
+      @NonNull
       @Override
       public String getDisplayName() {
         return "AccuRev Server";
@@ -1014,14 +1023,14 @@ public class AccurevSCM extends SCM {
           @QueryParameter String host,
           @QueryParameter int port,
           @QueryParameter String credentialsId) {
-        if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
           return new StandardListBoxModel().includeCurrentValue(credentialsId);
         }
         return new StandardListBoxModel()
             .includeEmptyValue()
             .includeMatchingAs(
                 ACL.SYSTEM,
-                Jenkins.getInstance(),
+                Jenkins.get(),
                 StandardUsernamePasswordCredentials.class,
                 URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
                 CredentialsMatchers.always());
@@ -1034,7 +1043,7 @@ public class AccurevSCM extends SCM {
           @QueryParameter String host,
           @QueryParameter int port,
           @QueryParameter String credentialsId) {
-        if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
           return FormValidation.ok();
         }
         if (null == host || host.isEmpty()) {

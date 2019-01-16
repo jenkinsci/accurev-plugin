@@ -1,9 +1,9 @@
 package hudson.plugins.accurev;
 
 import hudson.EnvVars;
-import hudson.model.AbstractBuild;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.InvisibleAction;
+import hudson.model.Run;
 
 public class AccuRevHiddenParametersAction extends InvisibleAction
     implements EnvironmentContributingAction {
@@ -14,7 +14,10 @@ public class AccuRevHiddenParametersAction extends InvisibleAction
     this.values = values;
   }
 
-  public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
+  @Override
+  public void buildEnvironment(
+      @edu.umd.cs.findbugs.annotations.NonNull Run<?, ?> run,
+      @edu.umd.cs.findbugs.annotations.NonNull EnvVars env) {
     env.putAll(values);
   }
 }

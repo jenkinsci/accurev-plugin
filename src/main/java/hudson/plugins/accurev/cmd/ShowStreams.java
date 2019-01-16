@@ -1,5 +1,6 @@
 package hudson.plugins.accurev.cmd;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -16,7 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 public class ShowStreams extends Command {

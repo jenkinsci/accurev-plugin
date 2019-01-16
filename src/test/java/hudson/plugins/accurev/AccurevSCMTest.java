@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
-import hudson.model.AbstractBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Run;
 import hudson.plugins.accurev.AccurevSCM.AccurevSCMDescriptor;
@@ -62,9 +61,9 @@ public class AccurevSCMTest {
 
     when(scm.getStream()).thenReturn("testStream");
 
-    AbstractBuild build = mock(AbstractBuild.class);
+    Run run = mock(Run.class);
     Map<String, String> environment = new HashMap<>();
-    scm.buildEnvVars(build, environment);
+    scm.buildEnvironment(run, environment);
 
     assertThat(environment.get("ACCUREV_SERVER_HOSTNAME"), is("accurevbox.example.org"));
     assertThat(environment.get("ACCUREV_SERVER_PORT"), is("5050"));
@@ -73,7 +72,6 @@ public class AccurevSCMTest {
 
   private AccurevSCM mockSCMForBuildEnvVars() {
     AccurevSCM scm = mock(AccurevSCM.class);
-    doCallRealMethod().when(scm).buildEnvVars(any(AbstractBuild.class), anyMap());
     doCallRealMethod().when(scm).buildEnvironment(any(Run.class), anyMap());
     return scm;
   }
