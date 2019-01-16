@@ -16,8 +16,8 @@ public class AccuRevHiddenParametersAction extends InvisibleAction
 
   @Override
   public void buildEnvironment(
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull Run<?, ?> run,
-      @SuppressWarnings("deprecation") @edu.umd.cs.findbugs.annotations.NonNull EnvVars env) {
+      @edu.umd.cs.findbugs.annotations.NonNull Run<?, ?> run,
+      @edu.umd.cs.findbugs.annotations.NonNull EnvVars env) {
     env.putAll(values);
   }
 }
