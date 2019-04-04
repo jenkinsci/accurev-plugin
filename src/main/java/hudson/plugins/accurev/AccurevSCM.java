@@ -106,6 +106,7 @@ public class AccurevSCM extends SCM {
   private boolean synctime;
   private String reftree;
   private String subPath;
+  private boolean subPathOnly;
   private String filterForPollSCM;
   private String directoryOffset;
   private boolean useReftree;
@@ -238,6 +239,15 @@ public class AccurevSCM extends SCM {
   @DataBoundSetter
   public void setSubPath(String subPath) {
     this.subPath = fixEmpty(subPath);
+  }
+
+  public boolean getSubPathOnly() {
+    return subPathOnly;
+  }
+
+  @DataBoundSetter
+  public void setSubPathOnly(boolean subPathOnly) {
+    this.subPathOnly = subPathOnly;
   }
 
   public String getFilterForPollSCM() {

@@ -60,6 +60,10 @@ public class PopulateCmd extends Command {
     if (streamName != null) {
       cmd.add("-v");
       cmd.add(streamName);
+
+      if (scm.getSubPathOnly()) {
+        cmd.add("-D");
+      }
     }
 
     cmd.add("-L");
