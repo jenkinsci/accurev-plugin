@@ -48,9 +48,9 @@
             </f:entry>
             <f:entry title="Sub-path" help="/plugin/accurev/help/project/subpath.html">
               <f:textbox name="accurev.subPath" value="${instance.subPath}" />
-              <f:entry title="Populate sub-path only">
-                  <f:checkbox name="accurev.subPathOnly" checked="${instance.subPathOnly}"/>
-              </f:entry>
+            </f:entry>
+            <f:entry title="Populate sub-path only" help="/plugin/accurev/help/project/subpathonly.html">
+                <f:checkbox name="accurev.subPathOnly" checked="${instance.subPathOnly}"/>
             </f:entry>
             <f:entry title="Filter for Poll SCM" help="/plugin/accurev/help/project/filterforpollscm.html">
               <f:textbox name="accurev.filterForPollSCM" value="${instance.filterForPollSCM}"/>
