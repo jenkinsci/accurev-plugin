@@ -115,7 +115,12 @@ public class AccurevSCM extends SCM {
 
   @Deprecated
   public AccurevSCM(String serverName, String depot, String stream) {
-    this(serverName, null, depot, stream, "none");
+    this(serverName, null, depot, stream);
+  }
+
+  @Deprecated
+  public AccurevSCM(String serverName, String serverUUID, String depot, String stream) {
+    this(serverName, serverUUID, depot, stream, "none");
   }
 
   @DataBoundConstructor
