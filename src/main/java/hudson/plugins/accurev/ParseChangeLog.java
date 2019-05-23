@@ -95,7 +95,7 @@ public class ParseChangeLog extends ChangeLogParser {
       filteredTransactions = transactions;
     }
     filteredTransactions.removeIf(t -> t.getAction().equalsIgnoreCase("dispatch"));
-    // getSubpath() != null && !getSubpath().isEmpty() && getSubpath().equals(" ")
+    
     logger.info("subpath:" + subpath);
     if (subpath != null && !subpath.isEmpty()) {
       logger.info("before filter by subpath process..");
