@@ -29,7 +29,7 @@ public class ParseChangeLog extends ChangeLogParser {
 
   private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
 
-  public static String subpath = "";
+  private static String subpath = "";
 
   public static String getSubpath() {
     return subpath;
