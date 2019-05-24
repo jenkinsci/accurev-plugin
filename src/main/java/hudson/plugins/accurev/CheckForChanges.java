@@ -47,6 +47,7 @@ public class CheckForChanges {
     AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
     String filterForPollSCM = scm.getFilterForPollSCM();
     String subPath = scm.getSubPath();
+    ParseChangeLog.setSubpath(subPath);
     latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
 
     // query AccuRev for the latest transactions of each kind defined in transactionTypes using

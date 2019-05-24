@@ -5,6 +5,7 @@ import hudson.model.Run;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.CheckForChanges;
+import hudson.plugins.accurev.ParseChangeLog;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.scm.PollingResult;
 import java.io.File;
@@ -64,6 +65,8 @@ public class StreamDelegate extends AbstractModeDelegate {
     final Date buildDate = lastBuild.getTimestamp().getTime();
     try {
       localStream = scm.getPollingStream(project, listener);
+      logger.fine("setting subpath from stream delegate:" + scm.getSubPath());
+      ParseChangeLog.setSubpath(scm.getSubPath());
     } catch (IllegalArgumentException ex) {
       listener.getLogger().println(ex.getMessage());
       return PollingResult.NO_CHANGES;

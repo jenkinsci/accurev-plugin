@@ -6,6 +6,7 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevReferenceTree;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.DetermineRemoteHostname;
+import hudson.plugins.accurev.ParseChangeLog;
 import hudson.plugins.accurev.RemoteWorkspaceDetails;
 import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
 import hudson.plugins.accurev.XmlParserFactory;
@@ -43,6 +44,8 @@ public class ReftreeDelegate extends AbstractModeDelegate {
   protected PollingResult checkForChanges(Job<?, ?> project)
       throws IOException, InterruptedException {
     try {
+      logger.fine("setting subpath from Reftree:" + scm.getSubPath());
+      ParseChangeLog.setSubpath(scm.getSubPath());
       Relocation relocation = checkForRelocation();
       if (relocation.isRelocationRequired()) {
         listener.getLogger().println("Relocation required triggering build");
