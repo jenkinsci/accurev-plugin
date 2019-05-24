@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import jenkins.plugins.accurev.util.AccurevUtils;
 import org.xml.sax.SAXException;
@@ -26,6 +27,16 @@ import org.xmlpull.v1.XmlPullParserException;
 public class ParseChangeLog extends ChangeLogParser {
 
   private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
+
+  public static String subpath = "";
+
+  public static String getSubpath() {
+    return subpath;
+  }
+
+  public static void setSubpath(String subpath) {
+    ParseChangeLog.subpath = subpath;
+  }
 
   /**
    * {@inheritDoc}
@@ -84,7 +95,71 @@ public class ParseChangeLog extends ChangeLogParser {
       filteredTransactions = transactions;
     }
     filteredTransactions.removeIf(t -> t.getAction().equalsIgnoreCase("dispatch"));
+    
+    logger.info("subpath:" + subpath);
+    if (subpath != null && !subpath.isEmpty()) {
+      logger.info("before filter by subpath process..");
+      filteredTransactions.forEach(transaction -> logger.info("transaction:" + transaction));
+      // filtering transaction based on sub-path
+      logger.info("starting filter by subpath process..");
+
+      filteredTransactions = filterBySubpath(filteredTransactions);
+      logger.info("starting filter by subpath process..");
+      logger.info("after filter by subpath process..");
+      filteredTransactions.forEach(transaction -> logger.info("transaction:" + transaction));
+    } else {
+      logger.info("subpath filter is not applied.");
+    }
     return filteredTransactions;
+  }
+
+  public List<AccurevTransaction> filterBySubpath(List<AccurevTransaction> transactions) {
+
+    List<AccurevTransaction> trans = new ArrayList<>();
+    logger.info("using subpath:" + getSubpath());
+    List<String> subpaths = new ArrayList<String>();
+
+    final StringTokenizer st = new StringTokenizer(getSubpath(), ",");
+    while (st.hasMoreElements()) {
+      String path = st.nextToken().trim();
+      path = path.replace("*", "");
+      logger.info("path:" + path);
+      subpaths.add(path);
+    }
+    logger.info("subpaths size:" + subpaths.size());
+
+    for (AccurevTransaction transaction : transactions) {
+
+      boolean isValid = false;
+      for (String rawPath : transaction.getAffectedRawPaths()) {
+
+        if (isValid) {
+          logger.info("transaction is valid :" + transaction.getId());
+          logger.info("no need check files in this transaction");
+          break;
+        }
+        logger.info("rawPath:" + rawPath);
+        for (String subpath : subpaths) {
+          logger.info("rawPath.contains(subpath):" + rawPath.contains(subpath));
+          if (rawPath.contains(subpath)) {
+            isValid = true;
+            break;
+          } else {
+            isValid = false;
+          }
+        }
+      }
+
+      if (!isValid) {
+        // transactions.remove(transaction);
+        logger.info("not adding  transaction to list:" + transaction.getId());
+      } else {
+        logger.info("adding  transaction to list:" + transaction.getId());
+        trans.add(transaction);
+      }
+    }
+
+    return trans;
   }
 
   private List<AccurevTransaction> parse(File changelogFile, UpdateLog updateLog)
