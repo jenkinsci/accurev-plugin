@@ -25,7 +25,7 @@ public class SnapshotDelegate extends StreamDelegate {
 
   private String calculateSnapshotName(final Run<?, ?> build)
       throws IOException, InterruptedException {
-    logger.info("setting subpath from snapshot delegate:" + scm.getSubPath());
+    logger.fine("setting subpath from snapshot delegate:" + scm.getSubPath());
     ParseChangeLog.setSubpath(scm.getSubPath());
     String snapshotNameFormat = scm.getSnapshotNameFormat();
     final String actualFormat =

@@ -42,7 +42,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
   protected PollingResult checkForChanges(Job<?, ?> project)
       throws IOException, InterruptedException, IllegalArgumentException {
     localStream = scm.getPollingStream(project, listener);
-    logger.info("setting subpath from workspace delegate:" + scm.getSubPath());
+    logger.fine("setting subpath from workspace delegate:" + scm.getSubPath());
     ParseChangeLog.setSubpath(scm.getSubPath());
     return super.checkForChanges(project);
   }
