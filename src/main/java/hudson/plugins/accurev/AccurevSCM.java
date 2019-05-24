@@ -70,8 +70,6 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /** Accurev SCM plugin for Jenkins */
 public class AccurevSCM extends SCM {
-  private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
-
   protected static final List<String> DEFAULT_VALID_STREAM_TRANSACTION_TYPES =
       Collections.unmodifiableList(
           Arrays.asList(
@@ -120,16 +118,19 @@ public class AccurevSCM extends SCM {
     this(serverName, null, depot, stream);
   }
 
-  @DataBoundConstructor
+  @Deprecated
   public AccurevSCM(String serverName, String serverUUID, String depot, String stream) {
+    this(serverName, serverUUID, depot, stream, "none");
+  }
+
+  @DataBoundConstructor
+  public AccurevSCM(
+      String serverName, String serverUUID, String depot, String stream, String wspaceORreftree) {
     this.depot = depot;
     this.stream = stream;
-    AccurevServer server =
-        getDescriptor().getServer((serverName != null) ? serverName : serverUUID);
-    if (server != null) {
-      setServerName(server.getName());
-      setServerUUID(server.getUuid());
-    }
+    this.serverName = serverName;
+    this.serverUUID = serverUUID;
+    this.wspaceORreftree = wspaceORreftree;
     updateMode();
   }
 
@@ -196,9 +197,6 @@ public class AccurevSCM extends SCM {
 
   @DataBoundSetter
   public void setWspaceORreftree(String wspaceORreftree) {
-    if (wspaceORreftree.equals("none")) {
-      wspaceORreftree = null;
-    }
     this.wspaceORreftree = wspaceORreftree;
     updateMode();
   }

@@ -102,4 +102,26 @@ public class AccurevSCMTest {
     rule.configRoundtrip(accurevTest);
     rule.assertEqualDataBoundBeans(scm, accurevTest.getScm());
   }
+
+  @Test
+  public void testConfigWspaceRoundtrip() throws Exception {
+
+    scm.setWspaceORreftree("wspace");
+    scm.setWorkspace("testWorkspace1");
+
+    accurevTest.setScm(scm);
+    rule.configRoundtrip(accurevTest);
+    rule.assertEqualDataBoundBeans(scm, accurevTest.getScm());
+  }
+
+  @Test
+  public void testConfigReftreeRoundtrip() throws Exception {
+
+    scm.setWspaceORreftree("reftree");
+    scm.setReftree("testRefTree1");
+
+    accurevTest.setScm(scm);
+    rule.configRoundtrip(accurevTest);
+    rule.assertEqualDataBoundBeans(scm, accurevTest.getScm());
+  }
 }
