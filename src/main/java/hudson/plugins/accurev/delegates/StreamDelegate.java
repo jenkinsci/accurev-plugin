@@ -65,7 +65,7 @@ public class StreamDelegate extends AbstractModeDelegate {
     final Date buildDate = lastBuild.getTimestamp().getTime();
     try {
       localStream = scm.getPollingStream(project, listener);
-      logger.info("setting subpath from stream delegate:" + scm.getSubPath());
+      logger.fine("setting subpath from stream delegate:" + scm.getSubPath());
       ParseChangeLog.setSubpath(scm.getSubPath());
     } catch (IllegalArgumentException ex) {
       listener.getLogger().println(ex.getMessage());

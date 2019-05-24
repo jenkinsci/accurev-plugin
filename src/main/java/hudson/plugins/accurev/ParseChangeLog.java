@@ -115,17 +115,17 @@ public class ParseChangeLog extends ChangeLogParser {
   public List<AccurevTransaction> filterBySubpath(List<AccurevTransaction> transactions) {
 
     List<AccurevTransaction> trans = new ArrayList<>();
-    logger.info("using subpath:" + getSubpath());
+    logger.fine("using subpath:" + getSubpath());
     List<String> subpaths = new ArrayList<String>();
 
     final StringTokenizer st = new StringTokenizer(getSubpath(), ",");
     while (st.hasMoreElements()) {
       String path = st.nextToken().trim();
       path = path.replace("*", "");
-      logger.info("path:" + path);
+      logger.fine("path:" + path);
       subpaths.add(path);
     }
-    logger.info("subpaths size:" + subpaths.size());
+    logger.fine("subpaths size:" + subpaths.size());
 
     for (AccurevTransaction transaction : transactions) {
 
@@ -133,13 +133,13 @@ public class ParseChangeLog extends ChangeLogParser {
       for (String rawPath : transaction.getAffectedRawPaths()) {
 
         if (isValid) {
-          logger.info("transaction is valid :" + transaction.getId());
-          logger.info("no need check files in this transaction");
+          logger.fine("transaction is valid :" + transaction.getId());
+          logger.fine("no need check files in this transaction");
           break;
         }
-        logger.info("rawPath:" + rawPath);
+        logger.fine("rawPath:" + rawPath);
         for (String subpath : subpaths) {
-          logger.info("rawPath.contains(subpath):" + rawPath.contains(subpath));
+          logger.fine("rawPath.contains(subpath):" + rawPath.contains(subpath));
           if (rawPath.contains(subpath)) {
             isValid = true;
             break;
@@ -151,9 +151,9 @@ public class ParseChangeLog extends ChangeLogParser {
 
       if (!isValid) {
         // transactions.remove(transaction);
-        logger.info("not adding  transaction to list:" + transaction.getId());
+        logger.fine("not adding  transaction to list:" + transaction.getId());
       } else {
-        logger.info("adding  transaction to list:" + transaction.getId());
+        logger.fine("adding  transaction to list:" + transaction.getId());
         trans.add(transaction);
       }
     }

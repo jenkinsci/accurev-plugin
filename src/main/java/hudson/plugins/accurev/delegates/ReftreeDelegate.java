@@ -44,7 +44,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
   protected PollingResult checkForChanges(Job<?, ?> project)
       throws IOException, InterruptedException {
     try {
-      logger.info("setting subpath from Reftree:" + scm.getSubPath());
+      logger.fine("setting subpath from Reftree:" + scm.getSubPath());
       ParseChangeLog.setSubpath(scm.getSubPath());
       Relocation relocation = checkForRelocation();
       if (relocation.isRelocationRequired()) {
