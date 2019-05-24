@@ -1,0 +1,23 @@
+name-template: v$NEXT_PATCH_VERSION 🌈
+tag-template: accurev-$NEXT_PATCH_VERSION
+categories:
+  - title: 🚨 Removed
+    label: removed
+  - title: ⚠️ Deprecated
+    label: deprecated
+  - title: 🚀 Features
+    label: feature
+  - title: 🐛 Bug Fixes
+    label: bugfix
+  - title: 👻 Maintenance
+    label: chore
+  - title: 📝 Documentation updates
+    label: documentation
+  - title: 🚦 Tests
+    label: test
+exclude-labels:
+  - reverted
+
+template: |
+  ## Changes
+  $CHANGES
