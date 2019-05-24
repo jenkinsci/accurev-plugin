@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import jenkins.plugins.accurev.util.AccurevUtils;
+import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -95,20 +96,18 @@ public class ParseChangeLog extends ChangeLogParser {
       filteredTransactions = transactions;
     }
     filteredTransactions.removeIf(t -> t.getAction().equalsIgnoreCase("dispatch"));
-    
-    logger.info("subpath:" + subpath);
-    if (subpath != null && !subpath.isEmpty()) {
-      logger.info("before filter by subpath process..");
-      filteredTransactions.forEach(transaction -> logger.info("transaction:" + transaction));
+
+    logger.fine("subpath:" + subpath);
+    if (StringUtils.isNotEmpty(subpath)) {
+      logger.fine("before filtering by subpath process..");
+      filteredTransactions.forEach(transaction -> logger.fine("transaction:" + transaction));
       // filtering transaction based on sub-path
-      logger.info("starting filter by subpath process..");
 
       filteredTransactions = filterBySubpath(filteredTransactions);
-      logger.info("starting filter by subpath process..");
-      logger.info("after filter by subpath process..");
-      filteredTransactions.forEach(transaction -> logger.info("transaction:" + transaction));
+      logger.fine("after filter by subpath process..");
+      filteredTransactions.forEach(transaction -> logger.fine("transaction:" + transaction));
     } else {
-      logger.info("subpath filter is not applied.");
+      logger.fine("subpath filter is not applied.");
     }
     return filteredTransactions;
   }
