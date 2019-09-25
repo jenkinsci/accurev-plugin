@@ -6,6 +6,7 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccurevSCM.AccurevServer;
 import hudson.plugins.accurev.cmd.History;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -44,11 +45,11 @@ public class CheckForChanges {
       Date buildDate,
       Logger logger,
       AccurevSCM scm) {
-    AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
     String filterForPollSCM = scm.getFilterForPollSCM();
     String subPath = scm.getSubPath();
     ParseChangeLog.setSubpath(subPath);
-    latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    String dateRange = formatter.format(buildDate);
 
     // query AccuRev for the latest transactions of each kind defined in transactionTypes using
     // getTimeOfLatestTransaction
@@ -58,70 +59,60 @@ public class CheckForChanges {
     } else {
       validTransactionTypes = AccurevSCM.DEFAULT_VALID_STREAM_TRANSACTION_TYPES;
     }
+    String transactionTypes = String.join(",", validTransactionTypes);
     listener
         .getLogger()
         .println( //
             "Checking transactions of type "
-                + String.join(", ", validTransactionTypes)
+                + transactionTypes
                 + //
                 " in stream ["
                 + stream.getName()
                 + "]");
     boolean isTransLatestThanBuild = false;
 
-    Collection<String> serverPaths;
+    Set<String> serverPaths = new HashSet<String>();
     Set<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
 
-    for (final String transactionType : validTransactionTypes) {
-      try {
-        final AccurevTransaction tempTransaction =
-            History.getLatestTransaction(
-                scm,
-                server,
-                accurevEnv,
-                workspace,
-                listener,
-                launcher,
-                stream.getName(),
-                transactionType);
-        if (tempTransaction != null) {
-          listener
-              .getLogger()
-              .println("Last transaction of type [" + transactionType + "] is " + tempTransaction);
-
-          if (latestCodeChangeTransaction.getDate().before(tempTransaction.getDate())) {
-            // check the affected
-            serverPaths = tempTransaction.getAffectedPaths();
-            if (tempTransaction.getAffectedPaths().size() > 0) {
-              if (!changesMatchFilter(serverPaths, pollingFilters)) {
-                // Continue to next transaction (that may have a match)
-                continue;
-              }
-            }
-          }
-          latestCodeChangeTransaction = tempTransaction;
-          if (latestCodeChangeTransaction.getDate().equals(AccurevSCM.NO_TRANS_DATE)) {
-            listener.getLogger().println("No last transaction found.");
-          }
-          // log last transaction information if retrieved
-          if (buildDate != null && buildDate.before(latestCodeChangeTransaction.getDate())) {
-            listener.getLogger().println("Last valid trans " + latestCodeChangeTransaction);
+    try {
+      final List<AccurevTransaction> tempTransaction =
+          History.getTransactionsRange(
+              scm,
+              server,
+              accurevEnv,
+              workspace,
+              listener,
+              launcher,
+              stream.getName(),
+              transactionTypes,
+              dateRange);
+      if (tempTransaction != null && !tempTransaction.isEmpty()) {
+        for (AccurevTransaction t : tempTransaction) {
+          if (t.getAffectedPaths().isEmpty()
+              && (t.getAction().equals("mkstream") || t.getAction().equals("chstream"))) {
+            listener.getLogger().println("Last valid transaction " + tempTransaction);
             isTransLatestThanBuild = true;
+          } else {
+            serverPaths.addAll(t.getAffectedPaths());
           }
-
-        } else {
-          listener.getLogger().println("No transactions of type [" + transactionType + "]");
         }
-      } catch (Exception e) {
-        final String msg =
-            "getLatestTransaction failed when checking the stream "
-                + stream.getName()
-                + " for changes with transaction type "
-                + transactionType;
-        listener.getLogger().println(msg);
-        e.printStackTrace(listener.getLogger());
-        logger.log(Level.WARNING, msg, e);
       }
+
+      if (serverPaths.size() > 0) {
+        if (changesMatchFilter(serverPaths, pollingFilters)) {
+          isTransLatestThanBuild = true;
+          listener.getLogger().println("Last valid transaction " + tempTransaction);
+        }
+      }
+    } catch (Exception e) {
+      final String msg =
+          "getLatestTransaction failed when checking the stream "
+              + stream.getName()
+              + " for changes with transaction type "
+              + transactionTypes;
+      listener.getLogger().println(msg);
+      e.printStackTrace(listener.getLogger());
+      logger.log(Level.WARNING, msg, e);
     }
     return isTransLatestThanBuild;
   }
