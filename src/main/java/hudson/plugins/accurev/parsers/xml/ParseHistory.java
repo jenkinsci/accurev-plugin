@@ -60,7 +60,6 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
           // check the children tags
           if ("comment".equals(parser.getName())) {
             resultTransaction.setMsg(parser.nextText());
-            System.out.println("poo" + resultTransaction.getMsg());
           } else if ("version".equals(parser.getName())) {
             String path = parser.getAttributeValue("", "path");
             resultTransaction.addAffectedPath(path);
