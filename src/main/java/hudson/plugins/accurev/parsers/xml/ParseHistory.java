@@ -62,10 +62,15 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
             resultTransaction.setMsg(parser.nextText());
           } else if ("version".equals(parser.getName())) {
             String path = parser.getAttributeValue("", "path");
+            if (path != null) {
+              path = AccurevUtils.cleanAccurevPath(path);
+            }
             resultTransaction.addAffectedPath(path);
             break;
+          } else {
+            break;
           }
-          parser.next();
+          parser.nextTag();
         }
         context.add(resultTransaction);
       }
