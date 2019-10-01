@@ -89,7 +89,7 @@ public class CheckForChanges {
       if (tempTransaction != null && !tempTransaction.isEmpty()) {
         for (AccurevTransaction t : tempTransaction) {
           if (t.getAffectedPaths().isEmpty()
-              && (t.getAction().equals("mkstream") || t.getAction().equals("chstream"))) {
+              && (t.getAction().equals("mkstream") || t.getAction().equals("chstream") || t.getAction().equals("defcomp"))) {
             listener.getLogger().println("Last valid transaction " + tempTransaction);
             isTransLatestThanBuild = true;
           } else {
