@@ -155,4 +155,73 @@ public class History extends Command {
     }
     return transactions;
   }
+
+  /**
+   * @param scm Accurev SCM
+   * @param server server
+   * @param accurevEnv Accurev Enviroment
+   * @param workspace workspace
+   * @param listener listener
+   * @param launcher launcher
+   * @param stream stream
+   * @param dateRange lastTransaction
+   * @param transactionTypes
+   * @return all the transaction for a given stream
+   * @throws IOException if no transaction was found
+   */
+  public static List<AccurevTransaction> getTransactionsRange( //
+      final AccurevSCM scm, //
+      final AccurevServer server, //
+      final EnvVars accurevEnv, //
+      final FilePath workspace, //
+      final TaskListener listener, //
+      final Launcher launcher, //
+      final String stream,
+      final String transactionTypes,
+      final String dateRange)
+      throws IOException {
+    // initialize code that extracts the latest transaction of a certain
+    final ArgumentListBuilder cmd = new ArgumentListBuilder();
+    cmd.add("hist");
+    addServer(cmd, server);
+    cmd.add("-fx");
+    cmd.add("-p");
+    cmd.add(scm.getDepot());
+    cmd.add("-s");
+    cmd.add(stream);
+    // Filter the history command to get all the transactions between last build date and now
+    if (dateRange != null) {
+      cmd.add("-t");
+      cmd.add("now-" + (dateRange));
+    }
+
+    if (transactionTypes != null) {
+      cmd.add("-k");
+      cmd.add(transactionTypes);
+    }
+    // execute code that extracts the latest transaction
+    XmlPullParserFactory parser = XmlParserFactory.getFactory();
+    if (parser == null) {
+      throw new IOException("No XML Parser");
+    }
+    final List<AccurevTransaction> transactions = new ArrayList<>();
+    final Boolean transactionFound =
+        AccurevLauncher.runHistCommandForAll(
+            "History command",
+            scm.getAccurevTool(),
+            launcher,
+            cmd,
+            scm.getOptionalLock(workspace),
+            accurevEnv,
+            workspace,
+            listener,
+            logger,
+            parser,
+            new ParseHistory(),
+            transactions);
+    if (transactionFound == null) {
+      throw new IOException("History command failed when trying to get all the transactionse ");
+    }
+    return transactions;
+  }
 }
