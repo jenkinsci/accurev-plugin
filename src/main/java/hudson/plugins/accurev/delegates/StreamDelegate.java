@@ -2,12 +2,15 @@ package hudson.plugins.accurev.delegates;
 
 import hudson.model.Job;
 import hudson.model.Run;
+import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.CheckForChanges;
 import hudson.plugins.accurev.ParseChangeLog;
 import hudson.plugins.accurev.cmd.ShowStreams;
+import hudson.plugins.accurev.parsers.output.ParseAccuRevVersion;
 import hudson.scm.PollingResult;
+import hudson.util.ArgumentListBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -88,6 +91,19 @@ public class StreamDelegate extends AbstractModeDelegate {
           .println("Tried to find '" + localStream + "' Stream, could not found it.");
       return PollingResult.NO_CHANGES;
     }
+    // command to get version of accurev
+    final ArgumentListBuilder cmd = new ArgumentListBuilder();
+    cmd.add("accurev");
+    String ACCUREV_VERSION =
+        AccurevLauncher.runJustAccurev(
+            "Accurev version command",
+            scm.getAccurevTool(),
+            launcher,
+            cmd,
+            jenkinsWorkspace,
+            listener,
+            logger,
+            new ParseAccuRevVersion());
     // There may be changes in a parent stream that we need to factor in.
     do {
       if (CheckForChanges.checkStreamForChanges(
@@ -99,7 +115,8 @@ public class StreamDelegate extends AbstractModeDelegate {
           stream,
           buildDate,
           logger,
-          scm)) {
+          scm,
+          ACCUREV_VERSION)) {
         return PollingResult.BUILD_NOW;
       }
       stream = stream.getParent();
