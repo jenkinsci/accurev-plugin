@@ -93,18 +93,19 @@ public class StreamDelegate extends AbstractModeDelegate {
     }
     // command to get version of accurev
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
-    cmd.add("accurev");
     String ACCUREV_VERSION =
-        AccurevLauncher.runJustAccurev(
+        AccurevLauncher.runCommand(
             "Accurev version command",
             scm.getAccurevTool(),
-            accurevEnv,
             launcher,
             cmd,
+            null,
+            accurevEnv,
             jenkinsWorkspace,
             listener,
             logger,
-            new ParseAccuRevVersion());
+            new ParseAccuRevVersion(),
+            null);
     listener
         .getLogger()
         .println( //
