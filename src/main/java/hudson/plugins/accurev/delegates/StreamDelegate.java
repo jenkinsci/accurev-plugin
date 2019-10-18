@@ -98,12 +98,24 @@ public class StreamDelegate extends AbstractModeDelegate {
         AccurevLauncher.runJustAccurev(
             "Accurev version command",
             scm.getAccurevTool(),
+            accurevEnv,
             launcher,
             cmd,
             jenkinsWorkspace,
             listener,
             logger,
             new ParseAccuRevVersion());
+    listener
+        .getLogger()
+        .println( //
+            "Accurev Client Version: " + ACCUREV_VERSION);
+    int version = Integer.parseInt(ACCUREV_VERSION.substring(0, ACCUREV_VERSION.indexOf(".")));
+    if (version < 7) {
+      listener
+          .getLogger()
+          .println( //
+              "Upgrade AccuRev Client for improved performance");
+    }
     // There may be changes in a parent stream that we need to factor in.
     do {
       if (CheckForChanges.checkStreamForChanges(
@@ -116,7 +128,7 @@ public class StreamDelegate extends AbstractModeDelegate {
           buildDate,
           logger,
           scm,
-          ACCUREV_VERSION)) {
+          version)) {
         return PollingResult.BUILD_NOW;
       }
       stream = stream.getParent();

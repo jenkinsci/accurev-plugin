@@ -386,6 +386,7 @@ public final class AccurevLauncher {
   public static <TResult, TContext> TResult runJustAccurev(
       @NonNull final String humanReadableCommandName, //
       String accurevTool,
+      @NonNull final EnvVars accurevEnv,
       @NonNull final Launcher launcher, //
       @NonNull final ArgumentListBuilder machineReadableCommand, //
       @NonNull final FilePath directoryToRunCommandFrom, //
@@ -397,7 +398,17 @@ public final class AccurevLauncher {
         final ByteArrayStream stderr = new ByteArrayStream()) {
       final OutputStream stdoutStream = stdout.getOutput();
       final OutputStream stderrStream = stderr.getOutput();
-      ProcStarter starter = launcher.launch().quiet(true).cmds(machineReadableCommand);
+      String accurevPath =
+          getAccurevExe(
+              accurevTool,
+              workspaceToNode(directoryToRunCommandFrom),
+              accurevEnv,
+              listenerToLogFailuresTo,
+              machineReadableCommand.toCommandArray()[0]);
+      if (StringUtils.isBlank(accurevPath)) {
+        accurevPath = "accurev";
+      }
+      ProcStarter starter = launcher.launch().quiet(true).cmdAsSingleString(accurevPath);
       starter = starter.stdout(stdoutStream).stderr(stderrStream);
       final int commandExitCode = starter.join();
       final InputStream outputFromCommand = stdout.getInput();
