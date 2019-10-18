@@ -33,7 +33,7 @@ public class CheckForChanges {
    * @param buildDate build Date
    * @param logger logger
    * @param scm Accurev SCm
-   * @param ACCUREV_VERSION
+   * @param version
    * @return if there are any new transactions in the stream since the last build was done
    */
   // stream param is of type AccurevStream
@@ -47,7 +47,7 @@ public class CheckForChanges {
       Date buildDate,
       Logger logger,
       AccurevSCM scm,
-      String ACCUREV_VERSION) {
+      int version) {
     String filterForPollSCM = scm.getFilterForPollSCM();
     String subPath = scm.getSubPath();
     ParseChangeLog.setSubpath(subPath);
@@ -72,10 +72,8 @@ public class CheckForChanges {
     Set<String> pollingFilters = getListOfPollingFilters(filterForPollSCM, subPath);
 
     // AR version 7+ supports combined transaction type hist call.
-    int version = Integer.parseInt(ACCUREV_VERSION.substring(0, ACCUREV_VERSION.indexOf(".")));
     if (version < 7) {
       AccurevTransaction latestCodeChangeTransaction = new AccurevTransaction();
-
       latestCodeChangeTransaction.setDate(AccurevSCM.NO_TRANS_DATE);
 
       // query AccuRev for the latest transactions of each kind defined in transactionTypes using
