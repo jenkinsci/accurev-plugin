@@ -10,6 +10,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.accurev.AccuRevHiddenParametersAction;
 import hudson.plugins.accurev.AccurevElement;
+import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevTransaction;
@@ -17,15 +18,16 @@ import hudson.plugins.accurev.GetConfigWebURL;
 import hudson.plugins.accurev.XmlConsolidateStreamChangeLog;
 import hudson.plugins.accurev.cmd.ChangeLogCmd;
 import hudson.plugins.accurev.cmd.FilesCmd;
-import hudson.plugins.accurev.cmd.GetAccuRevVersion;
 import hudson.plugins.accurev.cmd.History;
 import hudson.plugins.accurev.cmd.Login;
 import hudson.plugins.accurev.cmd.PopulateCmd;
 import hudson.plugins.accurev.cmd.SetProperty;
 import hudson.plugins.accurev.cmd.ShowStreams;
 import hudson.plugins.accurev.cmd.Synctime;
+import hudson.plugins.accurev.parsers.output.ParseAccuRevVersion;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
+import hudson.util.ArgumentListBuilder;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -413,6 +415,20 @@ public abstract class AbstractModeDelegate {
 
   private void setStreamColor() throws IOException {
     if (isSteamColorEnabled()) {
+      final ArgumentListBuilder cmd = new ArgumentListBuilder();
+      String ACCUREV_VERSION =
+          AccurevLauncher.runCommand(
+              "Accurev version",
+              scm.getAccurevTool(),
+              launcher,
+              cmd,
+              null,
+              accurevEnv,
+              jenkinsWorkspace,
+              listener,
+              logger,
+              new ParseAccuRevVersion(),
+              null);
       SetProperty.setproperty(
           scm,
           accurevWorkingSpace,
@@ -422,7 +438,7 @@ public abstract class AbstractModeDelegate {
           server,
           getStreamColorStream(),
           getStreamColor(),
-          getStreamTypeParameter());
+          getStreamTypeParameter(ACCUREV_VERSION));
     }
   }
 
@@ -546,12 +562,10 @@ public abstract class AbstractModeDelegate {
    * color parameter will be style if version greater than 6 like 6.1.x or 7 then color parameter
    * will streamStyle
    *
+   * @param version
    * @return String
    */
-  private String getStreamTypeParameter() {
-    String fullVersion = GetAccuRevVersion.getAccuRevVersion().trim();
-    String partialversion = fullVersion.substring(fullVersion.indexOf(" ") + 1);
-    String version = partialversion.substring(0, partialversion.indexOf(" "));
+  private String getStreamTypeParameter(String version) {
     String[] versionSplits = version.split("\\.");
     String type =
         ((Integer.parseInt(versionSplits[0]) < 6)
@@ -559,7 +573,7 @@ public abstract class AbstractModeDelegate {
                     && Integer.parseInt(versionSplits[1]) < 1))
             ? "style"
             : "streamStyle";
-    logger.info("Current AccuRev version " + fullVersion + " color type parameter " + type);
+    logger.info("Current AccuRev version " + version + " color type parameter " + type);
     return type;
   }
 

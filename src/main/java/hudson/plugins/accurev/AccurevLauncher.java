@@ -383,60 +383,6 @@ public final class AccurevLauncher {
     }
   }
 
-  public static <TResult, TContext> TResult runJustAccurev(
-      @NonNull final String humanReadableCommandName, //
-      String accurevTool,
-      @NonNull final EnvVars accurevEnv,
-      @NonNull final Launcher launcher, //
-      @NonNull final ArgumentListBuilder machineReadableCommand, //
-      @NonNull final FilePath directoryToRunCommandFrom, //
-      @NonNull final TaskListener listenerToLogFailuresTo, //
-      @NonNull final Logger loggerToLogFailuresTo, //
-      @NonNull final ICmdOutputParser<TResult, TContext> commandOutputParser)
-      throws IOException {
-    try (final ByteArrayStream stdout = new ByteArrayStream();
-        final ByteArrayStream stderr = new ByteArrayStream()) {
-      final OutputStream stdoutStream = stdout.getOutput();
-      final OutputStream stderrStream = stderr.getOutput();
-      String accurevPath =
-          getAccurevExe(
-              accurevTool,
-              workspaceToNode(directoryToRunCommandFrom),
-              accurevEnv,
-              listenerToLogFailuresTo,
-              machineReadableCommand.toCommandArray()[0]);
-      if (StringUtils.isBlank(accurevPath)) {
-        accurevPath = "accurev";
-      }
-      ProcStarter starter = launcher.launch().quiet(true).cmdAsSingleString(accurevPath);
-      starter = starter.stdout(stdoutStream).stderr(stderrStream);
-      final int commandExitCode = starter.join();
-      final InputStream outputFromCommand = stdout.getInput();
-      final InputStream errorFromCommand = stderr.getInput();
-      if (commandExitCode != 0) {
-        logCommandFailure(
-            machineReadableCommand,
-            directoryToRunCommandFrom,
-            humanReadableCommandName,
-            commandExitCode,
-            outputFromCommand,
-            errorFromCommand,
-            loggerToLogFailuresTo,
-            listenerToLogFailuresTo);
-      }
-      return commandOutputParser.parse(outputFromCommand, null);
-    } catch (InterruptedException | IOException | UnhandledAccurevCommandOutput ex) {
-      logCommandException(
-          machineReadableCommand,
-          directoryToRunCommandFrom,
-          humanReadableCommandName,
-          ex,
-          loggerToLogFailuresTo,
-          listenerToLogFailuresTo);
-      return null;
-    }
-  }
-
   public static AccurevTool resolveAccurevTool(
       String accurevToolValue, TaskListener listener, String command) {
     AccurevTool accurevTool =
@@ -521,11 +467,14 @@ public final class AccurevLauncher {
             workspaceToNode(directoryToRunCommandFrom),
             environmentVariables,
             listener,
-            machineReadableCommand.toCommandArray()[0]);
+            machineReadableCommand.toCommandArray().length == 0
+                ? ""
+                : machineReadableCommand.toCommandArray()[0]);
     if (StringUtils.isBlank(accurevPath)) {
       accurevPath = "accurev";
     }
-    if (!accurevPath.equals(machineReadableCommand.toCommandArray()[0])) {
+    if (machineReadableCommand.toCommandArray().length == 0
+        || !accurevPath.equals(machineReadableCommand.toCommandArray()[0])) {
       machineReadableCommand.prepend(accurevPath);
     }
     if (!justAccurev(launcher, accurevPath)) {
