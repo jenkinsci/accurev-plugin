@@ -147,8 +147,8 @@ public class CheckForChanges {
                 listener,
                 launcher,
                 stream.getName(),
-                dateRange,
-                transactionTypes);
+                transactionTypes,
+                dateRange);
         if (null != tempTransaction && !tempTransaction.isEmpty()) {
           for (AccurevTransaction t : tempTransaction) {
             if (t.getAffectedPaths().isEmpty()
