@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.43</version>
+    <version>3.50</version>
     <relativePath />
   </parent>
 
@@ -13,13 +13,12 @@
   <version>${revision}${changelist}</version>
   <name>Jenkins AccuRev plugin</name>
   <description>This plugin allows you to use AccuRev as a SCM.</description>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/AccuRev+Plugin</url>
+  <url>https://github.com/jenkinsci/accurev-plugin</url>
   <properties>
-    <revision>0.7.21</revision>
+    <revision>0.7.22</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.138.3</jenkins.version>
+    <jenkins.version>2.138.4</jenkins.version>
     <java.level>8</java.level>
-    <spotbugs-maven-plugin.version>3.1.9</spotbugs-maven-plugin.version>
   </properties>
 
   <developers>
@@ -33,7 +32,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.1.12</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -43,16 +41,32 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>2.8.9</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
-      <version>1.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins</groupId>
+      <artifactId>configuration-as-code</artifactId>
+      <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.jenkins.tools.bom</groupId>
+        <artifactId>bom-2.138.x</artifactId>
+        <version>3</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/accurev-plugin.git</connection>
@@ -63,10 +77,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-      </plugin>
       <plugin>
         <groupId>com.coveo</groupId>
         <artifactId>fmt-maven-plugin</artifactId>
@@ -81,85 +91,6 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-      <profile>
-      <id>spotbugs-on-java8+</id>
-      <activation>
-        <jdk>[1.8,)</jdk>
-      </activation>
-      <dependencyManagement>
-        <dependencies>
-          <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-            <version>3.1.9</version>
-            <exclusions>
-              <exclusion>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-        </dependencies>
-      </dependencyManagement>
-
-      <dependencies>
-        <dependency>
-          <groupId>com.github.spotbugs</groupId>
-          <artifactId>spotbugs-annotations</artifactId>
-          <scope>provided</scope>
-          <optional>true</optional>
-            <exclusions>
-              <exclusion>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-              </exclusion>
-            </exclusions>
-        </dependency>
-      </dependencies>
-
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>findbugs-maven-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>findbugs</id>
-                    <phase>none</phase>
-                </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-maven-plugin</artifactId>
-            <version>${spotbugs-maven-plugin.version}</version>
-            <configuration>
-              <failOnError>${findbugs.failOnError}</failOnError>
-            </configuration>
-            <executions>
-              <execution>
-                <id>spotbugs</id>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <!--  Do not define excludeFilterFile here as it will force a plugin to provide a file -->
-                  <!--  Instead we configure this in a profile -->
-                  <xmlOutput>true</xmlOutput>
-                  <spotbugsXmlOutput>false</spotbugsXmlOutput>
-                  <effort>${findbugs.effort}</effort>
-                  <threshold>${findbugs.threshold}</threshold>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
   <licenses>
     <license>
