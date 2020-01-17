@@ -67,6 +67,10 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
             }
             resultTransaction.addAffectedPath(path);
             break;
+          } else if ("move".equals(parser.getName())
+              || "wspace".equals(parser.getName())
+              || "stream".equals(parser.getName())) {
+            parser.nextTag();
           } else {
             break;
           }
