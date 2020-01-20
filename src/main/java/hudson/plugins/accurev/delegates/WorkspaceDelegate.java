@@ -6,7 +6,6 @@ import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
 import hudson.plugins.accurev.AccurevStream;
 import hudson.plugins.accurev.AccurevWorkspace;
-import hudson.plugins.accurev.ParseChangeLog;
 import hudson.plugins.accurev.RemoteWorkspaceDetails;
 import hudson.plugins.accurev.XmlParserFactory;
 import hudson.plugins.accurev.cmd.Command;
@@ -42,8 +41,6 @@ public class WorkspaceDelegate extends ReftreeDelegate {
   protected PollingResult checkForChanges(Job<?, ?> project)
       throws IOException, InterruptedException, IllegalArgumentException {
     localStream = scm.getPollingStream(project, listener);
-    logger.fine("setting subpath from workspace delegate:" + scm.getSubPath());
-    ParseChangeLog.setSubpath(scm.getSubPath());
     return super.checkForChanges(project);
   }
 

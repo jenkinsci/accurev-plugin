@@ -3,7 +3,9 @@ package hudson.plugins.accurev;
 import static jenkins.plugins.accurev.util.AccurevUtils.convertAccurevTimestamp;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.EnvVars;
 import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.accurev.parsers.output.ParseOutputToFile;
 import hudson.plugins.accurev.parsers.xml.ParseUpdate;
 import hudson.scm.ChangeLogParser;
@@ -15,10 +17,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import jenkins.plugins.accurev.util.AccurevUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOCase;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
@@ -29,15 +34,7 @@ public class ParseChangeLog extends ChangeLogParser {
 
   private static final Logger logger = Logger.getLogger(AccurevSCM.class.getName());
 
-  private static String subpath = "";
-
-  public static String getSubpath() {
-    return subpath;
-  }
-
-  public static void setSubpath(String subpath) {
-    ParseChangeLog.subpath = subpath;
-  }
+  private String subpath = "";
 
   /**
    * {@inheritDoc}
@@ -52,6 +49,13 @@ public class ParseChangeLog extends ChangeLogParser {
   public ChangeLogSet<AccurevTransaction> parse(
       Run build, RepositoryBrowser<?> browser, File changelogFile)
       throws IOException, SAXException {
+    try {
+      final EnvVars environment = build.getEnvironment(TaskListener.NULL);
+      subpath = environment.get("ACCUREV_SUBPATH");
+      logger.fine("ACCUREV_SUBPATH :" + subpath);
+    } catch (InterruptedException e) {
+      logger.fine(e.getMessage());
+    }
     UpdateLog updateLog = new UpdateLog();
     List<AccurevTransaction> transactions = parse(changelogFile, updateLog);
     transactions = filterTransactions(transactions, updateLog);
@@ -115,45 +119,38 @@ public class ParseChangeLog extends ChangeLogParser {
   public List<AccurevTransaction> filterBySubpath(List<AccurevTransaction> transactions) {
 
     List<AccurevTransaction> trans = new ArrayList<>();
-    logger.fine("using subpath:" + getSubpath());
+    logger.fine("using subpath:" + subpath);
     List<String> subpaths = new ArrayList<String>();
 
-    final StringTokenizer st = new StringTokenizer(getSubpath(), ",");
+    final StringTokenizer st = new StringTokenizer(subpath, ",");
     while (st.hasMoreElements()) {
       String path = st.nextToken().trim();
-      path = path.replace("*", "");
       logger.fine("path:" + path);
       subpaths.add(path);
     }
     logger.fine("subpaths size:" + subpaths.size());
 
     for (AccurevTransaction transaction : transactions) {
-
       boolean isValid = false;
-      for (String rawPath : transaction.getAffectedRawPaths()) {
-
-        if (isValid) {
-          logger.fine("transaction is valid :" + transaction.getId());
-          logger.fine("no need check files in this transaction");
-          break;
-        }
-        logger.fine("rawPath:" + rawPath);
+      for (Iterator<String> itr = transaction.getAffectedPaths().iterator(); itr.hasNext(); ) {
+        String path = itr.next();
+        logger.fine("rawPath:" + path);
+        String rawPath = path.substring(0, path.indexOf(' '));
         for (String subpath : subpaths) {
-          logger.fine("rawPath.contains(subpath):" + rawPath.contains(subpath));
-          if (rawPath.contains(subpath)) {
+          if (FilenameUtils.wildcardMatch(rawPath, subpath, IOCase.INSENSITIVE)) {
             isValid = true;
             break;
           } else {
             isValid = false;
           }
         }
+        if (!isValid) {
+          // if affected path dont match any of subpath filters, remove it from transaction.
+          itr.remove();
+        }
       }
-
-      if (!isValid) {
-        // transactions.remove(transaction);
-        logger.fine("not adding  transaction to list:" + transaction.getId());
-      } else {
-        logger.fine("adding  transaction to list:" + transaction.getId());
+      if (!transaction.getAffectedPaths().isEmpty()) {
+        logger.fine("Transaction added:" + transaction.getId());
         trans.add(transaction);
       }
     }
