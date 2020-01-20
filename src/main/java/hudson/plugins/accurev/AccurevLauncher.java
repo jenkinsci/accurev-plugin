@@ -484,6 +484,17 @@ public final class AccurevLauncher {
     ProcStarter starter = launcher.launch().cmds(machineReadableCommand);
     Node n = workspaceToNode(directoryToRunCommandFrom);
     environmentVariables.putAll(buildEnvironment(n, listener));
+    String path = null;
+    FilePath filePath = null;
+    if (null != n) {
+      filePath = n.getRootPath();
+    }
+    if (null != filePath) {
+      path = filePath.getRemote();
+    }
+    if (StringUtils.isNotBlank(path)) {
+      environmentVariables.putIfAbsent("ACCUREV_HOME", path);
+    }
     starter = starter.envs(environmentVariables);
     starter = starter.stdout(stdoutStream).stderr(stderrStream);
     starter = starter.pwd(directoryToRunCommandFrom);

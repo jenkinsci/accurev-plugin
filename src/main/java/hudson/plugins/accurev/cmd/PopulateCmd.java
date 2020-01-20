@@ -85,9 +85,7 @@ public class PopulateCmd extends Command {
     } else {
       final StringTokenizer st = new StringTokenizer(scm.getSubPath(), ",");
       while (st.hasMoreElements()) {
-        String path = st.nextToken().trim();
-        path = path.replace("*", "");
-        cmd.add(path);
+        cmd.add(st.nextToken().trim());
       }
     }
     _startDateOfPopulate = new Date();

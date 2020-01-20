@@ -4,6 +4,7 @@ import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.plugins.accurev.AccurevLauncher;
 import hudson.plugins.accurev.AccurevSCM;
+import hudson.plugins.accurev.ParseChangeLog;
 import hudson.plugins.accurev.cmd.Command;
 import hudson.util.ArgumentListBuilder;
 import java.io.File;
@@ -24,6 +25,8 @@ public class SnapshotDelegate extends StreamDelegate {
 
   private String calculateSnapshotName(final Run<?, ?> build)
       throws IOException, InterruptedException {
+    logger.fine("setting subpath from snapshot delegate:" + scm.getSubPath());
+    ParseChangeLog.setSubpath(scm.getSubPath());
     String snapshotNameFormat = scm.getSnapshotNameFormat();
     final String actualFormat =
         StringUtils.isBlank(snapshotNameFormat)

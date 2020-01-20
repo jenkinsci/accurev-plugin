@@ -49,7 +49,7 @@
                   :
                 </b>
                 <br/>
-                ${cs.msg}
+                ${cs.msgAnnotated}
               </div>
             </td>
             <j:forEach var="p" items="${cs.affectedPaths}">
