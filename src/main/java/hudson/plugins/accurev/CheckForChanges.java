@@ -50,7 +50,6 @@ public class CheckForChanges {
       int version) {
     String filterForPollSCM = scm.getFilterForPollSCM();
     String subPath = scm.getSubPath();
-    ParseChangeLog.setSubpath(subPath);
     List<String> validTransactionTypes;
     if (stream.getType().name().equalsIgnoreCase("workspace")) {
       validTransactionTypes = AccurevSCM.DEFAULT_VALID_WORKSPACE_TRANSACTION_TYPES;
