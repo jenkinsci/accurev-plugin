@@ -1,24 +1,35 @@
 # Jenkins AccuRev Plugin
+
 [![Build Status](https://ci.jenkins.io/job/Plugins/job/accurev-plugin/job/master/badge/icon)](https://ci.jenkins.io/job/Plugins/job/accurev-plugin/job/master/)
+[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/accurev.svg)](https://plugins.jenkins.io/accurev)
+[![GitHub release](https://img.shields.io/github/release/jenkinsci/accurev-plugin.svg?label=changelog)](https://github.com/jenkinsci/accurev-plugin/releases/latest)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/accurev.svg?color=blue)](https://plugins.jenkins.io/accurev)
 
-Read more: [https://plugins.jenkins.io/accurev](https://plugins.jenkins.io/accurev)
+This plugin allows you to use [AccuRev](https://www.microfocus.com/en-us/products/accurev/overview) as a SCM.
 
-# Bug Reports
+## Adopt this plugin
+
+This plugin is up for adoption, it needs an activate maintainer who actively uses AccuRev.
+
+## Bug Reports
 
 File bug reports [here](http://issues.jenkins-ci.org/secure/IssueNavigator.jspa?mode=hide&reset=true&jqlQuery=project+%3D+JENKINS+AND+status+in+%28Open%2C+%22In+Progress%22%2C+Reopened%29+AND+component+%3D+%27accurev-plugin%27)
 
-# Development
+## Development
 
 Start the local Jenkins instance:
 
-    mvn hpi:run
+```bash
+mvn hpi:run
+```
 
-
-## How to install
+### How to install
 
 Run
 
-	mvn clean package
+```bash
+mvn clean package
+```
 
 to create the plugin .hpi file.
 
@@ -29,33 +40,8 @@ To install:
 
 2. or use the plugin management console (http://example.com:8080/pluginManager/advanced) to upload the hpi file. You have to restart Jenkins in order to find the pluing in the installed plugins list.
 
+## Plugin releases
 
-# Plugin releases
-
-
-	mvn release:prepare release:perform -B
-
-
-## License
-
-MIT License
-
-  Copyright (c) 2017 Jenkins
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
+```bash
+mvn release:prepare release:perform -B
+```
