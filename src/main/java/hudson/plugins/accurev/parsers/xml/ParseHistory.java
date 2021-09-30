@@ -42,44 +42,35 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
     return resultTransaction != null;
   }
 
-  public Boolean parseAll(XmlPullParser parser, List<AccurevTransaction> context)
-      throws IOException, XmlPullParserException {
-    int eventType = parser.getEventType();
-    while (eventType != XmlPullParser.END_DOCUMENT) {
-      // check for the parent tag
-      if (eventType == XmlPullParser.START_TAG && "transaction".equals(parser.getName())) {
-        AccurevTransaction resultTransaction = new AccurevTransaction();
-        resultTransaction.setId((parser.getAttributeValue("", "id")));
-        resultTransaction.setAction(parser.getAttributeValue("", "type"));
-        resultTransaction.setDate(convertAccurevTimestamp(parser.getAttributeValue("", "time")));
-        resultTransaction.setUser(parser.getAttributeValue("", "user"));
-        eventType = parser.nextTag();
-
-        // loop the parent tag elements until we reach the end of the parent tag
-        while (eventType == XmlPullParser.START_TAG) {
-          // check the children tags
-          if ("comment".equals(parser.getName())) {
-            resultTransaction.setMsg(parser.nextText());
-          } else if ("version".equals(parser.getName())) {
-            String path = parser.getAttributeValue("", "path");
-            if (path != null) {
-              path = AccurevUtils.cleanAccurevPath(path);
-            }
-            resultTransaction.addAffectedPath(path);
-            break;
-          } else if ("move".equals(parser.getName())
-              || "wspace".equals(parser.getName())
-              || "stream".equals(parser.getName())) {
-            parser.nextTag();
-          } else {
-            break;
-          }
-          parser.nextTag();
+  public Boolean parseAll(XmlPullParser parser, List<AccurevTransaction> context) throws IOException, XmlPullParserException {
+    AccurevTransaction resultTransaction = null;
+    while (parser.next() != XmlPullParser.END_DOCUMENT) {
+      if (parser.getEventType() == XmlPullParser.START_TAG) {
+        if ("transaction".equalsIgnoreCase(parser.getName())) {
+          resultTransaction = new AccurevTransaction();
+          // parse transaction-values
+          resultTransaction.setId(parser.getAttributeValue("", "id"));
+          resultTransaction.setAction(parser.getAttributeValue("", "type"));
+          resultTransaction.setDate(AccurevUtils.convertAccurevTimestamp(parser.getAttributeValue("", "time")));
+          resultTransaction.setUser(parser.getAttributeValue("", "user"));
+        } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
+          // parse comments
+          resultTransaction.setMsg(parser.nextText());
+        } else if ("version".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
+          // parse path & convert it to standard format
+          String path = parser.getAttributeValue("", "path");
+          if (path != null)
+            path = AccurevUtils.cleanAccurevPath(path);
+          resultTransaction.addAffectedPath(path);
         }
-        context.add(resultTransaction);
+      } else if (parser.getEventType() == XmlPullParser.END_TAG) {
+        if ("transaction".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
+          // a transaction parsed
+          context.add(resultTransaction);
+          resultTransaction = null;
+        }
       }
-      eventType = parser.next();
     }
-    return context != null;
+    return Boolean.valueOf((context != null));
   }
 }
