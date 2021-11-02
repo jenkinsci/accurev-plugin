@@ -27,6 +27,7 @@ public class ShowDepots extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("show");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("depots");
 

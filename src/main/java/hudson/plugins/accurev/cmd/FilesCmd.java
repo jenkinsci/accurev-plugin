@@ -33,6 +33,7 @@ public class FilesCmd extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("files");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-s", scm.getStream());
     cmd.add("-l", file.getRemote());

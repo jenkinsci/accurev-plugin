@@ -56,7 +56,7 @@ public class PopulateCmd extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("pop");
     addServer(cmd, server);
-
+    AccurevLauncher.setAuthtokenOption(cmd);
     if (streamName != null) {
       cmd.add("-v");
       cmd.add(streamName);

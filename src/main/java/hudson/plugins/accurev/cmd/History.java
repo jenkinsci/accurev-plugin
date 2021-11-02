@@ -49,6 +49,7 @@ public class History extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("hist");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-p");
     cmd.add(scm.getDepot());
@@ -120,6 +121,7 @@ public class History extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("hist");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-p");
     cmd.add(scm.getDepot());
@@ -184,6 +186,7 @@ public class History extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("hist");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-p");
     cmd.add(scm.getDepot());
