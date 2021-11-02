@@ -16,8 +16,10 @@ import hudson.plugins.accurev.parsers.output.ParseIgnoreOutput;
 import hudson.plugins.accurev.parsers.output.ParseLastFewLines;
 import hudson.plugins.accurev.parsers.output.ParseOutputToStream;
 import hudson.util.ArgumentListBuilder;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -38,6 +40,12 @@ import org.xmlpull.v1.XmlPullParserFactory;
 public final class AccurevLauncher {
 
   private static final Logger LOGGER = Logger.getLogger(AccurevLauncher.class.getName());
+  private static String authToken = "";
+
+  public static void setAuthtokenOption(ArgumentListBuilder cmd) {
+    cmd.add("-A");
+    cmd.add(authToken);
+  }
 
   /**
    * Runs a command and returns <code>true</code> if it passed, <code>false</code> if it failed, and
@@ -348,6 +356,19 @@ public final class AccurevLauncher {
             runCommandToCompletion(starter, synchronizationLockObjectOrNull);
         final InputStream outputFromCommand = stdout.getInput();
         final InputStream errorFromCommand = stderr.getInput();
+        //      extracting authtoken from login command output.
+        if (humanReadableCommandName.equalsIgnoreCase("login")) {
+          BufferedReader reader = new BufferedReader(new InputStreamReader(outputFromCommand));
+          String authtokenLine;
+          while (true) {
+            authtokenLine = reader.readLine();
+            if (authtokenLine == null) {
+              break;
+            }
+            authToken = authtokenLine;
+          }
+          reader.close();
+        }
         if (commandExitCode != 0) {
           logCommandFailure(
               machineReadableCommand,
