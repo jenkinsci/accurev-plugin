@@ -59,6 +59,7 @@ public class ChangeLogCmd {
     ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("hist");
     Command.addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-a");
     cmd.add("-s");
@@ -125,6 +126,7 @@ public class ChangeLogCmd {
     final ArgumentListBuilder getConfigCmd = new ArgumentListBuilder();
     getConfigCmd.add("getconfig");
     Command.addServer(getConfigCmd, server);
+    AccurevLauncher.setAuthtokenOption(getConfigCmd);
     getConfigCmd.add("-s");
     getConfigCmd.add("-r");
     getConfigCmd.add("settings.xml");
