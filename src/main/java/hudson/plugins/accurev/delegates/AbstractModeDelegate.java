@@ -208,7 +208,7 @@ public abstract class AbstractModeDelegate {
       isSuccess = false;
     }
 
-    if (isSuccess && !captureChangeLog(build, changelogFile, streams)) {
+    if (isSuccess && changelogFile != null && !captureChangeLog(build, changelogFile, streams)) {
       errorMessage += " CaptureChangeLog";
       isSuccess = false;
     }
