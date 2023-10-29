@@ -47,13 +47,12 @@ public class AccurevTool extends ToolInstallation
   }
 
   private static AccurevTool[] getInstallations(DescriptorImpl descriptor) {
-    AccurevTool[] installations;
-    try {
-      installations = descriptor.getInstallations();
-    } catch (NullPointerException e) {
-      installations = new AccurevTool[0];
+
+    if (descriptor == null) {
+      return new AccurevTool[0];
+    } else {
+      return descriptor.getInstallations();
     }
-    return installations;
   }
 
   /**
