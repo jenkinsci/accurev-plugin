@@ -8,6 +8,7 @@ public class RemoteWorkspaceDetails implements Serializable {
   private final String hostName;
   private final String path;
   private final String fileSeparator;
+  private static final long serialVersionUID = 1L;
 
   public RemoteWorkspaceDetails(String hostName, String path) {
     this.hostName = hostName;

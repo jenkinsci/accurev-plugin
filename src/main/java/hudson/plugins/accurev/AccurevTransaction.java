@@ -1,5 +1,6 @@
 package hudson.plugins.accurev;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.User;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
@@ -92,6 +93,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
   }
 
   @Exported
+  @SuppressFBWarnings(
+      value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+      justification = "We hope that AccurevTransaction.author is not null here...  Need to fix.")
   public String getUser() { // digester wants read/write property, even though it never reads. Duh.
     return author.getDisplayName();
   }
@@ -101,6 +105,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
   }
 
   @Exported
+  @SuppressFBWarnings(
+      value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+      justification = "We hope that AccurevTransaction.date is not null here...  Need to fix.")
   public Date getDate() {
     return (Date) date.clone();
   }
@@ -123,6 +130,9 @@ public final class AccurevTransaction extends ChangeLogSet.Entry {
   }
 
   @Exported
+  @SuppressFBWarnings(
+      value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+      justification = "We hope that AccurevTransaction.action is not null here...  Need to fix.")
   public EditType getEditType() {
     if (action.equals("promote")) {
       return EditType.EDIT;

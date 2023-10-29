@@ -33,7 +33,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
   }
 
   @Override
-  public String getRefTree() {
+  public String getSCMRefTree() {
     return null;
   }
 

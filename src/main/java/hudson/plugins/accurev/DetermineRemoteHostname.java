@@ -11,6 +11,7 @@ public class DetermineRemoteHostname
     implements Callable<RemoteWorkspaceDetails, UnknownHostException> {
 
   private final String path;
+  private static final long serialVersionUID = 1L;
 
   public DetermineRemoteHostname(String path) {
     this.path = path;

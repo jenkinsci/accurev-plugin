@@ -46,7 +46,7 @@ public final class AccurevChangeLogSet extends ChangeLogSet<AccurevTransaction> 
 
   public java.lang.Object[] toArray() {
     if (transactions == null) {
-      return null;
+      return new java.lang.Object[0];
     }
 
     return transactions.toArray();

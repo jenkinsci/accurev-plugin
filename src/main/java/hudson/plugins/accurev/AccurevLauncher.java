@@ -343,35 +343,24 @@ public final class AccurevLauncher {
           directoryToRunCommandFrom,
           loggerToLogFailuresTo,
           listenerToLogFailuresTo);
-      try {
-        final int commandExitCode =
-            runCommandToCompletion(starter, synchronizationLockObjectOrNull);
-        final InputStream outputFromCommand = stdout.getInput();
-        final InputStream errorFromCommand = stderr.getInput();
-        if (commandExitCode != 0) {
-          logCommandFailure(
-              machineReadableCommand,
-              directoryToRunCommandFrom,
-              humanReadableCommandName,
-              commandExitCode,
-              outputFromCommand,
-              errorFromCommand,
-              loggerToLogFailuresTo,
-              listenerToLogFailuresTo);
-          return null;
-        }
-        return commandOutputParser.parse(outputFromCommand, commandOutputParserContext);
-      } catch (Exception ex) {
-        logCommandException(
+
+      final int commandExitCode = runCommandToCompletion(starter, synchronizationLockObjectOrNull);
+      final InputStream outputFromCommand = stdout.getInput();
+      final InputStream errorFromCommand = stderr.getInput();
+      if (commandExitCode != 0) {
+        logCommandFailure(
             machineReadableCommand,
             directoryToRunCommandFrom,
             humanReadableCommandName,
-            ex,
+            commandExitCode,
+            outputFromCommand,
+            errorFromCommand,
             loggerToLogFailuresTo,
             listenerToLogFailuresTo);
         return null;
       }
-    } catch (InterruptedException | IOException ex) {
+      return commandOutputParser.parse(outputFromCommand, commandOutputParserContext);
+    } catch (InterruptedException | IOException | UnhandledAccurevCommandOutput ex) {
       logCommandException(
           machineReadableCommand,
           directoryToRunCommandFrom,
