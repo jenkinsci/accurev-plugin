@@ -566,7 +566,7 @@ public class AccurevSCM extends SCM {
 
   @Extension
   @Symbol("accurev")
-  public static class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM>
+  public static final class AccurevSCMDescriptor extends SCMDescriptor<AccurevSCM>
       implements ModelObject {
 
     private static final Logger DESCRIPTORLOGGER =
@@ -1014,7 +1014,7 @@ public class AccurevSCM extends SCM {
 
     @Extension
     @Symbol("accurevServer")
-    public static class DescriptorImpl extends Descriptor<AccurevServer> {
+    public static final class DescriptorImpl extends Descriptor<AccurevServer> {
 
       public DescriptorImpl() {
         load();

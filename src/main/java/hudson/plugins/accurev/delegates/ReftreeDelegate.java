@@ -35,7 +35,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     super(scm);
   }
 
-  public String getRefTree() {
+  public String getSCMRefTree() {
     return scm.getReftree();
   }
 
@@ -49,7 +49,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         return PollingResult.BUILD_NOW;
       } else {
         if (Update.hasChanges(
-            scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, getRefTree())) {
+            scm, server, accurevEnv, accurevWorkingSpace, listener, launcher, getSCMRefTree())) {
           return PollingResult.BUILD_NOW;
         } else {
           return PollingResult.NO_CHANGES;
@@ -164,7 +164,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
         accurevWorkingSpace,
         listener,
         launcher,
-        getRefTree(),
+        getSCMRefTree(),
         updateLogFile);
   }
 
@@ -209,12 +209,12 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     chrefcmd.add("chref");
     Command.addServer(chrefcmd, server);
     chrefcmd.add("-r");
-    chrefcmd.add(getRefTree());
+    chrefcmd.add(getSCMRefTree());
     return chrefcmd;
   }
 
   protected boolean validateCheckout(Run<?, ?> build) {
-    String reftree = getRefTree();
+    String reftree = getSCMRefTree();
     if (StringUtils.isEmpty(reftree)) {
       listener.fatalError("Must specify a reference tree");
       return false;

@@ -30,7 +30,7 @@ import org.kohsuke.stapler.StaplerRequest;
 public class AccurevTool extends ToolInstallation
     implements NodeSpecific<AccurevTool>, EnvironmentSpecific<AccurevTool> {
 
-  public static final transient String DEFAULT = "Default";
+  private static final String DEFAULT = "Default";
   private static final long serialVersionUID = 1;
   private static final Logger LOGGER = Logger.getLogger(AccurevTool.class.getName());
 
@@ -118,7 +118,7 @@ public class AccurevTool extends ToolInstallation
 
   @Extension
   @Symbol("accurevTool")
-  public static class DescriptorImpl extends ToolDescriptor<AccurevTool> {
+  public static final class DescriptorImpl extends ToolDescriptor<AccurevTool> {
 
     public DescriptorImpl() {
       super();

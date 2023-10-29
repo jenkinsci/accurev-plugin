@@ -5,6 +5,7 @@ import java.io.Serializable;
 public class GetConfigWebURL implements Serializable {
 
   private final String webURL;
+  private static final long serialVersionUID = 1L;
 
   public GetConfigWebURL(String webURL) {
     this.webURL = webURL;

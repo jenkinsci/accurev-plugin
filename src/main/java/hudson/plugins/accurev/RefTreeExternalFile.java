@@ -6,6 +6,7 @@ public class RefTreeExternalFile implements Serializable {
 
   private final String location;
   private final String status;
+  private static final long serialVersionUID = 1L;
 
   public RefTreeExternalFile(String location, String status) {
     this.location = location;

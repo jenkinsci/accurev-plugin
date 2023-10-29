@@ -16,6 +16,7 @@ public class AccurevWorkspace implements Serializable {
   private final String host;
   private final String storage;
   private AccurevStream stream = null;
+  private static final long serialVersionUID = 1L;
 
   public AccurevWorkspace(
       String depot, Long streamNumber, String name, String host, String storage) {

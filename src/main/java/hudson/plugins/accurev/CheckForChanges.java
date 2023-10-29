@@ -148,7 +148,7 @@ public class CheckForChanges {
                 stream.getName(),
                 transactionTypes,
                 dateRange);
-        if (null != tempTransaction && !tempTransaction.isEmpty()) {
+        if (!tempTransaction.isEmpty()) {
           for (AccurevTransaction t : tempTransaction) {
             if (t.getAffectedPaths().isEmpty()
                 && (t.getAction().equals("mkstream")
