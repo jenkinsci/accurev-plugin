@@ -43,6 +43,7 @@ public class SnapshotDelegate extends StreamDelegate {
     final ArgumentListBuilder mksnapcmd = new ArgumentListBuilder();
     mksnapcmd.add("mksnap");
     Command.addServer(mksnapcmd, server);
+    AccurevLauncher.setAuthtokenOption(mksnapcmd);
     mksnapcmd.add("-s");
     mksnapcmd.add(snapshotName);
     mksnapcmd.add("-b");

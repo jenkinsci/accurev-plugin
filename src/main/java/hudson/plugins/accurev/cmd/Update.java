@@ -33,6 +33,7 @@ public class Update extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("update");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     if (reftree != null) {
       cmd.add("-r");

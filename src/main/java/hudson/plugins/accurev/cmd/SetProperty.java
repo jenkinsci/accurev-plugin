@@ -33,6 +33,7 @@ public class SetProperty extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("setproperty");
     Command.addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-s");
     cmd.add(streamOrWorkspaceName);
     cmd.add("-r");

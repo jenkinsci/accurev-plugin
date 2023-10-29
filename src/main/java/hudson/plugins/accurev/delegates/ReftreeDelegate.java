@@ -115,6 +115,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("show");
     Command.addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("refs");
     XmlPullParserFactory parser = XmlParserFactory.getFactory();
@@ -208,6 +209,7 @@ public class ReftreeDelegate extends AbstractModeDelegate {
     ArgumentListBuilder chrefcmd = new ArgumentListBuilder();
     chrefcmd.add("chref");
     Command.addServer(chrefcmd, server);
+    AccurevLauncher.setAuthtokenOption(chrefcmd);
     chrefcmd.add("-r");
     chrefcmd.add(getRefTree());
     return chrefcmd;

@@ -68,6 +68,7 @@ public class ShowStreams extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("show");
     addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-p");
     cmd.add(depot);
@@ -133,6 +134,7 @@ public class ShowStreams extends Command {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("show");
     addServer(cmd, scm.getServer());
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-p");
     cmd.add(scm.getDepot());

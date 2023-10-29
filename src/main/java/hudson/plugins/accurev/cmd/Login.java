@@ -140,6 +140,7 @@ public class Login extends Command {
     } else {
       cmd.add(server.getPassword(), true);
     }
+    cmd.add("-A");
     final boolean success =
         AccurevLauncher.runCommand(
             "login", accurevTool, launcher, cmd, null, accurevEnv, workspace, listener, logger);

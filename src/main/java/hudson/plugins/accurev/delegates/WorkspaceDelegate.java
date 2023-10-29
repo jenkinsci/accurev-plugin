@@ -131,6 +131,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     final ArgumentListBuilder cmd = new ArgumentListBuilder();
     cmd.add("show");
     Command.addServer(cmd, server);
+    AccurevLauncher.setAuthtokenOption(cmd);
     cmd.add("-fx");
     cmd.add("-p");
     cmd.add(depot);
@@ -174,6 +175,7 @@ public class WorkspaceDelegate extends ReftreeDelegate {
     ArgumentListBuilder chwscmd = new ArgumentListBuilder();
     chwscmd.add("chws");
     Command.addServer(chwscmd, server);
+    AccurevLauncher.setAuthtokenOption(chwscmd);
     chwscmd.add("-w");
     chwscmd.add(scm.getWorkspace());
     return chwscmd;
