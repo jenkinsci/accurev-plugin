@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.74</version>
+    <version>4.75</version>
     <relativePath />
   </parent>
 
@@ -17,7 +17,7 @@
   <properties>
     <revision>0.7.25</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.361</jenkins.version>
+    <jenkins.version>2.387.3</jenkins.version>
     <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.threshold>Low</spotbugs.threshold>
   </properties>
@@ -61,8 +61,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.138.x</artifactId>
-        <version>3</version>
+        <artifactId>bom-weekly</artifactId>
+        <version>2543.vfb_1a_5fb_9496d</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
