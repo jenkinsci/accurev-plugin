@@ -42,7 +42,8 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
     return resultTransaction != null;
   }
 
-  public Boolean parseAll(XmlPullParser parser, List<AccurevTransaction> context) throws IOException, XmlPullParserException {
+  public Boolean parseAll(XmlPullParser parser, List<AccurevTransaction> context)
+      throws IOException, XmlPullParserException {
     AccurevTransaction resultTransaction = null;
     while (parser.next() != XmlPullParser.END_DOCUMENT) {
       if (parser.getEventType() == XmlPullParser.START_TAG) {
@@ -51,7 +52,8 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
           // parse transaction-values
           resultTransaction.setId(parser.getAttributeValue("", "id"));
           resultTransaction.setAction(parser.getAttributeValue("", "type"));
-          resultTransaction.setDate(AccurevUtils.convertAccurevTimestamp(parser.getAttributeValue("", "time")));
+          resultTransaction.setDate(
+              AccurevUtils.convertAccurevTimestamp(parser.getAttributeValue("", "time")));
           resultTransaction.setUser(parser.getAttributeValue("", "user"));
         } else if ("comment".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
           // parse comments
@@ -59,8 +61,7 @@ public final class ParseHistory implements ICmdOutputXmlParser<Boolean, List<Acc
         } else if ("version".equalsIgnoreCase(parser.getName()) && resultTransaction != null) {
           // parse path & convert it to standard format
           String path = parser.getAttributeValue("", "path");
-          if (path != null)
-            path = AccurevUtils.cleanAccurevPath(path);
+          if (path != null) path = AccurevUtils.cleanAccurevPath(path);
           resultTransaction.addAffectedPath(path);
         }
       } else if (parser.getEventType() == XmlPullParser.END_TAG) {
