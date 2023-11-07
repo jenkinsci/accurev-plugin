@@ -196,116 +196,121 @@ public class ParseChangeLog extends ChangeLogParser {
     boolean inWebuiURL = false;
     String depotName = "";
     String webuiURL = "";
-    while (true) {
-      switch (parser.next()) {
-        case XmlPullParser.START_DOCUMENT:
-          break;
-        case XmlPullParser.END_DOCUMENT:
-          return transactions;
-        case XmlPullParser.START_TAG:
-          final String tagName = parser.getName();
-          if ("transaction".equalsIgnoreCase(tagName)) {
-            currentTransaction = new AccurevTransaction();
-            transactions.add(currentTransaction);
-            currentTransaction.setId(parser.getAttributeValue("", "id"));
-            currentTransaction.setUser(parser.getAttributeValue("", "user"));
-            currentTransaction.setDate(
-                convertAccurevTimestamp(parser.getAttributeValue("", "time")));
-            currentTransaction.setAction(parser.getAttributeValue("", "type"));
-            if (webuiURL != null && !webuiURL.isEmpty()) {
-              currentTransaction.setWebuiURLforTrans(
-                  webuiURL
-                      + "/WebGui.jsp?tran_number="
-                      + parser.getAttributeValue("", "id")
-                      + "&depot="
-                      + depotName
-                      + "&view=trans_hist");
+        
+    try {    
+      while (true) {
+        switch (parser.next()) {
+          case XmlPullParser.START_DOCUMENT:
+            break;
+          case XmlPullParser.END_DOCUMENT:
+            return transactions;
+          case XmlPullParser.START_TAG:
+            final String tagName = parser.getName();
+            if ("transaction".equalsIgnoreCase(tagName)) {
+              currentTransaction = new AccurevTransaction();
+              transactions.add(currentTransaction);
+              currentTransaction.setId(parser.getAttributeValue("", "id"));
+              currentTransaction.setUser(parser.getAttributeValue("", "user"));
+              currentTransaction.setDate(
+                  convertAccurevTimestamp(parser.getAttributeValue("", "time")));
+              currentTransaction.setAction(parser.getAttributeValue("", "type"));
+              if (webuiURL != null && !webuiURL.isEmpty()) {
+                currentTransaction.setWebuiURLforTrans(
+                    webuiURL
+                        + "/WebGui.jsp?tran_number="
+                        + parser.getAttributeValue("", "id")
+                        + "&depot="
+                        + depotName
+                        + "&view=trans_hist");
+              }
+            } else if ("version".equalsIgnoreCase(tagName) && currentTransaction != null) {
+              path = parser.getAttributeValue("", "path");
+              if (path != null) {
+                path = AccurevUtils.cleanAccurevPath(path);
+                // currentTransaction.addAffectedPath(path);
+  
+              }
+              inVersion = true;
+              realVersion = parser.getAttributeValue("", "real");
+              // currentTransaction.addFileRevision("Version - "+realVersion);
+  
+            } else if ("issueNum".equalsIgnoreCase(tagName) && currentTransaction != null) {
+              inIssueNum = true;
+            } else if ("comment".equalsIgnoreCase(tagName) && currentTransaction != null) {
+              inComment = true;
+            } else if ("ChangeLog".equalsIgnoreCase(tagName)) {
+              inConsolidatedChangeLog = true;
+            } else if ("UpdateLog".equalsIgnoreCase(tagName)) {
+              inUpdateLog = true;
+            } else if ("depot".equalsIgnoreCase(tagName)) {
+              inDepot = true;
+            } else if ("webuiURL".equalsIgnoreCase(tagName)) {
+              inWebuiURL = true;
             }
-          } else if ("version".equalsIgnoreCase(tagName) && currentTransaction != null) {
-            path = parser.getAttributeValue("", "path");
-            if (path != null) {
-              path = AccurevUtils.cleanAccurevPath(path);
-              // currentTransaction.addAffectedPath(path);
-
+            break;
+          case XmlPullParser.END_TAG:
+            final String endTagName = parser.getName();
+            if ("issueNum".equalsIgnoreCase(endTagName)
+                && inVersion
+                && inIssueNum
+                && currentTransaction != null) {
+              affectedPathInfo = path + " --- " + "Version - " + realVersion;
+              currentTransaction.addAffectedPath(affectedPathInfo);
+              currentTransaction.addAffectedRawPath(path);
+              inIssueNum = false;
+              inVersion = false;
+            } else if ("version".equalsIgnoreCase(endTagName)
+                && inVersion
+                && currentTransaction != null) {
+              affectedPathInfo = path + " --- " + "Version - " + realVersion;
+              currentTransaction.addAffectedPath(affectedPathInfo);
+              currentTransaction.addAffectedRawPath(path);
+              inVersion = false;
+            } else if ("comment".equalsIgnoreCase(endTagName)) {
+              inComment = false;
+            } else if ("ChangeLog".equalsIgnoreCase(endTagName)) {
+              inConsolidatedChangeLog = false;
+            } else if ("UpdateLog".equalsIgnoreCase(endTagName)) {
+              inUpdateLog = false;
+            } else if ("depot".equalsIgnoreCase(endTagName)) {
+              inDepot = false;
+            } else if ("webuiURL".equalsIgnoreCase(endTagName)) {
+              inWebuiURL = false;
             }
-            inVersion = true;
-            realVersion = parser.getAttributeValue("", "real");
-            // currentTransaction.addFileRevision("Version - "+realVersion);
-
-          } else if ("issueNum".equalsIgnoreCase(tagName) && currentTransaction != null) {
-            inIssueNum = true;
-          } else if ("comment".equalsIgnoreCase(tagName) && currentTransaction != null) {
-            inComment = true;
-          } else if ("ChangeLog".equalsIgnoreCase(tagName)) {
-            inConsolidatedChangeLog = true;
-          } else if ("UpdateLog".equalsIgnoreCase(tagName)) {
-            inUpdateLog = true;
-          } else if ("depot".equalsIgnoreCase(tagName)) {
-            inDepot = true;
-          } else if ("webuiURL".equalsIgnoreCase(tagName)) {
-            inWebuiURL = true;
-          }
-          break;
-        case XmlPullParser.END_TAG:
-          final String endTagName = parser.getName();
-          if ("issueNum".equalsIgnoreCase(endTagName)
-              && inVersion
-              && inIssueNum
-              && currentTransaction != null) {
-            affectedPathInfo = path + " --- " + "Version - " + realVersion;
-            currentTransaction.addAffectedPath(affectedPathInfo);
-            currentTransaction.addAffectedRawPath(path);
-            inIssueNum = false;
-            inVersion = false;
-          } else if ("version".equalsIgnoreCase(endTagName)
-              && inVersion
-              && currentTransaction != null) {
-            affectedPathInfo = path + " --- " + "Version - " + realVersion;
-            currentTransaction.addAffectedPath(affectedPathInfo);
-            currentTransaction.addAffectedRawPath(path);
-            inVersion = false;
-          } else if ("comment".equalsIgnoreCase(endTagName)) {
-            inComment = false;
-          } else if ("ChangeLog".equalsIgnoreCase(endTagName)) {
-            inConsolidatedChangeLog = false;
-          } else if ("UpdateLog".equalsIgnoreCase(endTagName)) {
-            inUpdateLog = false;
-          } else if ("depot".equalsIgnoreCase(endTagName)) {
-            inDepot = false;
-          } else if ("webuiURL".equalsIgnoreCase(endTagName)) {
-            inWebuiURL = false;
-          }
-          break;
-        case XmlPullParser.TEXT:
-          if (inComment && currentTransaction != null) {
-            currentTransaction.setMsg(parser.getText());
-          } else if (inVersion && inIssueNum && currentTransaction != null) {
-            issueNum = parser.getText();
-            currentTransaction.setIssueNum(issueNum);
-            if (webuiURL != null && !webuiURL.isEmpty()) {
-              currentTransaction.setWebuiURLforIssue(
-                  webuiURL
-                      + "/WebGui.jsp?depot="
-                      + depotName
-                      + "&issueNum="
-                      + issueNum
-                      + "&view=issue");
+            break;
+          case XmlPullParser.TEXT:
+            if (inComment && currentTransaction != null) {
+              currentTransaction.setMsg(parser.getText());
+            } else if (inVersion && inIssueNum && currentTransaction != null) {
+              issueNum = parser.getText();
+              currentTransaction.setIssueNum(issueNum);
+              if (webuiURL != null && !webuiURL.isEmpty()) {
+                currentTransaction.setWebuiURLforIssue(
+                    webuiURL
+                        + "/WebGui.jsp?depot="
+                        + depotName
+                        + "&issueNum="
+                        + issueNum
+                        + "&view=issue");
+              }
+            } else if (inDepot) {
+              depotName = parser.getText();
+            } else if (inWebuiURL) {
+              webuiURL = parser.getText();
             }
-          } else if (inDepot) {
-            depotName = parser.getText();
-          } else if (inWebuiURL) {
-            webuiURL = parser.getText();
-          }
-          if (inConsolidatedChangeLog) {
-            File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
-            transactions.addAll(parse(subChangeLog, updateLog));
-          }
-          if (inUpdateLog) {
-            File updateLogFile = new File(changeLogFile.getParent(), parser.getText());
-            parseUpdate(updateLogFile, updateLog);
-          }
-          break;
+            if (inConsolidatedChangeLog) {
+              File subChangeLog = new File(changeLogFile.getParent(), parser.getText());
+              transactions.addAll(parse(subChangeLog, updateLog));
+            }
+            if (inUpdateLog) {
+              File updateLogFile = new File(changeLogFile.getParent(), parser.getText());
+              parseUpdate(updateLogFile, updateLog);
+            }
+            break;
+        }
       }
+    } catch (Exception ex) {
+      return transactions;
     }
   }
 
