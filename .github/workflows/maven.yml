@@ -18,6 +18,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
+        distribution: "temurin"
     - name: Build with Maven
       run: |
         mvn install -B -V --no-transfer-progress ${{ matrix.flags }}
