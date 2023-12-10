@@ -870,10 +870,10 @@ public class AccurevSCM extends SCM {
         return null;
       } else {
         return CredentialsMatchers.firstOrNull(
-            CredentialsProvider.lookupCredentials(
+            CredentialsProvider.lookupCredentialsInItemGroup(
                 StandardUsernamePasswordCredentials.class,
                 Jenkins.get(),
-                ACL.SYSTEM,
+                ACL.SYSTEM2,
                 URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build()),
             CredentialsMatchers.withId(credentialsId));
       }
@@ -971,10 +971,10 @@ public class AccurevSCM extends SCM {
             fixNull(URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build());
         List<StandardUsernamePasswordCredentials> credentials =
             CredentialsMatchers.filter(
-                CredentialsProvider.lookupCredentials(
+                CredentialsProvider.lookupCredentialsInItemGroup(
                     StandardUsernamePasswordCredentials.class,
                     Jenkins.get(),
-                    ACL.SYSTEM,
+                    ACL.SYSTEM2,
                     domainRequirements),
                 CredentialsMatchers.withUsername(username));
         for (StandardUsernamePasswordCredentials cred : credentials) {
@@ -1034,10 +1034,11 @@ public class AccurevSCM extends SCM {
         if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
           return new StandardListBoxModel().includeCurrentValue(credentialsId);
         }
+
         return new StandardListBoxModel()
             .includeEmptyValue()
             .includeMatchingAs(
-                ACL.SYSTEM,
+                ACL.SYSTEM2,
                 Jenkins.get(),
                 StandardUsernamePasswordCredentials.class,
                 URIRequirementBuilder.fromUri("").withHostnamePort(host, port).build(),
