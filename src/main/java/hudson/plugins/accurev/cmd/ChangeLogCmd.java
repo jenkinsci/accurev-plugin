@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.logging.Logger;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -164,6 +165,13 @@ public class ChangeLogCmd {
 
     GetConfigWebURL webuiURL = webURL.get("webuiURL");
     DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+    String FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+    try {
+      documentBuilderFactory.setFeature(FEATURE, true);
+    } catch (ParserConfigurationException e) {
+      throw new IllegalStateException("ParserConfigurationException was thrown. The feature '"
+          + FEATURE + "' is not supported by your XML processor.", e);
+    }
     DocumentBuilder documentBuilder;
     try {
       documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -196,6 +204,9 @@ public class ChangeLogCmd {
       DOMSource source = new DOMSource(document);
 
       TransformerFactory transformerFactory = TransformerFactory.newInstance();
+      transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+      transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+      transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       Transformer transformer = transformerFactory.newTransformer();
       StreamResult result = new StreamResult(changelogFile);
       transformer.transform(source, result);
